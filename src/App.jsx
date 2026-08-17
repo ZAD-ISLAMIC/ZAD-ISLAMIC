@@ -8,6 +8,8 @@ const QuranScreen = lazy(() => import('./screens/QuranScreen.jsx'))
 const QuranSurahScreen = lazy(() => import('./screens/QuranSurahScreen.jsx'))
 const AdhkarScreen = lazy(() => import('./screens/AdhkarScreen.jsx'))
 const AdhkarCategoryScreen = lazy(() => import('./screens/AdhkarCategoryScreen.jsx'))
+const HisnMuslimScreen = lazy(() => import('./screens/HisnMuslimScreen.jsx'))
+const HisnMuslimCategoryScreen = lazy(() => import('./screens/HisnMuslimCategoryScreen.jsx'))
 const PrayerScreen = lazy(() => import('./screens/PrayerScreen.jsx'))
 const TasbihScreen = lazy(() => import('./screens/TasbihScreen.jsx'))
 const RadioScreen = lazy(() => import('./screens/RadioScreen.jsx'))
@@ -27,6 +29,8 @@ export function App() {
           <Route path="/quran/:surahIndex" element={<QuranSurahScreen />} />
           <Route path="/adhkar" element={<AdhkarScreen />} />
           <Route path="/adhkar/:categoryKey" element={<AdhkarCategoryScreen />} />
+          <Route path="/hisn" element={<HisnMuslimScreen />} />
+          <Route path="/hisn/:categoryId" element={<HisnMuslimCategoryScreen />} />
           <Route path="/prayer" element={<PrayerScreen />} />
           <Route path="/tasbih" element={<TasbihScreen />} />
           <Route path="/radio" element={<RadioScreen />} />

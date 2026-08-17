@@ -1409,6 +1409,594 @@ h3 {
   animation: adhkar-toast-in 0.18s ease;
 }
 
+/* ===== حصن المسلم: شبكة الأقسام ===== */
+
+.hisn-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 24px 12px 18px;
+  text-align: center;
+}
+
+.hisn-hero__badge {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, var(--gold), #8a6d1a);
+  color: #04120c;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--gold) 35%, transparent);
+  margin-bottom: 6px;
+}
+
+.hisn-hero h2 {
+  font-size: 23px;
+  color: var(--gold);
+  margin: 0;
+}
+
+.hisn-hero p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.7;
+  max-width: 420px;
+}
+
+.hisn-grid__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.hisn-grid__search .icon {
+  flex-shrink: 0;
+}
+
+.hisn-grid__search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.hisn-grid__clear {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.hisn-grid__meta {
+  margin: 10px 4px 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.hisn-empty {
+  padding: 28px 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.hisn-section {
+  margin-top: 14px;
+}
+
+.hisn-section__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--cat-accent) 13%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--cat-accent) 30%, var(--border));
+  color: var(--text);
+  text-align: start;
+}
+
+.hisn-section__title {
+  flex: 1;
+  font-size: 14.5px;
+  font-weight: 800;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hisn-section__count {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.hisn-section__caret {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.hisn-section__cats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.hisn-cat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 13px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--cat-accent);
+  color: var(--text);
+  text-align: start;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.hisn-cat:active {
+  transform: scale(0.985);
+}
+
+.hisn-cat__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.hisn-cat__body strong {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hisn-cat__body > span {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.hisn-cat__arrow {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.hisn-card-acts {
+  display: inline-flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.hisn-card-acts__btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: transform 0.1s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.hisn-card-acts__btn:active {
+  transform: scale(0.92);
+}
+
+.hisn-card-acts__btn--playing,
+.hisn-card-acts__btn--stored {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--border));
+  background: color-mix(in srgb, var(--gold) 12%, var(--surface));
+}
+
+.hisn-card-acts__btn--busy {
+  pointer-events: none;
+}
+
+/* ===== حصن المسلم: قائمة باب ===== */
+
+.hisn-grid,
+.hisn-list {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px 18px;
+}
+
+.hisn-list__topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0 2px;
+}
+
+.hisn-list__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hisn-list__count {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.hisn-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-h) + var(--safe-bottom) + 16px);
+  transform: translateX(-50%);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 86%;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 22%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--border));
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  animation: hisn-toast-in 0.22s ease;
+}
+
+.hisn-toast--error {
+  background: color-mix(in srgb, var(--danger) 20%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  color: var(--danger);
+}
+
+@keyframes hisn-toast-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.hisn-list__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 4px;
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.hisn-list__progress-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.hisn-list__progress-label .icon {
+  color: var(--hisn-accent);
+}
+
+.hisn-list__progress-bar {
+  display: block;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.hisn-list__progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--hisn-accent);
+  transition: width 0.3s ease;
+}
+
+.hisn-list__items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* ===== حصن المسلم: بطاقة ذكر ===== */
+
+.hisn-card {
+  padding: 13px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-inline-start: 3px solid var(--cat-accent);
+  color: var(--text);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.hisn-card--done {
+  background: color-mix(in srgb, var(--cat-accent) 9%, var(--bg-card));
+  border-inline-start-color: var(--cat-accent);
+}
+
+.hisn-card__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hisn-card__num {
+  flex-shrink: 0;
+  font-size: 13.5px;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.hisn-card__rep {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.hisn-card__text {
+  margin: 0;
+  font-size: 16px;
+  line-height: 2;
+  text-align: center;
+  color: var(--text);
+}
+
+.hisn-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 11px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+/* ===== حصن المسلم: العدّاد الدائري ===== */
+
+.hisn-count {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.hisn-count__ring {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--hisn-accent) var(--hisn-progress),
+    color-mix(in srgb, var(--hisn-accent) 20%, transparent) 0
+  );
+}
+
+.hisn-count__btn {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid color-mix(in srgb, var(--hisn-accent) 40%, transparent);
+  color: var(--hisn-accent);
+  transition: transform 0.1s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.hisn-count__btn:active {
+  transform: scale(0.9);
+}
+
+.hisn-count__btn strong {
+  font-size: 19px;
+  line-height: 1.15;
+}
+
+.hisn-count__label {
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  opacity: 0.85;
+}
+
+.hisn-count__btn--done {
+  background: var(--hisn-accent);
+  border-color: var(--hisn-accent);
+  color: #04120c;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--hisn-accent) 40%, transparent);
+  animation: adhkar-pop 0.3s ease;
+}
+
+.hisn-count__btn--done .hisn-count__label {
+  font-size: 10.5px;
+  opacity: 1;
+}
+
+.hisn-count__ring:has(.hisn-count__btn--done) {
+  background: var(--hisn-accent);
+}
+
+.hisn-count__chip {
+  position: absolute;
+  top: -7px;
+  inset-inline-end: -7px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  box-shadow: var(--shadow);
+  animation: adhkar-toast-in 0.18s ease;
+}
+
+.hisn-count__chip--undo {
+  color: var(--hisn-accent);
+  border-color: color-mix(in srgb, var(--hisn-accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--hisn-accent) 10%, var(--bg-elevated));
+}
+
+.hisn-count--compact .hisn-count__btn {
+  width: 48px;
+  height: 48px;
+}
+
+.hisn-count--compact .hisn-count__btn strong {
+  font-size: 16px;
+}
+
+/* ===== حصن المسلم: لوحة الباب ===== */
+
+.hisn-door {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.hisn-door__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hisn-door__label {
+  flex: 1;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.hisn-door__percent {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.hisn-door__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ===== حصن المسلم: أزرار الإجراءات ===== */
+
+.hisn-act__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  transition: transform 0.1s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.hisn-act__btn:active {
+  transform: scale(0.94);
+}
+
+.hisn-act__btn--lg {
+  flex: 1;
+  justify-content: center;
+  padding: 9px 12px;
+  font-size: 12.5px;
+}
+
+.hisn-act__btn--playing,
+.hisn-act__btn--stored {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--border));
+  background: color-mix(in srgb, var(--gold) 12%, var(--surface));
+}
+
+.hisn-act__btn--busy {
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+}
+
+.hisn-act__btn--error {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+}
+
+.hisn-act__spin {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: hisn-spin 0.8s linear infinite;
+}
+
+@keyframes hisn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* ===== القرّاء ===== */
 
 .reciters__search {

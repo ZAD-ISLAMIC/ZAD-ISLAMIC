@@ -212,24 +212,31 @@ function getFile(dirEntry, name, create) {
   })
 }
 
-async function filePath(reciterId) {
+async function directoryFor(ns) {
   const fs = await cordovaFs()
   const base = await getDirectory(fs.root, FILE_DIR)
-  const reciterDir = await getDirectory(base, String(reciterId))
-  return { reciterDir, fs }
+  return getDirectory(base, String(ns))
 }
 
 function storageKey(reciterId, surahNumber) {
   return `r${reciterId}:s${surahNumber}`
 }
 
+function fileKey(ns, fileName) {
+  return `file:${ns}:${fileName}`
+}
+
 function fileName(surahNumber) {
   return `${String(surahNumber).padStart(3, '0')}.mp3`
 }
 
+async function entryFor(ns, fileName, create) {
+  const dir = await directoryFor(ns)
+  return getFile(dir, fileName, create)
+}
+
 async function cordovaEntry(reciterId, surahNumber, create) {
-  const { reciterDir } = await filePath(reciterId)
-  return getFile(reciterDir, fileName(surahNumber), create)
+  return entryFor(reciterId, fileName(surahNumber), create)
 }
 
 /* ------------------------------------------------------------------ *
@@ -519,5 +526,185 @@ export async function removeAudio(reciterId, surahNumber) {
   delete reg.sizes[surahNumber]
   recountRegistry(reg)
   saveRegistry(reciterId, reg)
+}
+
+/* ------------------------------------------------------------------ *
+ * Generic file storage — the سورة API above is a reciter flavour of
+ * these primitives. Used by حصن المسلم (and anything else that needs
+ * to store audio keyed by an arbitrary file name). Files live under
+ * `<FILE_DIR>/<ns>/<fileName>` on disk and `file:<ns>:<fileName>` in
+ * IndexedDB. `fileName` is a plain name (e.g. `75`, `ar_...`, `001.mp3`).
+ * ------------------------------------------------------------------ */
+
+const FILES_REG_PREFIX = 'hisn.files.'
+
+export function getFileRegistry(ns) {
+  return (
+    storage.get(FILES_REG_PREFIX + ns) || {
+      files: [],
+      bytes: 0,
+      count: 0,
+      sizes: {},
+    }
+  )
+}
+
+function saveFileRegistry(ns, reg) {
+  storage.set(FILES_REG_PREFIX + ns, reg)
+}
+
+function recountFileRegistry(reg) {
+  reg.count = reg.files.length
+  reg.bytes = Object.values(reg.sizes || {}).reduce((sum, size) => sum + size, 0)
+  return reg
+}
+
+export function hasFile(ns, fileName) {
+  return getFileRegistry(ns).files.includes(String(fileName))
+}
+
+export function fileRegistrySummary(ns) {
+  const reg = getFileRegistry(ns)
+  return { count: reg.count || 0, bytes: reg.bytes || 0 }
+}
+
+// Same error-wrapping as the surah sink, so download managers get
+// consistent `{ code }` failures (quota / permission / storage).
+function wrapFileWriteError(err) {
+  const code = typeof err?.code === 'number' ? err.code : null
+  if (
+    code === 10 ||
+    code === 22 ||
+    code === 13 ||
+    /quota|no.?space|limit/i.test(String(err))
+  ) {
+    throw { code: 'quota', message: '' }
+  }
+  if (code === 18 || /permission|denied|SECURITY/i.test(String(err?.name || err))) {
+    throw {
+      code: 'permission',
+      message: 'يلزم الإذن بالوصول إلى التخزين — امنحه من إعدادات النظام ثم أعد المحاولة',
+    }
+  }
+  throw {
+    code: 'storage',
+    message: code != null ? `تعذّرت الكتابة على الجهاز (رمز ${code})` : 'تعذّرت الكتابة على الجهاز',
+  }
+}
+
+export async function openFileSink(ns, fileName) {
+  const name = String(fileName)
+  if ((await getBackend()) === 'cordova') {
+    let entry
+    try {
+      entry = await entryFor(ns, name, true)
+    } catch {
+      throw { code: 'storage', message: 'تعذّر فتح ملف التحميل' }
+    }
+    const sink = createCordovaSink(entry)
+    const offset = await sink.init()
+    return {
+      offset,
+      write: (blob, pos) =>
+        sink.write(blob, pos != null ? pos : null).catch(wrapFileWriteError),
+      reset: () => sink.reset(),
+      done: async () => null,
+      discard: () => {},
+    }
+  }
+
+  const chunks = []
+  let added = 0
+  return {
+    offset: 0,
+    write: (blob) => {
+      chunks.push(blob)
+      added += blob.size
+      return Promise.resolve(added)
+    },
+    reset: async () => {
+      chunks.length = 0
+      added = 0
+    },
+    done: async () => {
+      const blob = new Blob(chunks, { type: AUDIO_MIME })
+      await idbPut(fileKey(ns, name), blob)
+      return null
+    },
+    discard: () => {
+      chunks.length = 0
+    },
+  }
+}
+
+export async function localUrlFor(ns, fileName) {
+  const name = String(fileName)
+  const key = fileKey(ns, name)
+  const cache = getBlobUrlCache()
+  if (cache.has(key)) return cache.get(key)
+  if ((await getBackend()) === 'cordova') {
+    try {
+      const entry = await entryFor(ns, name, false)
+      const url = await fileEntryToObjectUrl(entry)
+      cache.set(key, url)
+      return url
+    } catch (err) {
+      if (typeof console !== 'undefined') {
+        console.warn('[altaqwaa] localUrlFor failed (cordova)', { ns, name, message: err?.message })
+      }
+      return null
+    }
+  }
+  const record = await idbGet(key)
+  if (!record?.blob) return null
+  const url = URL.createObjectURL(record.blob)
+  cache.set(key, url)
+  return url
+}
+
+export function markStoredByFile(ns, fileName, byteSize) {
+  const reg = getFileRegistry(ns)
+  const name = String(fileName)
+  if (!reg.files.includes(name)) reg.files.push(name)
+  reg.sizes = reg.sizes || {}
+  reg.sizes[name] = byteSize
+  recountFileRegistry(reg)
+  saveFileRegistry(ns, reg)
+}
+
+export async function removeFileBy(ns, fileName) {
+  const reg = getFileRegistry(ns)
+  const name = String(fileName)
+  const idx = reg.files.indexOf(name)
+  if (idx === -1) return
+  const key = fileKey(ns, name)
+  const cached = getBlobUrlCache().get(key)
+  if (cached) {
+    URL.revokeObjectURL(cached)
+    getBlobUrlCache().delete(key)
+  }
+  if ((await getBackend()) === 'cordova') {
+    try {
+      const entry = await entryFor(ns, name, false)
+      await new Promise((resolve, reject) => entry.remove(resolve, reject))
+    } catch {
+      /* file may not exist */
+    }
+  } else {
+    try {
+      await idbDelete(key)
+    } catch {
+      /* ignore */
+    }
+  }
+  reg.files.splice(idx, 1)
+  reg.sizes = reg.sizes || {}
+  delete reg.sizes[name]
+  recountFileRegistry(reg)
+  saveFileRegistry(ns, reg)
+}
+
+export function resetFileRegistry(ns) {
+  saveFileRegistry(ns, { files: [], bytes: 0, count: 0, sizes: {} })
 }
 

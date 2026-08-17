@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { arabicDigits } from '../../utils/arabic.mjs'
-import { hasSurah } from '../../services/reciterStorage.mjs'
+import { hasSurah, hasFile } from '../../services/reciterStorage.mjs'
+import { HISN_NS } from '../../services/hisnmuslim.mjs'
 import { usePlayer } from '../../hooks/usePlayer.mjs'
 import { Icon } from '../ui/Icon.jsx'
 
@@ -29,7 +30,12 @@ export function PlayerBar() {
   if (!track) return null
 
   const isLive = track.kind === 'radio'
-  const stored = isLive ? false : hasSurah(track.reciterId, track.surahNumber)
+  const isHisn = track.kind === 'hisn'
+  const stored = isLive
+    ? false
+    : isHisn
+      ? hasFile(HISN_NS, track.fileName)
+      : hasSurah(track.reciterId, track.surahNumber)
   const percent =
     player.duration > 0
       ? Math.min(100, (player.time / player.duration) * 100)
@@ -52,13 +58,21 @@ export function PlayerBar() {
         onClick={() => setExpanded((v) => !v)}
       >
         <span className={`player-mini__badge${isLive ? ' player-mini__badge--live' : ''}`}>
-          {isLive ? <Icon name="radio" size={22} /> : arabicDigits(track.surahNumber)}
+          {isLive ? (
+            <Icon name="radio" size={22} />
+          ) : isHisn ? (
+            <Icon name="shield" size={22} />
+          ) : (
+            arabicDigits(track.surahNumber)
+          )}
         </span>
         <span className="player-mini__body">
-          <strong className="player-mini__surah">{track.name || track.surahName}</strong>
+          <strong className="player-mini__surah">{track.name || track.surahName || 'حصن المسلم'}</strong>
           <span className="player-mini__reciter">
-            {track.category || track.reciterName}
-            {!isLive && track.rewaya ? ` • ${track.rewaya}` : ''}
+            {isHisn
+              ? track.sub || 'حصن المسلم'
+              : track.category || track.reciterName}
+            {!isLive && !isHisn && track.rewaya ? ` • ${track.rewaya}` : ''}
           </span>
         </span>
         {isLive ? (
@@ -134,8 +148,8 @@ export function PlayerBar() {
 
             <div className="player-full__art">
               <span className="player-full__badge">
-                <Icon name={isLive ? 'radio' : 'note'} size={34} />
-                {!isLive && (
+                <Icon name={isLive ? 'radio' : isHisn ? 'shield' : 'note'} size={34} />
+                {!isLive && !isHisn && (
                   <span className="player-full__badge-num">
                     {arabicDigits(track.surahNumber)}
                   </span>
@@ -144,10 +158,14 @@ export function PlayerBar() {
             </div>
 
             <div className="player-full__meta">
-              <h2 className="player-full__surah">{track.name || track.surahName}</h2>
+              <h2 className="player-full__surah">{track.name || track.surahName || 'حصن المسلم'}</h2>
               <p className="player-full__reciter">
-                {isLive ? track.category || 'بث مباشر' : track.reciterName}
-                {!isLive && track.rewaya ? ` • ${track.rewaya}` : ''}
+                {isLive
+                  ? track.category || 'بث مباشر'
+                  : isHisn
+                    ? track.sub || 'حصن المسلم'
+                    : track.reciterName}
+                {!isLive && !isHisn && track.rewaya ? ` • ${track.rewaya}` : ''}
               </p>
               {isLive && (
                 <p className="player-full__live-badge">

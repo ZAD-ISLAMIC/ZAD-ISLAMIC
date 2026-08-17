@@ -1,5 +1,6 @@
 import { audioUrl } from './reciters.mjs'
-import { getLocalUrl } from './reciterStorage.mjs'
+import { getLocalUrl, localUrlFor } from './reciterStorage.mjs'
+import { HISN_NS } from './hisnmuslim.mjs'
 import { storage } from './storage.mjs'
 
 const LAST_KEY = 'player.last'
@@ -150,15 +151,20 @@ function handleAudioError() {
   disarmTiming()
   const offline = typeof navigator !== 'undefined' && !navigator.onLine
   const isRadio = state.track?.kind === 'radio'
+  const isHisn = state.track?.kind === 'hisn'
   const message = isRadio
     ? offline
       ? 'لا يوجد اتصال بالإنترنت — البث المباشر يتطلب اتصالاً'
       : state.track?.hls
         ? 'هذه الإذاعة تصدر بصيغة لا يدعمها المشغّل المدمج — جرّب إذاعة أخرى'
         : 'تعذّر تشغيل هذه الإذاعة — قد يكون البث متوقفاً أو الرابط معطلاً'
-    : offline
-      ? 'لا يوجد اتصال بالإنترنت ولا نسخة محلية محفوظة لهذه السورة'
-      : 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً'
+    : isHisn
+      ? offline
+        ? 'لا يوجد اتصال بالإنترنت ولا نسخة محفوظة لهذا الذكر'
+        : 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً، أو حمّله للاستماع دون إنترنت'
+      : offline
+        ? 'لا يوجد اتصال بالإنترنت ولا نسخة محلية محفوظة لهذه السورة'
+        : 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً'
   patch({ playing: false, status: 'error', error: message })
 }
 
@@ -214,10 +220,17 @@ async function loadTrack(queue, index, { autoplay }) {
     element.load()
 
     const isRadio = track.kind === 'radio'
-    const url = isRadio
-      ? track.url
-      : (await getLocalUrl(track.reciterId, track.surahNumber)) ||
+    const isHisn = track.kind === 'hisn'
+    let url
+    if (isRadio) {
+      url = track.url
+    } else if (isHisn) {
+      url = (await localUrlFor(HISN_NS, track.fileName)) || track.url
+    } else {
+      url =
+        (await getLocalUrl(track.reciterId, track.surahNumber)) ||
         audioUrl({ server: track.server }, track.surahNumber)
+    }
     element.src = url
     element.playbackRate = state.rate
     if (autoplay) {
@@ -329,12 +342,23 @@ function syncMediaSession(enabled = true) {
       return
     }
     const isRadio = state.track.kind === 'radio'
+    const isHisn = state.track.kind === 'hisn'
     ms.metadata = new MediaMetadata({
-      title: isRadio ? state.track.name || 'إذاعة' : state.track.surahName || 'سورة',
+      title: isRadio
+        ? state.track.name || 'إذاعة'
+        : isHisn
+          ? state.track.name || 'حصن المسلم'
+          : state.track.surahName || 'سورة',
       artist: isRadio
         ? state.track.category || 'التقوى'
-        : state.track.reciterName || 'التقوى',
-      album: isRadio ? 'التقوى — الراديو' : 'التقوى — المصحف',
+        : isHisn
+          ? 'حصن المسلم'
+          : state.track.reciterName || 'التقوى',
+      album: isRadio
+        ? 'التقوى — الراديو'
+        : isHisn
+          ? 'التقوى — حصن المسلم'
+          : 'التقوى — المصحف',
     })
     ms.setActionHandler('play', () => toggle())
     ms.setActionHandler('pause', () => toggle())
