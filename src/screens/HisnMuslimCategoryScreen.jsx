@@ -7,7 +7,7 @@ export default function HisnMuslimCategoryScreen() {
   const navigate = useNavigate()
 
   return (
-    <section className="screen adhkar">
+    <section className="adhkar">
       <HisnCategoryList categoryId={categoryId} onBack={() => navigate('/hisn')} />
     </section>
   )
