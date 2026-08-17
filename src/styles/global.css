@@ -1990,6 +1990,12 @@ h3 {
   background: color-mix(in srgb, var(--danger) 8%, var(--surface));
 }
 
+.hisn-act__btn--clear-partial {
+  color: var(--text-muted);
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: color-mix(in srgb, var(--danger) 6%, var(--surface));
+}
+
 .hisn-act__spin {
   width: 14px;
   height: 14px;

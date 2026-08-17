@@ -160,14 +160,28 @@ test('doorRef and itemRef produce unique refs with https urls', () => {
   assert.ok(item.url.startsWith('https://'))
 })
 
-test('doorFiles lists the door audio first then every dhikr', () => {
+test('doorFiles lists every dhikr only — no merged door audio', () => {
   const files = doorFiles(1)
   const door = getCategoryById(1)
-  assert.equal(files.length, door.array.length + 1)
-  assert.equal(files[0].fileName, door.filename)
+  assert.equal(files.length, door.array.length)
   for (const file of files) {
+    assert.ok(file.ref.startsWith('hisn:i:'), `ref ${file.ref} is a dhikr file`)
     assert.ok(file.fileName && file.url.startsWith('https://'))
   }
+})
+
+test('a door with a single dhikr counts as one file — not two', () => {
+  const door = getCategoryById(4)
+  assert.equal(door.array.length, 1)
+  const files = doorFiles(4)
+  assert.equal(files.length, 1, 'ترقيم «محفوظ X من Y» يعتمد على الأذكار فقط')
+  assert.equal(files[0].fileName, door.array[0].filename)
+  // Door 52 cites the same audio for the door and its only dhikr — must
+  // never count that twice.
+  const d52 = getCategoryById(52)
+  assert.equal(d52.array.length, 1)
+  assert.equal(d52.filename, d52.array[0].filename)
+  assert.equal(doorFiles(52).length, 1, 'نفس الملف يُعدّ مرة واحدة')
 })
 
 test('kind:hisn tracks carry name/sub/url for the shared player', () => {
@@ -308,4 +322,27 @@ test('markStoredByFile/hasFile/removeFileBy keep the registry accurate', async (
   await removeFileBy(ns, name)
   assert.equal(hasFile(ns, name), false)
   assert.deepEqual(fileRegistrySummary(ns), { count: 0, bytes: 0 })
+})
+
+test('removeFileBy purges half-written files even when unregistered', async () => {
+  installLocalStorageMock()
+  const ns = 'hisn'
+  const name = 'aborted-partial'
+  assert.equal(hasFile(ns, name), false)
+  await removeFileBy(ns, name)
+  assert.equal(hasFile(ns, name), false)
+  assert.deepEqual(fileRegistrySummary(ns), { count: 0, bytes: 0 })
+})
+
+test('clearing every door file empties the registry completely', async () => {
+  installLocalStorageMock()
+  const ns = 'hisn'
+  const files = doorFiles(4)
+  for (const file of files) markStoredByFile(ns, file.fileName, 512)
+  assert.ok(fileRegistrySummary(ns).count > 0)
+  for (const file of files) {
+    await removeFileBy(ns, file.fileName)
+  }
+  assert.equal(fileRegistrySummary(ns).count, 0, 'كل الملفات المحفوظة تُحذف فعلاً')
+  assert.equal(hasFile(ns, files[0].fileName), false)
 })

@@ -80,13 +80,13 @@ export function itemRef(categoryId, itemId) {
   }
 }
 
-/** All files belonging to a door: the door audio first, then every dhikr. */
+/** The dhikr files belonging to a door (one per dhikr the user sees).
+ * The whole-door merged audio is intentionally NOT included: every dhikr
+ * has its own file, so "الباب" == its dhikrs for download/progress/delete. */
 export function doorFiles(categoryId) {
   const category = getCategoryById(categoryId)
   if (!category) return []
   const files = []
-  const door = doorRef(categoryId)
-  if (door.fileName) files.push(door)
   for (const item of category.array) {
     const ref = itemRef(categoryId, item.id)
     if (ref.fileName) files.push(ref)

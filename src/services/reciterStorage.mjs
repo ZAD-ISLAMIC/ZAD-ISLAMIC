@@ -672,21 +672,26 @@ export function markStoredByFile(ns, fileName, byteSize) {
   saveFileRegistry(ns, reg)
 }
 
-export async function removeFileBy(ns, fileName) {
-  const reg = getFileRegistry(ns)
-  const name = String(fileName)
-  const idx = reg.files.indexOf(name)
-  if (idx === -1) return
-  const key = fileKey(ns, name)
+// Blindly remove the physical artifact even when the registry does not
+// know about it — needed to purge half-written files left behind by an
+// aborted download, or legacy files that no longer belong to the app.
+async function deletePhysicalFile(ns, fileName) {
+  const key = fileKey(ns, fileName)
   const cached = getBlobUrlCache().get(key)
   if (cached) {
-    URL.revokeObjectURL(cached)
+    try {
+      URL.revokeObjectURL(cached)
+    } catch {
+      /* ignore */
+    }
     getBlobUrlCache().delete(key)
   }
   if ((await getBackend()) === 'cordova') {
     try {
-      const entry = await entryFor(ns, name, false)
-      await new Promise((resolve, reject) => entry.remove(resolve, reject))
+      const entry = await entryFor(ns, fileName, false)
+      if (entry) {
+        await new Promise((resolve, reject) => entry.remove(resolve, reject))
+      }
     } catch {
       /* file may not exist */
     }
@@ -697,6 +702,14 @@ export async function removeFileBy(ns, fileName) {
       /* ignore */
     }
   }
+}
+
+export async function removeFileBy(ns, fileName) {
+  const reg = getFileRegistry(ns)
+  const name = String(fileName)
+  await deletePhysicalFile(ns, name)
+  const idx = reg.files.indexOf(name)
+  if (idx === -1) return
   reg.files.splice(idx, 1)
   reg.sizes = reg.sizes || {}
   delete reg.sizes[name]

@@ -6,14 +6,14 @@ import {
   downloadItem,
   cancelRef,
   cancelDoor,
+  removeDoor,
   removeFile,
   hasFile,
 } from '../../services/hisnDownload.mjs'
 import {
   HISN_NS,
   itemRef,
-  toDoorTrack,
-  doorFiles,
+  itemTrackList,
 } from '../../services/hisnmuslim.mjs'
 import { Icon } from '../ui/Icon.jsx'
 
@@ -126,8 +126,8 @@ export function HisnDownloadButton({ catId, itemId }) {
 export function HisnDoorActions({ category }) {
   const player = usePlayer()
   const stats = useHisnDoorStats(category.id)
-  const doorTrack = toDoorTrack(category)
-  const isActive = player.track && player.track.ref === doorTrack.ref
+  const tracks = itemTrackList(category)
+  const isActive = player.track && tracks.some((t) => t.ref === player.track.ref)
   const playing = isActive && player.playing
 
   const onPlay = (event) => {
@@ -135,7 +135,7 @@ export function HisnDoorActions({ category }) {
     if (isActive) {
       player.toggle()
     } else {
-      player.play([doorTrack], 0)
+      player.play(tracks, 0)
     }
   }
 
@@ -153,11 +153,7 @@ export function HisnDoorActions({ category }) {
   const onClear = async (event) => {
     event?.stopPropagation()
     if (stats.busy) return
-    for (const file of doorFiles(category.id)) {
-      if (hasFile(HISN_NS, file.fileName)) {
-        await removeFile(file.ref, file.fileName)
-      }
-    }
+    await removeDoor(category.id)
   }
 
   return (
@@ -208,6 +204,16 @@ export function HisnDoorActions({ category }) {
             {stats.errorCount > 0 ? 'إكمال الحفظ' : 'حفظ الباب'}
           </button>
         )}
+        {!stats.busy && !stats.allStored && stats.doneCount > 0 && (
+          <button
+            className="hisn-act__btn hisn-act__btn--lg hisn-act__btn--clear-partial"
+            onClick={onClear}
+            aria-label="حذف الأذكار المحفوظة من هذا الباب"
+          >
+            <Icon name="trash" size={15} />
+            مسح المحفوظ
+          </button>
+        )}
       </div>
     </div>
   )
@@ -220,15 +226,17 @@ export function HisnDoorActions({ category }) {
 export function HisnDoorMiniActions({ category }) {
   const player = usePlayer()
   const stats = useHisnDoorStats(category.id)
-  const doorTrack = toDoorTrack(category)
-  const playing = player.track && player.track.ref === doorTrack.ref && player.playing
+  const tracks = itemTrackList(category)
+  const playing =
+    player.track && tracks.some((t) => t.ref === player.track.ref) && player.playing
+  const isActive = player.track && tracks.some((t) => t.ref === player.track.ref)
 
   const onPlay = (event) => {
     event?.stopPropagation()
-    if (playing || (player.track && player.track.ref === doorTrack.ref)) {
+    if (isActive) {
       player.toggle()
     } else {
-      player.play([doorTrack], 0)
+      player.play(tracks, 0)
     }
   }
 
@@ -238,10 +246,8 @@ export function HisnDoorMiniActions({ category }) {
       cancelDoor(category.id)
       return
     }
-    if (stats.allStored) {
-      for (const file of doorFiles(category.id)) {
-        await removeFile(file.ref, file.fileName)
-      }
+    if (stats.allStored || stats.doneCount > 0) {
+      await removeDoor(category.id)
     } else {
       downloadDoor(category.id)
     }
@@ -259,16 +265,24 @@ export function HisnDoorMiniActions({ category }) {
       <button
         className={
           'hisn-card-acts__btn' +
-          (stats.allStored ? ' hisn-card-acts__btn--stored' : '') +
+          (stats.doneCount > 0 && !stats.busy ? ' hisn-card-acts__btn--stored' : '') +
           (stats.busy ? ' hisn-card-acts__btn--busy' : '')
         }
         onClick={onSave}
-        aria-label={stats.busy ? 'إلغاء تحميل الباب' : stats.allStored ? 'مسح تحميلات الباب' : 'حفظ الباب'}
+        aria-label={
+          stats.busy
+            ? 'إلغاء تحميل الباب'
+            : stats.allStored || stats.doneCount > 0
+              ? 'مسح تحميلات الباب'
+              : 'حفظ الباب'
+        }
       >
         {stats.allStored ? (
           <Icon name="check" size={14} />
         ) : stats.busy ? (
           <Icon name="close" size={14} />
+        ) : stats.doneCount > 0 ? (
+          <Icon name="trash" size={14} />
         ) : (
           <Icon name="download" size={14} />
         )}

@@ -1,5 +1,6 @@
-import { HISN_NS, doorFiles, itemRef } from './hisnmuslim.mjs'
+import { HISN_DATA, HISN_NS, doorFiles, getCategoryById, itemRef } from './hisnmuslim.mjs'
 import {
+  getFileRegistry,
   hasFile,
   markStoredByFile,
   openFileSink,
@@ -389,14 +390,13 @@ export function downloadItem(catId, itemId) {
   }
 }
 
-export function cancelDoor(catId) {
-  let aborted = false
+export async function cancelDoor(catId) {
+  const toPurge = []
   for (const file of doorFiles(catId)) {
     const task = tasks.get(file.ref)
     if (!task) continue
     if (task.state === 'running' && task.controller) {
       task.controller.abort()
-      aborted = true
     }
     if (task.state === 'pending' || task.state === 'running') {
       task.state = 'idle'
@@ -404,24 +404,36 @@ export function cancelDoor(catId) {
       task.retryAt = 0
       task.progress = 0
       task.error = null
+      if (!hasFile(HISN_NS, file.fileName)) toPurge.push(file.fileName)
     }
   }
-  if (!aborted) {
-    markDirty()
-    flush()
+  markDirty()
+  flush()
+  if (toPurge.length) {
+    // Let any in-flight chunk write settle, then drop the half-written files
+    // so a cancelled download leaves nothing behind on the device.
+    await sleep(280)
+    for (const name of toPurge) {
+      await removeFileBy(HISN_NS, name)
+    }
   }
 }
 
-export function cancelRef(ref) {
+export async function cancelRef(ref) {
   const task = tasks.get(ref)
   if (!task) return
   if (task.state === 'running' && task.controller) task.controller.abort()
+  const purgePartial = !hasFile(HISN_NS, task.fileName)
   task.state = 'idle'
   task.attempts = 0
   task.retryAt = 0
   task.progress = 0
   task.error = null
   markDirty()
+  if (purgePartial) {
+    await sleep(280)
+    await removeFileBy(HISN_NS, task.fileName)
+  }
 }
 
 export async function removeFile(ref, fileName) {
@@ -441,12 +453,37 @@ export async function removeFile(ref, fileName) {
 }
 
 export async function removeDoor(catId) {
-  // Abort everything for this door first, then drop each stored file.
+  // Abort everything for this door first, then drop each stored file
+  // (including the old merged whole-door audio if it was saved before).
   for (const file of doorFiles(catId)) cancelRef(file.ref)
   for (const file of doorFiles(catId)) {
     await removeFileBy(HISN_NS, file.fileName)
   }
+  const category = getCategoryById(catId)
+  if (category?.filename) {
+    await removeFileBy(HISN_NS, category.filename)
+  }
   markDirty()
+}
+
+// Every dhikr + door file that the current dataset still references.
+const KNOWN_HISN_FILES = new Set()
+for (const c of HISN_DATA) {
+  if (c.filename) KNOWN_HISN_FILES.add(String(c.filename))
+  for (const item of c.array || []) {
+    if (item.filename) KNOWN_HISN_FILES.add(String(item.filename))
+  }
+}
+
+/** Drop stored files that no dataset entry references (legacy merged-door
+ * audio, half-written leftovers, or content removed from the dataset). */
+export async function purgeOrphanFiles() {
+  const reg = getFileRegistry(HISN_NS)
+  for (const name of [...reg.files]) {
+    if (!KNOWN_HISN_FILES.has(name)) {
+      await removeFileBy(HISN_NS, name)
+    }
+  }
 }
 
 export { hasFile }
@@ -484,4 +521,10 @@ if (typeof window !== 'undefined') {
       pump()
     }
   })
+}
+
+// One-time cleanup: purge legacy merged-door audio and any leftovers that
+// the current dataset no longer references, so storage matches the UI.
+if (typeof window !== 'undefined' && typeof process === 'undefined') {
+  purgeOrphanFiles()
 }
