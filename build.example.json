@@ -1,0 +1,20 @@
+{
+  "android": {
+    "debug": {
+      "keystore": "./altaqwaa.keystore",
+      "storePassword": "CHANGE_ME_STORE_PASSWORD",
+      "alias": "rn0x_Altaqwaa",
+      "password": "CHANGE_ME_KEY_PASSWORD",
+      "keystoreType": "pkcs12",
+      "packageType": "apk"
+    },
+    "release": {
+      "keystore": "./altaqwaa.keystore",
+      "storePassword": "CHANGE_ME_STORE_PASSWORD",
+      "alias": "rn0x_Altaqwaa",
+      "password": "CHANGE_ME_KEY_PASSWORD",
+      "keystoreType": "pkcs12",
+      "packageType": "apk"
+    }
+  }
+}

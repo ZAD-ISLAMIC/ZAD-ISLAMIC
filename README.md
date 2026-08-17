@@ -1,11 +1,6 @@
 # تطبيق التقوى — React + Cordova
 
-تطبيق إسلامي مبني من الصفر بـ **React 19 + JSX** مع **Cordova** للأندرويد. بدون TypeScript نهائياً.
-
-## قواعد الامتدادات
-
-- **`.jsx`** — كل ملفات React (مكونات، شاشات، App، main) — يُعالجها Vite أصلياً بدون أي إعداد إضافي
-- **`.mjs`** — السكربتات والوحدات المنطقية غير التفاعلية فقط (`scripts/`, `services/`, `utils/`, `constants/`, `hooks/`)
+تطبيق إسلامي مفتوح المصدر يعمل على أجهزة اندرويد سهل الإستخدام و جامع للكثير من الميزات التي يحتاجها المسلم في يومه
 
 ## المتطلبات
 
@@ -27,8 +22,14 @@ npm run dev          # خادم التطوير على http://localhost:5173
 ```bash
 npm run build             # بناء الـ web assets فقط إلى www/
 npm run build:apk         # بناء APK Debug كامل (vite + cordova)
-npm run build:apk:release # بناء APK Release موقّع عبر build.json + tqw.keystore
+npm run build:apk:release # بناء APK Release موقّع عبر build.json
 ```
+
+### التوقيع (keystore)
+```bash
+npm run keystore          # توليد مفتاح توقيع جديد + build.json (بيانات حقيقية محلياً)
+```
+> الشرح الكامل في [`docs/signing.md`](docs/signing.md). النموذج: `build.example.json`.
 
 ### التثبيت والتشغيل على الجهاز
 ```bash
@@ -55,7 +56,8 @@ npm run build:apk
 
 ```
 ├── config.xml          # إعدادات Cordova (id, name, permissions, ...)
-├── build.json          # إعداد توقيع الـ keystore (debug + release) — محلي فقط، غير مرفوع
+├── build.example.json  # قالب build.json بمعلومات وهمية (مرفوع في git)
+├── build.json          # إعداد توقيع الـ keystore — محلي فقط، غير مرفوع (صرّفه: npm run keystore)
 ├── tqw.keystore        # مفتاح التوقيع — محلي فقط، غير مرفوع
 ├── vite.config.mjs     # إعداد Vite (سكربت إعداد — JSX يتم عبر امتداد .jsx الأصلي)
 ├── index.html          # نقطة الدخول
@@ -86,11 +88,6 @@ npm run build:apk
 7. **الـ Router**: `HashRouter` لأن Cordova يحمّل من `file://` (لا يدعم التاريخ الحقيقي).
 8. **سكربت أو وحدة منطقية**: `.mjs` فقط.
 
-## إضافة منصة جديدة (iOS مثلاً)
-```bash
-npx cordova platform add ios    # على macOS فقط
-npx cordova build ios
-```
 
 ## إضافة إضافات Cordova
 ```bash
@@ -99,7 +96,7 @@ npx cordova plugin add cordova-plugin-xxx
 
 ## ملاحظات بناء معروفة
 
-- `build.json` و `tqw.keystore` غير مرفوعين إلى git (أسرار التوقيع). لبنيان Release جديد انسخهما إلى جذر المشروع أولاً.
+- `build.json` و `*.keystore` غير مرفوعين إلى git (أسرار التوقيع). على جهاز جديد شغّل `npm run keystore` أو انسخ `build.example.json` → `build.json` وقيمها. التفاصيل في `docs/signing.md`.
 - `cordova-android` يحتاج أن يكون `gradle` في PATH؛ أنشئنا symlink:
   `ln -s ~/.gradle/wrapper/dists/gradle-8.14.2-bin/*/gradle-8.14.2/bin/gradle ~/.local/bin/gradle`
 - لا تستخدم `cordova-plugin-compat` — يسبب تكرار فئة `BuildHelper` مع cordova-android 15.

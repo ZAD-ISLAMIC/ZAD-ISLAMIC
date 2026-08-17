@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <widget id="com.rn0x.altaqwaa" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+  <widget id="com.rn0x.altaqwaa" version="3.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
 
   <name>التقوى</name>
   <description>تطبيق التقوى — تطبيق إسلامي متكامل</description>
-  <author email="rn0x.me@gmail.com" href="https://www.i8x.net">Rayan Almalki</author>
+  <author email="rn0x.me@gmail.com" href="https://i8x.net">Rayan Almalki</author>
 
   <content src="index.html" />
   <access origin="*" />

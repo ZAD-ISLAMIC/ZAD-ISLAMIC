@@ -1,5 +1,5 @@
 export const APP_NAME = 'التقوى'
-export const APP_VERSION = '1.0.0'
+export const APP_VERSION = '3.0.0'
 
 export const NAV_ITEMS = [
   { path: '/home', label: 'الرئيسية', icon: 'home' },
