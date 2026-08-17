@@ -1,6 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react'
 import {
-  CATEGORY_ICONS,
   CATEGORY_STYLES,
   findAudio,
   formatCount,
@@ -54,7 +53,7 @@ export function AdhkarAudioButton({ item }) {
   )
 }
 
-export function AdhkarList({ category, onBack, onComplete }) {
+export function AdhkarList({ category, onComplete }) {
   const accent = CATEGORY_STYLES[category.key]?.accent || '#10b981'
   const [counts, setCounts] = useState({})
   const [expandedId, setExpandedId] = useState(null)
@@ -104,14 +103,6 @@ export function AdhkarList({ category, onBack, onComplete }) {
   return (
     <div className="adhkar-list">
       <div className="adhkar-list__topbar">
-        <button className="quran-reader__back" onClick={onBack}>
-          <Icon name="arrow-right" size={22} />
-          <span>الأقسام</span>
-        </button>
-        <span className="adhkar-list__title" style={{ color: accent }}>
-          <Icon name={CATEGORY_ICONS[category.key]} size={18} />
-          {category.category}
-        </span>
         <span className="adhkar-list__count">
           {formatCount(category.array.length)} ذكر
         </span>

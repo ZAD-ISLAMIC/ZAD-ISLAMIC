@@ -70,10 +70,6 @@ export default function QuizCategoryScreen() {
     <section style={{ '--cat-accent': accent }}>
       <div className="quiz" style={{ '--quiz-accent': accent }}>
         <div className="quiz-topbar">
-          <button className="quran-reader__back" onClick={() => navigate('/quiz')}>
-            <Icon name="arrow-right" size={20} />
-            <span>المجالات</span>
-          </button>
           <QuizCategoryProgressSummary category={category} progress={progress} />
         </div>
 

@@ -21,5 +21,5 @@ export default function ReciterScreen() {
     )
   }
 
-  return <ReciterDetail reciter={reciter} onBack={() => navigate('/reciters')} />
+  return <ReciterDetail reciter={reciter} />
 }

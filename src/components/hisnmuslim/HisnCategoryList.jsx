@@ -7,7 +7,7 @@ import { Icon } from '../ui/Icon.jsx'
 import { HisnDoorActions } from './HisnAudioActions.jsx'
 import { HisnItemCard } from './HisnItemCard.jsx'
 
-export function HisnCategoryList({ categoryId, onBack }) {
+export function HisnCategoryList({ categoryId }) {
   const category = getCategoryById(categoryId)
   const accent = category ? accentFor(category.category) : undefined
   const [counts, setCounts] = useState({})
@@ -77,13 +77,6 @@ export function HisnCategoryList({ categoryId, onBack }) {
   return (
     <div className="hisn-list">
       <div className="hisn-list__topbar">
-        <button className="quran-reader__back" onClick={onBack}>
-          <Icon name="arrow-right" size={22} />
-          <span>الأقسام</span>
-        </button>
-        <span className="hisn-list__title" style={{ color: accent }}>
-          {category.category}
-        </span>
         <span className="hisn-list__count">{arabicDigits(category.array.length)} ذكر</span>
       </div>
 

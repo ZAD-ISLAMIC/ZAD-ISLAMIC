@@ -11,7 +11,7 @@ export default function HomeScreen() {
   return (
     <section className="screen home">
       <div className="home__hero">
-        <h1>بسم الله الرحمن الرحيم</h1>
+        <h2>بسم الله الرحمن الرحيم</h2>
         <p>تطبيقك الشامل للعبادات والقرآن الكريم</p>
       </div>
 

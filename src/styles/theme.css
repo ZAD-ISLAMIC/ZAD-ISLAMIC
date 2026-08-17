@@ -17,11 +17,11 @@
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   --header-gradient: linear-gradient(180deg, rgba(10, 20, 40, 0.96), rgba(10, 20, 40, 0.82));
   --nav-bg: rgba(16, 31, 60, 0.72);
-  --header-h: 52px;
+  --header-h: 46px;
   --nav-h: 56px;
   --nav-gap: 12px;
   --nav-maxw: 640px;
-  --safe-top: 5px;
+  --safe-top: 4px;
   --safe-bottom: min(env(safe-area-inset-bottom, 0px), 5px);
 
   --cat-morning: #d4af37;

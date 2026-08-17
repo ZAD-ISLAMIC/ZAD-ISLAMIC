@@ -1,0 +1,76 @@
+import { APP_NAME, NAV_ITEMS, BOTTOM_NAV_ITEMS } from '../constants/app.mjs'
+import { SURAH_META } from '../services/surahsMeta.mjs'
+import azkarData from '../resources/data/azkar.json' with { type: 'json' }
+import hisnData from '../resources/data/hisnmuslim.json' with { type: 'json' }
+import mp3quranData from '../resources/data/mp3quran.json' with { type: 'json' }
+
+/* جداول خفيفة للبحث — نستورد ملفات JSON مباشرة بدل خدمات كاملة
+   كي لا تُسحب ملفات ثقيلة (quran.json ~5MB، ملفات الصوت) إلى الهيدر. */
+
+const RECITER_BY_ID = new Map(mp3quranData.map((r) => [r.id, r]))
+const ADHKAR_BY_KEY = new Map(azkarData.map((c) => [c.key, c]))
+const HISN_BY_ID = new Map(hisnData.map((c) => [String(c.id), c]))
+
+const TITLES = {
+  '/home': 'الرئيسية',
+  '/quran': 'المصحف',
+  '/adhkar': 'الأذكار',
+  '/hisn': 'حصن المسلم',
+  '/prayer': 'المواقيت',
+  '/tasbih': 'المسبحة',
+  '/radio': 'الراديو',
+  '/reciters': 'القرّاء',
+  '/quiz': 'الأسئلة',
+  '/settings': 'الإعدادات',
+}
+
+/* الصفحات الجذرية (تظهر في الشبكة الرئيسية) غير الموجودة في شريط التنقل السفلي
+   — يظهر فيها زر رجوع إلى القائمة الرئيسية. */
+const BOTTOM_NAV_PATHS = new Set(BOTTOM_NAV_ITEMS.map((i) => i.path))
+const ROOT_BACK_HOME = NAV_ITEMS.map((i) => i.path).filter(
+  (p) => !BOTTOM_NAV_PATHS.has(p) && p !== '/home'
+)
+
+/**
+ * يحوّل مسار الصفحة إلى بيانات الهيدر:
+ * { title, back } — اسم الصفحة + وجهة زر الرجوع إن وُجدت.
+ *
+ * - `back = 'history'` للصفحات الفرعية (السور، القارئ، الباب…) → رجوع للصفحة السابقة.
+ * - `back = '/home'` للصفحات الجذرية خارج شريط التنقل → رجوع للقائمة الرئيسية.
+ * - `back = null` لصفحات شريط التنقل (لا زر رجوع).
+ *
+ * يُتجنَّب استيراد بيانات الكويز الكسولة (IslamicQuiz.json ~2.4MB) لذا
+ * تبقى الصفحات الفرعية للأسئلة بعنوان القسم العام.
+ */
+export function getHeaderMeta(pathname) {
+  const segments = pathname.split('/').filter(Boolean)
+  const base = `/${segments[0] || 'home'}`
+  const isSubPage = segments.length > 1
+
+  let title = TITLES[base] || APP_NAME
+
+  if (segments[1]) {
+    if (base === '/quran') {
+      const meta = SURAH_META[Number(segments[1])]
+      if (meta?.name) title = `سورة ${meta.name}`
+    } else if (base === '/adhkar') {
+      const category = ADHKAR_BY_KEY.get(segments[1])
+      if (category?.category) title = category.category
+    } else if (base === '/hisn') {
+      const category = HISN_BY_ID.get(String(segments[1]))
+      if (category?.category) title = category.category
+    } else if (base === '/reciters') {
+      const reciter = RECITER_BY_ID.get(Number(segments[1]))
+      if (reciter?.name) title = reciter.name
+    }
+  }
+
+  let back = null
+  if (isSubPage) {
+    back = 'history'
+  } else if (ROOT_BACK_HOME.includes(base)) {
+    back = '/home'
+  }
+
+  return { title, back }
+}

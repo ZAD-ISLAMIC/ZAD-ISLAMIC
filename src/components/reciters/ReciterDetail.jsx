@@ -25,7 +25,7 @@ function useOnline() {
   return online
 }
 
-export function ReciterDetail({ reciter, onBack }) {
+export function ReciterDetail({ reciter }) {
   const player = usePlayer()
   const summary = useDownloads(reciter.id)
   const online = useOnline()
@@ -100,14 +100,7 @@ export function ReciterDetail({ reciter, onBack }) {
   return (
     <section className="screen rec-detail">
       <div className="rec-detail__topbar">
-        <button className="quran-reader__back" onClick={onBack}>
-          <Icon name="arrow-right" size={22} />
-          <span>القرّاء</span>
-        </button>
-        <div className="rec-detail__title">
-          <strong>{reciter.name}</strong>
-          <span>{reciter.rewaya}</span>
-        </div>
+        {reciter.rewaya ? <span className="rec-detail__rewaya">{reciter.rewaya}</span> : null}
         <span className="rec-detail__done">
           <Icon name="check" size={14} />
           {arabicDigits(percent)}%

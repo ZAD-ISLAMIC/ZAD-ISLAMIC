@@ -20,7 +20,6 @@ export default function QuranSurahScreen() {
       key={index}
       surahIndex={index}
       initialVerse={initialVerse}
-      onBack={() => navigate('/quran')}
       onPrev={
         index > 0 ? () => navigate(`/quran/${index - 1}`) : null
       }
