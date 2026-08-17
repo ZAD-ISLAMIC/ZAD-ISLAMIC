@@ -7,6 +7,7 @@ export const NAV_ITEMS = [
   { path: '/adhkar', label: 'الأذكار', icon: 'beads' },
   { path: '/hisn', label: 'حصن المسلم', icon: 'shield' },
   { path: '/prayer', label: 'المواقيت', icon: 'moon' },
+  { path: '/quiz', label: 'الأسئلة', icon: 'trophy' },
   { path: '/tasbih', label: 'المسبحة', icon: 'bead' },
   { path: '/radio', label: 'الراديو', icon: 'radio' },
   { path: '/reciters', label: 'القرّاء', icon: 'mic' },
@@ -29,5 +30,6 @@ export const SCREENS_META = {
   tasbih: { title: 'المسبحة الإلكترونية', description: 'تسبيح بعدّاد تفاعلي' },
   radio: { title: 'راديو التقوى', description: 'بث مباشر وقنوات قرآنية' },
   reciters: { title: 'القرّاء', description: 'تصفح القراء والاستماع لتلاواتهم' },
+  quiz: { title: 'الأسئلة الإسلامية', description: 'أسئلة تفاعلية بأبواب مقفلة ونجوم وإنجازات' },
   settings: { title: 'الإعدادات', description: 'تفضيلات التطبيق والحساب' },
 }

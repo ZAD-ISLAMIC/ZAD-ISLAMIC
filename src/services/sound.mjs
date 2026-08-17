@@ -1,5 +1,10 @@
 import tickSound from '../resources/audio/ui/tick.wav'
 import doneSound from '../resources/audio/ui/done.wav'
+import correctSound from '../resources/audio/ui/correct.wav'
+import wrongSound from '../resources/audio/ui/wrong.wav'
+import winSound from '../resources/audio/ui/win.wav'
+import loseSound from '../resources/audio/ui/lose.wav'
+import starSound from '../resources/audio/ui/star.wav'
 import { loadConfig } from './prayerConfig.mjs'
 import azanBasset from '../resources/audio/الأذان/عبد_الباسط.mp3'
 import azanIslamSobhi from '../resources/audio/الأذان/إسلام_صبحي.mp3'
@@ -159,7 +164,16 @@ export async function playAzan() {
   }
 }
 
-const SOUNDS = { tick: tickSound, done: doneSound, azan: azanBasset }
+const SOUNDS = {
+  tick: tickSound,
+  done: doneSound,
+  correct: correctSound,
+  wrong: wrongSound,
+  win: winSound,
+  lose: loseSound,
+  star: starSound,
+  azan: azanBasset,
+}
 
 function getAudio(kind) {
   let pool = audioPool.get(kind)

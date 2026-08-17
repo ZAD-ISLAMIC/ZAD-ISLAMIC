@@ -19,7 +19,8 @@
     "test:adhan": "node scripts/adhantest.mjs --install",
     "run:android": "npm run build:apk && npm run install:apk",
     "run:android:release": "npm run build:apk:release && npm run install:apk -- --release",
-    "test": "node --test \"tests/**/*.test.mjs\""
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "gen:ui-sounds": "node scripts/generate-ui-sounds.mjs"
   },
   "author": {
     "name": "Rayan Almalki",
@@ -45,6 +46,7 @@
     "cordova-plugin-compat": "^1.2.0",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-file": "^4.3.3",
+    "cordova-plugin-inappbrowser": "^4.1.0",
     "cordova-plugin-local-notification": "^1.2.3",
     "vite": "^7.3.6"
   },
@@ -61,7 +63,8 @@
       "com.altaqwaa.moonshinestt": {},
       "com.rn0x.prayerlocation": {},
       "com.rn0x.prayerwatch": {},
-      "com.rn0x.systemui": {}
+      "com.rn0x.systemui": {},
+      "cordova-plugin-inappbrowser": {}
     }
   }
 }

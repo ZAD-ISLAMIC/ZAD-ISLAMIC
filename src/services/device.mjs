@@ -79,3 +79,30 @@ export async function copyText(text) {
   document.body.removeChild(area)
   return ok
 }
+
+/* ------------------------------------------------------------------ *
+ * فتح الرابط الخارجي (مصدر الأسئلة) بأمان:
+ * - على الجهاز: متصفح النظام خارج التطبيق (InAppBrowser _system).
+ * - على الويب: تبويب جديد (window.open _blank).
+ * لا ينتقل التنقّل داخل التطبيق أبدًا — يعيد `false` عند تعذّر الفتح.
+ * ------------------------------------------------------------------ */
+
+export function openExternal(url) {
+  try {
+    const target = String(url || '').trim()
+    if (!target) return false
+    if (window.cordova?.InAppBrowser?.open) {
+      window.cordova.InAppBrowser.open(target, '_system')
+      return true
+    }
+    if (window.open) {
+      const win = window.open(target, '_blank', 'noopener,noreferrer')
+      if (win) return true
+    }
+    console.warn('openExternal failed (no browser available)', target)
+    return false
+  } catch (error) {
+    console.warn('openExternal failed', error)
+    return false
+  }
+}

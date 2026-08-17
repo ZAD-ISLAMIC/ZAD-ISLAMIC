@@ -15,6 +15,9 @@ const TasbihScreen = lazy(() => import('./screens/TasbihScreen.jsx'))
 const RadioScreen = lazy(() => import('./screens/RadioScreen.jsx'))
 const RecitersScreen = lazy(() => import('./screens/RecitersScreen.jsx'))
 const ReciterScreen = lazy(() => import('./screens/ReciterScreen.jsx'))
+const QuizScreen = lazy(() => import('./screens/QuizScreen.jsx'))
+const QuizCategoryScreen = lazy(() => import('./screens/QuizCategoryScreen.jsx'))
+const QuizSessionScreen = lazy(() => import('./screens/QuizSessionScreen.jsx'))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen.jsx'))
 const NotFoundScreen = lazy(() => import('./screens/NotFoundScreen.jsx'))
 
@@ -36,6 +39,9 @@ export function App() {
           <Route path="/radio" element={<RadioScreen />} />
           <Route path="/reciters" element={<RecitersScreen />} />
           <Route path="/reciters/:reciterId" element={<ReciterScreen />} />
+          <Route path="/quiz" element={<QuizScreen />} />
+          <Route path="/quiz/:categoryEnglish" element={<QuizCategoryScreen />} />
+          <Route path="/quiz/:categoryEnglish/:topicSlug/:level" element={<QuizSessionScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
           <Route path="*" element={<NotFoundScreen />} />
         </Route>

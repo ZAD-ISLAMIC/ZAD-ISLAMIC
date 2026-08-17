@@ -30,6 +30,16 @@
   --cat-food: #ff9d5c;
   --cat-prayer: #2dd4bf;
   --cat-tasbih: #4ade80;
+
+  /* ألوان سياقية للحالة (إجابة صحيحة/خاطئة) — تباين قوي */
+  --on-primary: #04120c;
+  --ok: #34d399;
+  --ok-text: #5ce8a9;
+  --ok-bg: rgba(52, 211, 153, 0.14);
+  --ok-border: rgba(52, 211, 153, 0.55);
+  --danger-text: #fda4a4;
+  --danger-bg: rgba(239, 68, 68, 0.16);
+  --danger-border: rgba(239, 68, 68, 0.6);
 }
 
 :root[data-theme='light'] {
@@ -56,4 +66,13 @@
   --cat-food: #e07b39;
   --cat-prayer: #0d9488;
   --cat-tasbih: #16a34a;
+
+  --on-primary: #ffffff;
+  --ok: #0e9f6e;
+  --ok-text: #0a7a54;
+  --ok-bg: rgba(14, 159, 110, 0.12);
+  --ok-border: rgba(14, 159, 110, 0.5);
+  --danger-text: #b91c1c;
+  --danger-bg: rgba(220, 38, 38, 0.1);
+  --danger-border: rgba(220, 38, 38, 0.55);
 }
