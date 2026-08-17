@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="com.rn0x.prayerwatch"
+        version="1.0.0">
+    <name>PrayerWatch</name>
+    <description>Persistent prayer-times foreground service with WorkManager-based periodic updates and boot restart (Android)</description>
+    <license>MIT</license>
+    <keywords>cordova, prayer, notification, foreground-service, workmanager, android</keywords>
+    <author>rn0x</author>
+
+    <js-module src="www/prayerwatch.js" name="PrayerWatch">
+        <clobbers target="cordova.plugins.PrayerWatch" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="PrayerWatch">
+                <param name="android-package" value="com.rn0x.prayerwatch.PrayerWatch" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+            <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+            <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+            <uses-permission android:name="android.permission.VIBRATE" />
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <receiver android:name="com.rn0x.prayerwatch.PrayerAdhanReceiver"
+                      android:exported="false" />
+            <receiver android:name="com.rn0x.prayerwatch.PrayerWatchActionReceiver"
+                      android:exported="false" />
+            <receiver android:name="com.rn0x.prayerwatch.PrayerDebugReceiver"
+                      android:exported="true" />
+            <receiver android:name="com.rn0x.prayerwatch.PrayerWatchBootReceiver"
+                      android:exported="false">
+                <intent-filter>
+                    <action android:name="android.intent.action.BOOT_COMPLETED" />
+                    <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                    <action android:name="android.intent.action.TIME_SET" />
+                    <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                </intent-filter>
+            </receiver>
+        </config-file>
+
+        <framework src="androidx.work:work-runtime:2.9.1" />
+
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerWatch.java" target-dir="src/com/rn0x/prayerwatch" />
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerAlarmScheduler.java" target-dir="src/com/rn0x/prayerwatch" />
+        <source-file src="src/android/com/rn0x/prayerwatch/AdhanPlayback.java" target-dir="src/com/rn0x/prayerwatch" />
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerAdhanReceiver.java" target-dir="src/com/rn0x/prayerwatch" />
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerWatchWorker.java" target-dir="src/com/rn0x/prayerwatch" />
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerWatchBootReceiver.java" target-dir="src/com/rn0x/prayerwatch" />
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerWatchActionReceiver.java" target-dir="src/com/rn0x/prayerwatch" />
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerDebugReceiver.java" target-dir="src/com/rn0x/prayerwatch" />
+    </platform>
+</plugin>

@@ -1,0 +1,13 @@
+node_modules/
+www/
+platforms/
+plugins/
+.DS_Store
+*.log
+scripts/secrets/
+scripts/audit/
+module/
+
+# Secrets — never commit
+tqw.keystore
+build.json

@@ -1,0 +1,21 @@
+{
+  "name": "com.rn0x.prayerwatch",
+  "version": "1.0.0",
+  "description": "Persistent prayer-times notification via Android foreground service + WorkManager (Cordova)",
+  "author": "rn0x",
+  "cordova": {
+    "id": "com.rn0x.prayerwatch",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "prayer",
+    "notification",
+    "foreground-service",
+    "workmanager",
+    "android"
+  ],
+  "license": "MIT"
+}

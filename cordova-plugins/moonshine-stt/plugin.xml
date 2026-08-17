@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="com.altaqwaa.moonshinestt"
+        version="1.0.0">
+    <name>MoonshineSTT</name>
+    <description>Offline Arabic Speech-to-Text using Moonshine-tiny-ar on transcribe.cpp (ggml)</description>
+    <license>MIT</license>
+    <keywords>speech, recognition, moonshine, ggml, offline, arabic, llama.cpp</keywords>
+
+    <js-module src="www/moonshine-stt.js" name="MoonshineSTT">
+        <clobbers target="cordova.plugins.MoonshineSTT" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="MoonshineSTT">
+                <param name="android-package" value="com.altaqwaa.moonshinestt.MoonshineSTT" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.RECORD_AUDIO" />
+            <uses-permission android:name="android.permission.INTERNET" />
+        </config-file>
+
+        <source-file src="src/android/com/altaqwaa/moonshinestt/MoonshineSTT.java" target-dir="src/com/altaqwaa/moonshinestt" />
+        <source-file src="src/android/com/altaqwaa/moonshinestt/MoonshineSTTNative.java" target-dir="src/com/altaqwaa/moonshinestt" />
+
+        <!-- Bundled native engine (arm64-v8a) → app/src/main/jniLibs/arm64-v8a -->
+        <source-file src="src/android/libs/arm64-v8a/libc++_shared.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libggml-base.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libggml.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libggml-cpu.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libtranscribe.so" target-dir="libs/arm64-v8a" />
+        <source-file src="src/android/libs/arm64-v8a/libmoonshine_stt.so" target-dir="libs/arm64-v8a" />
+
+        <!-- Bundled Arabic moonshine model → assets/models (read via getAssets().open("models/...")) -->
+        <source-file src="src/android/assets/models/moonshine-tiny-ar-Q8_0.gguf" target-dir="app/src/main/assets/models" />
+    </platform>
+</plugin>

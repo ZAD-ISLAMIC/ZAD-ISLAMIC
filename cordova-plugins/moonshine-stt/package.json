@@ -1,0 +1,20 @@
+{
+  "name": "com.altaqwaa.moonshinestt",
+  "version": "1.0.0",
+  "description": "Offline Arabic STT via Moonshine-tiny-ar on transcribe.cpp (ggml)",
+  "cordova": {
+    "id": "com.altaqwaa.moonshinestt",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "stt",
+    "moonshine",
+    "ggml",
+    "arabic",
+    "offline"
+  ],
+  "license": "MIT"
+}

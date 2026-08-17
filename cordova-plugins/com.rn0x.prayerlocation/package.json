@@ -1,0 +1,21 @@
+{
+  "name": "com.rn0x.prayerlocation",
+  "version": "1.0.0",
+  "description": "Minimal GPS location provider with permission/GPS-off handling for prayer times (Cordova)",
+  "author": "rn0x",
+  "cordova": {
+    "id": "com.rn0x.prayerlocation",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "location",
+    "gps",
+    "permission",
+    "prayer",
+    "android"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="com.rn0x.prayerlocation"
+        version="1.0.0">
+    <name>PrayerLocation</name>
+    <description>GPS location provider with permission + GPS-off handling (Android)</description>
+    <license>MIT</license>
+    <keywords>cordova, location, gps, permission, android</keywords>
+    <author>rn0x</author>
+
+    <js-module src="www/prayerlocation.js" name="PrayerLocation">
+        <clobbers target="cordova.plugins.PrayerLocation" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="PrayerLocation">
+                <param name="android-package" value="com.rn0x.prayerlocation.PrayerLocation" />
+                <param name="onload" value="true" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+            <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+            <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+        </config-file>
+
+        <source-file src="src/android/com/rn0x/prayerlocation/PrayerLocation.java" target-dir="src/com/rn0x/prayerlocation" />
+    </platform>
+</plugin>

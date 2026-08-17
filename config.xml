@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <widget id="com.rn0x.altaqwaa" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <name>التقوى</name>
+  <description>تطبيق التقوى — تطبيق إسلامي متكامل</description>
+  <author email="rn0x.me@gmail.com" href="https://www.i8x.net">Rayan Almalki</author>
+
+  <content src="index.html" />
+  <access origin="*" />
+
+  <allow-intent href="http://*/*" />
+  <allow-intent href="https://*/*" />
+  <allow-intent href="tel:*" />
+  <allow-intent href="sms:*" />
+  <allow-intent href="mailto:*" />
+
+  <preference name="orientation" value="portrait" />
+  <preference name="BackgroundColor" value="#0a1428" />
+  <preference name="StatusBarBackgroundColor" value="#0a1428" />
+  <preference name="android-minSdkVersion" value="24" />
+  <preference name="android-targetSdkVersion" value="35" />
+  <preference name="AndroidXEnabled" value="true" />
+  <uses-permission android:name="android.permission.INTERNET" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.VIBRATE" />
+  <preference name="loadUrlTimeoutValue" value="70000" />
+  <preference name="hostname" value="localhost" />
+
+  <platform name="android">
+    <preference name="deployment-target" value="13.0" />
+  </platform>
+
+  <!-- Runs after `cordova prepare` and before compiling: strips the stale
+       foreground-service manifest entries that cordova itself cannot remove. -->
+  <hook src="scripts/patch-manifest.mjs" type="before_compile" />
+</widget>

@@ -1,0 +1,61 @@
+{
+  "name": "altaqwaa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "تطبيق التقوى — تطبيق إسلامي مبني بـ React + Cordova",
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "build": "vite build",
+    "clean": "node scripts/clean.mjs",
+    "clean:all": "node scripts/clean.mjs --all",
+    "cordova:setup": "node scripts/setup.mjs",
+    "postinstall": "node scripts/patch-cordova.mjs",
+    "build:apk": "node scripts/build.mjs",
+    "build:apk:release": "node scripts/build.mjs --release",
+    "install:apk": "node scripts/install.mjs",
+    "test:adhan": "node scripts/adhantest.mjs --install",
+    "run:android": "npm run build:apk && npm run install:apk",
+    "run:android:release": "npm run build:apk:release && npm run install:apk -- --release",
+    "test": "node --test \"tests/**/*.test.mjs\""
+  },
+  "engines": {
+    "node": ">= 20.19.0"
+  },
+  "dependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.2.0",
+    "com.altaqwaa.moonshinestt": "file:cordova-plugins/moonshine-stt",
+    "com.rn0x.prayerlocation": "file:cordova-plugins/com.rn0x.prayerlocation",
+    "com.rn0x.prayerwatch": "file:cordova-plugins/com.rn0x.prayerwatch",
+    "com.rn0x.systemui": "file:cordova-plugins/system-ui",
+    "cordova": "^13.0.0",
+    "cordova-android": "^15.1.0",
+    "cordova-plugin-compat": "^1.2.0",
+    "cordova-plugin-device": "^3.0.0",
+    "cordova-plugin-file": "^4.3.3",
+    "cordova-plugin-local-notification": "^1.2.3",
+    "vite": "^7.3.6"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-file": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-local-notification": {
+        "ANDROIDX_CORE_VERSION": "1.12.0"
+      },
+      "com.altaqwaa.moonshinestt": {},
+      "com.rn0x.prayerlocation": {},
+      "com.rn0x.prayerwatch": {},
+      "com.rn0x.systemui": {}
+    }
+  }
+}
