@@ -5,6 +5,7 @@ import {
   downloadDoor,
   downloadItem,
   cancelRef,
+  cancelDoor,
   removeFile,
   hasFile,
 } from '../../services/hisnDownload.mjs'
@@ -144,6 +145,11 @@ export function HisnDoorActions({ category }) {
     downloadDoor(category.id)
   }
 
+  const onCancel = (event) => {
+    event?.stopPropagation()
+    cancelDoor(category.id)
+  }
+
   const onClear = async (event) => {
     event?.stopPropagation()
     if (stats.busy) return
@@ -158,12 +164,14 @@ export function HisnDoorActions({ category }) {
     <div className="hisn-door">
       <div className="hisn-door__bar" style={{ '--door-progress': `${stats.percent}%` }}>
         <span className="hisn-door__label">
-          <Icon name={stats.busy ? 'download' : 'check'} size={15} />
+          <Icon name={stats.busy ? 'download' : stats.errorCount > 0 ? 'refresh' : 'check'} size={15} />
           {stats.busy
             ? `جاري الحفظ ${stats.doneCount}/${stats.total}`
-            : stats.allStored
-              ? 'الباب محفوظ بالكامل — استمع دون إنترنت'
-              : `محفوظ ${stats.doneCount} من ${stats.total}`}
+            : stats.errorCount > 0
+              ? `تعطّل حفظ ${stats.errorCount} ${stats.errorCount === 1 ? 'ملف' : 'ملفات'} — أعد المحاولة`
+              : stats.allStored
+                ? 'الباب محفوظ بالكامل — استمع دون إنترنت'
+                : `محفوظ ${stats.doneCount} من ${stats.total}`}
         </span>
         <span className="hisn-door__percent">{stats.percent}٪</span>
       </div>
@@ -176,25 +184,28 @@ export function HisnDoorActions({ category }) {
           {playing ? <Icon name="pause" size={16} /> : <Icon name="play" size={16} />}
           {playing ? 'إيقاف' : 'تشغيل الباب'}
         </button>
-        {stats.allStored ? (
+        {stats.busy ? (
+          <button
+            className="hisn-act__btn hisn-act__btn--lg hisn-act__btn--cancel"
+            onClick={onCancel}
+            aria-label="إلغاء حفظ الباب"
+          >
+            <Icon name="close" size={15} />
+            إلغاء الحفظ
+          </button>
+        ) : stats.allStored ? (
           <button className="hisn-act__btn hisn-act__btn--lg hisn-act__btn--stored" onClick={onClear}>
             <Icon name="trash" size={15} />
             مسح المحفوظ
           </button>
         ) : (
           <button
-            className={'hisn-act__btn hisn-act__btn--lg' + (stats.busy ? ' hisn-act__btn--busy' : '')}
+            className={'hisn-act__btn hisn-act__btn--lg' + (stats.errorCount > 0 ? ' hisn-act__btn--error' : '')}
             onClick={onDownload}
             aria-label="حفظ الباب للاستماع دون إنترنت"
           >
-            {stats.busy ? (
-              <span className="hisn-act__spin" aria-hidden="true" />
-            ) : stats.errorCount > 0 ? (
-              <Icon name="refresh" size={15} />
-            ) : (
-              <Icon name="download" size={15} />
-            )}
-            {stats.busy ? 'حفظ…' : stats.errorCount > 0 ? 'إكمال الحفظ' : 'حفظ الباب'}
+            {stats.errorCount > 0 ? <Icon name="refresh" size={15} /> : <Icon name="download" size={15} />}
+            {stats.errorCount > 0 ? 'إكمال الحفظ' : 'حفظ الباب'}
           </button>
         )}
       </div>
@@ -223,7 +234,10 @@ export function HisnDoorMiniActions({ category }) {
 
   const onSave = async (event) => {
     event?.stopPropagation()
-    if (stats.busy) return
+    if (stats.busy) {
+      cancelDoor(category.id)
+      return
+    }
     if (stats.allStored) {
       for (const file of doorFiles(category.id)) {
         await removeFile(file.ref, file.fileName)
@@ -249,12 +263,12 @@ export function HisnDoorMiniActions({ category }) {
           (stats.busy ? ' hisn-card-acts__btn--busy' : '')
         }
         onClick={onSave}
-        aria-label={stats.allStored ? 'مسح تحميلات الباب' : 'حفظ الباب'}
+        aria-label={stats.busy ? 'إلغاء تحميل الباب' : stats.allStored ? 'مسح تحميلات الباب' : 'حفظ الباب'}
       >
         {stats.allStored ? (
           <Icon name="check" size={14} />
         ) : stats.busy ? (
-          <span className="hisn-act__spin" aria-hidden="true" />
+          <Icon name="close" size={14} />
         ) : (
           <Icon name="download" size={14} />
         )}

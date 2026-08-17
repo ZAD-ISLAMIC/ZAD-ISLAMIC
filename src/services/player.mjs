@@ -221,15 +221,20 @@ async function loadTrack(queue, index, { autoplay }) {
 
     const isRadio = track.kind === 'radio'
     const isHisn = track.kind === 'hisn'
+    const offline = typeof navigator !== 'undefined' && !navigator.onLine
     let url
     if (isRadio) {
       url = track.url
     } else if (isHisn) {
-      url = (await localUrlFor(HISN_NS, track.fileName)) || track.url
+      const local = await localUrlFor(HISN_NS, track.fileName)
+      if (local) url = local
+      else if (offline) throw new Error('offline-hisn')
+      else url = track.url
     } else {
-      url =
-        (await getLocalUrl(track.reciterId, track.surahNumber)) ||
-        audioUrl({ server: track.server }, track.surahNumber)
+      const local = await getLocalUrl(track.reciterId, track.surahNumber)
+      if (local) url = local
+      else if (offline) throw new Error('offline-reciter')
+      else url = audioUrl({ server: track.server }, track.surahNumber)
     }
     element.src = url
     element.playbackRate = state.rate
@@ -244,13 +249,22 @@ async function loadTrack(queue, index, { autoplay }) {
       patch({ status: 'paused' })
     }
   } catch (err) {
+    const offlineNow = typeof navigator !== 'undefined' && !navigator.onLine
+    let message
+    if (offlineNow) {
+      message =
+        track.kind === 'radio'
+          ? 'لا يوجد اتصال بالإنترنت — البث المباشر يتطلب اتصالاً'
+          : 'لا يوجد اتصال بالإنترنت ولا نسخة محفوظة محلياً — حمّله للاستماع دون إنترنت'
+    } else if (track.kind === 'radio') {
+      message = 'تعذّر تشغيل هذه الإذاعة — قد يكون البث متوقفاً'
+    } else {
+      message = 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً'
+    }
     patch({
       playing: false,
       status: 'error',
-      error:
-        track.kind === 'radio'
-          ? 'تعذّر تشغيل هذه الإذاعة — قد يكون البث متوقفاً'
-          : 'تعذّر تشغيل هذا المقطع',
+      error: message,
     })
   }
 }

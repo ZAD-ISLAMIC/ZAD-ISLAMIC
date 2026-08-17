@@ -1614,7 +1614,9 @@ h3 {
 }
 
 .hisn-card-acts__btn--busy {
-  pointer-events: none;
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
 }
 
 /* ===== حصن المسلم: قائمة باب ===== */
@@ -1980,6 +1982,12 @@ h3 {
 .hisn-act__btn--error {
   color: var(--danger);
   border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+}
+
+.hisn-act__btn--cancel {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
 }
 
 .hisn-act__spin {

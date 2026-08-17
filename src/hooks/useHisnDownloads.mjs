@@ -23,14 +23,22 @@ export function useHisnDoorStats(categoryId) {
   let doneCount = 0
   let runningCount = 0
   let errorCount = 0
+  let resolved = 0
   for (const file of files) {
     if (hasFile(HISN_NS, file.fileName)) {
       doneCount += 1
+      resolved += 1
     } else {
       const task = downloads[file.ref]
-      if (task?.state === 'done') doneCount += 1
-      else if (task?.state === 'pending' || task?.state === 'running') runningCount += 1
-      else if (task?.state === 'error') errorCount += 1
+      if (task?.state === 'done') {
+        doneCount += 1
+        resolved += 1
+      } else if (task?.state === 'pending' || task?.state === 'running') {
+        runningCount += 1
+        resolved += Number.isFinite(task.progress) && task.progress > 0 ? task.progress : 0
+      } else if (task?.state === 'error') {
+        errorCount += 1
+      }
     }
   }
   const total = files.length
@@ -40,7 +48,7 @@ export function useHisnDoorStats(categoryId) {
     runningCount,
     errorCount,
     allStored: total > 0 && doneCount === total,
-    percent: total ? Math.round((doneCount / total) * 100) : 0,
+    percent: total ? Math.round((resolved / total) * 100) : 0,
     busy: runningCount > 0,
   }
 }
