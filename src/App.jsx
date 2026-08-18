@@ -22,6 +22,9 @@ const QuizScreen = lazy(() => import('./screens/QuizScreen.jsx'))
 const QuizCategoryScreen = lazy(() => import('./screens/QuizCategoryScreen.jsx'))
 const QuizSessionScreen = lazy(() => import('./screens/QuizSessionScreen.jsx'))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen.jsx'))
+const HistoryScreen = lazy(() => import('./screens/HistoryScreen.jsx'))
+const HistoryEraScreen = lazy(() => import('./screens/HistoryEraScreen.jsx'))
+const HistoryEventScreen = lazy(() => import('./screens/HistoryEventScreen.jsx'))
 const NotFoundScreen = lazy(() => import('./screens/NotFoundScreen.jsx'))
 
 export function App() {
@@ -49,6 +52,9 @@ export function App() {
           <Route path="/quiz/:categoryEnglish" element={<QuizCategoryScreen />} />
           <Route path="/quiz/:categoryEnglish/:topicSlug/:level" element={<QuizSessionScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/history" element={<HistoryScreen />} />
+          <Route path="/history/:eraKey" element={<HistoryEraScreen />} />
+          <Route path="/history/:eraKey/:id" element={<HistoryEventScreen />} />
           <Route path="*" element={<NotFoundScreen />} />
         </Route>
       </Routes>

@@ -1,0 +1,114 @@
+[
+  {
+    "key": "before",
+    "title": "ما قبل الهجرة",
+    "count": 36,
+    "firstYear": -53,
+    "lastYear": 0
+  },
+  {
+    "key": "c1",
+    "title": "القرن ١ الهجري",
+    "count": 373,
+    "firstYear": 1,
+    "lastYear": 100
+  },
+  {
+    "key": "c2",
+    "title": "القرن ٢ الهجري",
+    "count": 244,
+    "firstYear": 101,
+    "lastYear": 200
+  },
+  {
+    "key": "c3",
+    "title": "القرن ٣ الهجري",
+    "count": 372,
+    "firstYear": 201,
+    "lastYear": 300
+  },
+  {
+    "key": "c4",
+    "title": "القرن ٤ الهجري",
+    "count": 349,
+    "firstYear": 301,
+    "lastYear": 400
+  },
+  {
+    "key": "c5",
+    "title": "القرن ٥ الهجري",
+    "count": 417,
+    "firstYear": 401,
+    "lastYear": 500
+  },
+  {
+    "key": "c6",
+    "title": "القرن ٦ الهجري",
+    "count": 550,
+    "firstYear": 501,
+    "lastYear": 600
+  },
+  {
+    "key": "c7",
+    "title": "القرن ٧ الهجري",
+    "count": 501,
+    "firstYear": 601,
+    "lastYear": 700
+  },
+  {
+    "key": "c8",
+    "title": "القرن ٨ الهجري",
+    "count": 374,
+    "firstYear": 701,
+    "lastYear": 800
+  },
+  {
+    "key": "c9",
+    "title": "القرن ٩ الهجري",
+    "count": 314,
+    "firstYear": 801,
+    "lastYear": 900
+  },
+  {
+    "key": "c10",
+    "title": "القرن ١٠ الهجري",
+    "count": 285,
+    "firstYear": 901,
+    "lastYear": 1000
+  },
+  {
+    "key": "c11",
+    "title": "القرن ١١ الهجري",
+    "count": 166,
+    "firstYear": 1001,
+    "lastYear": 1100
+  },
+  {
+    "key": "c12",
+    "title": "القرن ١٢ الهجري",
+    "count": 217,
+    "firstYear": 1101,
+    "lastYear": 1200
+  },
+  {
+    "key": "c13",
+    "title": "القرن ١٣ الهجري",
+    "count": 518,
+    "firstYear": 1201,
+    "lastYear": 1300
+  },
+  {
+    "key": "c14",
+    "title": "القرن ١٤ الهجري",
+    "count": 744,
+    "firstYear": 1301,
+    "lastYear": 1400
+  },
+  {
+    "key": "c15",
+    "title": "القرن ١٥ الهجري",
+    "count": 668,
+    "firstYear": 1401,
+    "lastYear": 1443
+  }
+]

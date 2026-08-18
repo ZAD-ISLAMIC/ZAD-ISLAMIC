@@ -21,7 +21,8 @@
     "run:android:release": "npm run build:apk:release && npm run install:apk -- --release",
     "test": "node --test \"tests/**/*.test.mjs\"",
     "gen:ui-sounds": "node scripts/generate-ui-sounds.mjs",
-    "gen:fatwas": "node scripts/split-fatwas.mjs"
+    "gen:fatwas": "node scripts/split-fatwas.mjs",
+    "gen:history": "node scripts/split-history.mjs"
   },
   "author": {
     "name": "Rayan Almalki",

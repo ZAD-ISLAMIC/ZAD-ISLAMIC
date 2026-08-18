@@ -4,6 +4,7 @@ import azkarData from '../resources/data/azkar.json' with { type: 'json' }
 import hisnData from '../resources/data/hisnmuslim.json' with { type: 'json' }
 import mp3quranData from '../resources/data/mp3quran.json' with { type: 'json' }
 import fatwasIndex from '../resources/data/fatwas/index.json' with { type: 'json' }
+import historyIndex from '../resources/data/history/index.json' with { type: 'json' }
 
 /* جداول خفيفة للبحث — نستورد ملفات JSON مباشرة بدل خدمات كاملة
    كي لا تُسحب ملفات ثقيلة (quran.json ~5MB، ملفات الصوت) إلى الهيدر. */
@@ -12,6 +13,7 @@ const RECITER_BY_ID = new Map(mp3quranData.map((r) => [r.id, r]))
 const ADHKAR_BY_KEY = new Map(azkarData.map((c) => [c.key, c]))
 const HISN_BY_ID = new Map(hisnData.map((c) => [String(c.id), c]))
 const FATWA_BY_SLUG = new Map(fatwasIndex.map((c) => [c.slug, c]))
+const HISTORY_ERA_BY_KEY = new Map(historyIndex.map((e) => [e.key, e]))
 
 const TITLES = {
   '/home': 'الرئيسية',
@@ -24,6 +26,7 @@ const TITLES = {
   '/radio': 'الراديو',
   '/reciters': 'القرّاء',
   '/quiz': 'الأسئلة',
+  '/history': 'الموسوعة التاريخية',
   '/settings': 'الإعدادات',
 }
 
@@ -100,6 +103,9 @@ export function getHeaderMeta(pathname) {
     } else if (base === '/reciters') {
       const reciter = RECITER_BY_ID.get(Number(segments[1]))
       if (reciter?.name) title = reciter.name
+    } else if (base === '/history') {
+      const era = HISTORY_ERA_BY_KEY.get(segments[1])
+      if (era?.title) title = era.title
     }
   }
 
