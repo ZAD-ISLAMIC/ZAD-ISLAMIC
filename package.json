@@ -24,6 +24,7 @@
     "gen:fatwas": "node scripts/split-fatwas.mjs",
     "gen:history": "node scripts/split-history.mjs",
     "gen:tafseer": "node scripts/split-tafseer.mjs",
+    "gen:khutbah": "node scripts/split-khutbah.mjs",
     "convert:tafseer": "node scripts/convert-tafseer-v3.mjs"
   },
   "author": {
@@ -50,6 +51,7 @@
     "cordova-plugin-compat": "^1.2.0",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-file": "^4.3.3",
+    "cordova-plugin-file-opener2": "^4.0.0",
     "cordova-plugin-inappbrowser": "^4.1.0",
     "cordova-plugin-local-notification": "^1.2.3",
     "vite": "^7.3.6"
@@ -68,7 +70,8 @@
       "com.rn0x.prayerlocation": {},
       "com.rn0x.prayerwatch": {},
       "com.rn0x.systemui": {},
-      "cordova-plugin-inappbrowser": {}
+      "cordova-plugin-inappbrowser": {},
+      "cordova-plugin-file-opener2": {}
     }
   }
 }

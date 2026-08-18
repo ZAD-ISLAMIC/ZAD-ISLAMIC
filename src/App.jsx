@@ -27,6 +27,9 @@ const SettingsScreen = lazy(() => import('./screens/SettingsScreen.jsx'))
 const HistoryScreen = lazy(() => import('./screens/HistoryScreen.jsx'))
 const HistoryEraScreen = lazy(() => import('./screens/HistoryEraScreen.jsx'))
 const HistoryEventScreen = lazy(() => import('./screens/HistoryEventScreen.jsx'))
+const KhutbahsScreen = lazy(() => import('./screens/KhutbahsScreen.jsx'))
+const KhutbahCategoryScreen = lazy(() => import('./screens/KhutbahCategoryScreen.jsx'))
+const KhutbahDetailScreen = lazy(() => import('./screens/KhutbahDetailScreen.jsx'))
 const NotFoundScreen = lazy(() => import('./screens/NotFoundScreen.jsx'))
 
 export function App() {
@@ -59,6 +62,9 @@ export function App() {
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/history/:eraKey" element={<HistoryEraScreen />} />
           <Route path="/history/:eraKey/:id" element={<HistoryEventScreen />} />
+          <Route path="/khutbah" element={<KhutbahsScreen />} />
+          <Route path="/khutbah/:slug" element={<KhutbahCategoryScreen />} />
+          <Route path="/khutbah/:slug/:id" element={<KhutbahDetailScreen />} />
           <Route path="*" element={<NotFoundScreen />} />
         </Route>
       </Routes>

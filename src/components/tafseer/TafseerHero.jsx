@@ -13,7 +13,7 @@ export function TafseerHero() {
       </div>
       <h2 className="tafseer-hero__name">التفسير الميسر</h2>
       <p className="tafseer-hero__subtitle">
-        تفسير كتاب الله بأسلوب سهل قريب
+        تفسير كتاب الله بأسلوب سهل
       </p>
       <p className="tafseer-hero__short">
         نص كل آية بخط المصحف يليه بيان معناها — من إصدار مجمع الملك فهد

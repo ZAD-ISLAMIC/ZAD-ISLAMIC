@@ -662,6 +662,20 @@ export async function localUrlFor(ns, fileName) {
   return url
 }
 
+// مسار file:// الفعلي لملف محفوظ — يُستخدم لفتحه في تطبيق خارجي
+// (file-opener2). يعيد null خارج Cordova أو عند غياب الملف.
+export async function localFileUrlFor(ns, fileName) {
+  const name = String(fileName)
+  if ((await getBackend()) !== 'cordova') return null
+  try {
+    const entry = await entryFor(ns, name, false)
+    const url = entry.toURL()
+    return typeof url === 'string' && url.startsWith('file://') ? url : null
+  } catch {
+    return null
+  }
+}
+
 export function markStoredByFile(ns, fileName, byteSize) {
   const reg = getFileRegistry(ns)
   const name = String(fileName)

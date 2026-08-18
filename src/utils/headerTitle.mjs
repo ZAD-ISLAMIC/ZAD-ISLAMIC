@@ -6,6 +6,7 @@ import mp3quranData from '../resources/data/mp3quran.json' with { type: 'json' }
 import fatwasIndex from '../resources/data/fatwas/index.json' with { type: 'json' }
 import historyIndex from '../resources/data/history/index.json' with { type: 'json' }
 import tafseerIndex from '../resources/data/tafseer/index.json' with { type: 'json' }
+import khutbahIndex from '../resources/data/khutbah/index.json' with { type: 'json' }
 
 /* جداول خفيفة للبحث — نستورد ملفات JSON مباشرة بدل خدمات كاملة
    كي لا تُسحب ملفات ثقيلة (quran.json ~5MB، ملفات الصوت) إلى الهيدر. */
@@ -16,6 +17,7 @@ const HISN_BY_ID = new Map(hisnData.map((c) => [String(c.id), c]))
 const FATWA_BY_SLUG = new Map(fatwasIndex.map((c) => [c.slug, c]))
 const HISTORY_ERA_BY_KEY = new Map(historyIndex.map((e) => [e.key, e]))
 const TAFSEER_BY_NO = new Map(tafseerIndex.map((s) => [s.n, s]))
+const KHUTBAH_BY_SLUG = new Map(khutbahIndex.map((c) => [c.slug, c]))
 
 const TITLES = {
   '/home': 'الرئيسية',
@@ -30,6 +32,7 @@ const TITLES = {
   '/reciters': 'القرّاء',
   '/quiz': 'الأسئلة',
   '/history': 'الموسوعة التاريخية',
+  '/khutbah': 'الخطب',
   '/settings': 'الإعدادات',
 }
 
@@ -112,6 +115,9 @@ export function getHeaderMeta(pathname) {
     } else if (base === '/history') {
       const era = HISTORY_ERA_BY_KEY.get(segments[1])
       if (era?.title) title = era.title
+    } else if (base === '/khutbah') {
+      const category = KHUTBAH_BY_SLUG.get(segments[1])
+      if (category?.name) title = category.name
     }
   }
 
