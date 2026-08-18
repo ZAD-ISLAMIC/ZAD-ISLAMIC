@@ -3645,6 +3645,24 @@ h3 {
   transform: scale(0.95);
 }
 
+.tap-stage__edit {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.tap-act--danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+}
+
+.tap-act--confirm {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
 /* ---------- Dhikr pills ---------- */
 
 .tap-pills {

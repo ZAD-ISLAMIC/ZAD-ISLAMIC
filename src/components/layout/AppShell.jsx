@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore, useState, useEffect } from 'react'
+import React, { useSyncExternalStore, useState, useEffect, useLayoutEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Header } from './Header.jsx'
 import { BottomNav } from './BottomNav.jsx'
@@ -23,6 +23,13 @@ export function AppShell() {
   )
   const [adhan, setAdhan] = useState(null)
   const [showExit, setShowExit] = useState(false)
+
+  // Reset the shared scroll container to the top whenever the route changes so
+  // a new screen never inherits the previous screen's scroll offset.
+  useLayoutEffect(() => {
+    const el = document.querySelector('.shell__main')
+    if (el) el.scrollTop = 0
+  }, [location.pathname])
 
   useEffect(
     () =>

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import { Icon } from '../ui/Icon.jsx'
 
@@ -9,6 +9,7 @@ import { Icon } from '../ui/Icon.jsx'
  *  - Big circular tap zone with count + remaining
  *  - Progress ring around the tap zone
  *  - Undo / reset tiny buttons
+ *  - Edit / delete buttons for the active (custom) dhikr
  *  - Horizontal pill selector to switch active dhikr
  *  - Done state with celebration
  */
@@ -22,8 +23,29 @@ export function TapCounter({
   onSelect,
   onAdd,
   onEdit,
+  onDelete,
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const confirmTimer = useRef(null)
   const active = dhikrs.find((d) => d.id === activeId) || dhikrs[0] || null
+
+  useEffect(() => {
+    return () => {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+    }
+  }, [])
+
+  const requestDelete = () => {
+    if (confirmingDelete) {
+      if (confirmTimer.current) clearTimeout(confirmTimer.current)
+      confirmTimer.current = null
+      setConfirmingDelete(false)
+      onDelete(active)
+      return
+    }
+    setConfirmingDelete(true)
+    confirmTimer.current = setTimeout(() => setConfirmingDelete(false), 2600)
+  }
   if (!active) {
     return (
       <div className="tap-stage tap-stage--empty">
@@ -89,6 +111,23 @@ export function TapCounter({
           </>
         )}
       </p>
+
+      <div className="tap-stage__edit">
+        <button className="tap-act" onClick={() => onEdit(active)} aria-label="تعديل الذكر">
+          <Icon name="pencil" size={14} />
+          تعديل
+        </button>
+        {active.custom && (
+          <button
+            className={'tap-act tap-act--danger' + (confirmingDelete ? ' tap-act--confirm' : '')}
+            onClick={requestDelete}
+            aria-label={confirmingDelete ? 'تأكيد حذف الذكر' : 'حذف الذكر'}
+          >
+            <Icon name="trash" size={14} />
+            {confirmingDelete ? 'تأكيد الحذف؟' : 'حذف'}
+          </button>
+        )}
+      </div>
 
       <div className="tap-stage__actions">
         <button

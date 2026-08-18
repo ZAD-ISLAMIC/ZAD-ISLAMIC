@@ -177,6 +177,7 @@ export default function TasbihScreen() {
             onSelect={handleSelect}
             onAdd={() => setEditor({ mode: 'add' })}
             onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </div>
       ) : (
