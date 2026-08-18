@@ -7114,3 +7114,1021 @@ h3 {
     display: none;
   }
 }
+
+/* ===== فتاوى ابن باز ===== */
+
+/* --- الهيرو --- */
+
+.fat-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 26px 12px 20px;
+  text-align: center;
+}
+
+.fat-hero__badge {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), #8a6d1a);
+  color: #04120c;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--gold) 32%, transparent);
+  margin-bottom: 8px;
+}
+
+.fat-hero__name {
+  font-size: 23px;
+  color: var(--gold);
+  margin: 0;
+}
+
+.fat-hero__subtitle {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.fat-hero__short {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.7;
+  max-width: 420px;
+}
+
+.fat-hero__stats {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 460px;
+  margin-top: 14px;
+}
+
+.fat-hero__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 10px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.fat-hero__stat strong {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.fat-hero__stat em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.fat-hero__bio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13.5px;
+  font-weight: 700;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.fat-hero__bio:active {
+  transform: scale(0.97);
+}
+
+/* --- البحث العام --- */
+
+.fat-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.fat-search:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+}
+
+.fat-search .icon {
+  flex-shrink: 0;
+}
+
+.fat-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.fat-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.fat-search__clear {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.fat-search-results {
+  padding-top: 16px;
+}
+
+.fat-search-results__count {
+  margin: 0 2px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.fat-search-results__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fat-search-result {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-align: start;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.fat-search-result:active {
+  transform: scale(0.985);
+}
+
+.fat-search-result__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fat-search-result__body strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fat-search-result__body em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--gold);
+}
+
+.fat-search-result__arrow {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.fat-search-results__empty,
+.fat-search-results__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 22px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  font-size: 13.5px;
+}
+
+.fat-search-results__error button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+/* --- الفئات --- */
+
+.fat-cat {
+  padding-top: 20px;
+}
+
+.fat-cat__toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fat-cat__search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.fat-cat__search:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+.fat-cat__search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+}
+
+.fat-cat__search input::placeholder {
+  color: var(--text-muted);
+}
+
+.fat-cat__clear {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: var(--surface);
+  flex-shrink: 0;
+}
+
+.fat-cat__sort {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.fat-cat__sort-btn {
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.fat-cat__sort-btn--on {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.fat-cat__count {
+  margin: 14px 2px 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.fat-cat__empty {
+  padding: 20px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  text-align: center;
+}
+
+.fat-cat__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fat-cat__card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-align: start;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.fat-cat__card:active {
+  transform: scale(0.985);
+}
+
+.fat-cat__badge {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+.fat-cat__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fat-cat__name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.fat-cat__meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.fat-cat__arrow {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+/* --- شاشة الفئة وقائمة الفتاوى --- */
+
+.fat-cat-screen__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 16px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px dashed var(--danger-border);
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.fat-cat-screen__error svg {
+  color: var(--danger);
+}
+
+.fat-cat-screen__error button {
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fat-cat-screen__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px 2px 12px;
+}
+
+.fat-cat-screen__topbar h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.fat-cat-screen__topbar p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.fat-cat-screen__badge {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), #8a6d1a);
+  color: #04120c;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
+.fatwa-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fatwa-row {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.fatwa-row:active {
+  border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+.fatwa-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 12px 12px 12px 4px;
+  text-align: start;
+}
+
+.fatwa-item__num {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fatwa-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fatwa-item__title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fatwa-item__tag {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.fatwa-item__arrow {
+  flex-shrink: 0;
+  margin-inline-start: auto;
+  color: var(--text-muted);
+}
+
+.fatwa-list__more {
+  display: grid;
+  place-items: center;
+  padding: 16px 0;
+}
+
+.fatwa-list__spinner {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  animation: fatwa-spin 0.7s linear infinite;
+}
+
+@keyframes fatwa-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fatwa-list__end {
+  margin: 18px 0 6px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* --- أزرار التشغيل والتحميل --- */
+
+.fatwa-act {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+/* في صفوف القائمة: عمود أزرار ثابت العرض في أقصى اليسار، زر فوق الآخر
+   بأحجام متساوية، لا يتغير موضعه مع طول العنوان (flex:0 0 للتثبيت). */
+.fatwa-row .fatwa-act {
+  flex: 0 0 42px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 4px;
+  border-inline-start: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-elevated) 55%, transparent);
+}
+
+.fatwa-row .fatwa-act__btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.fatwa-row .fatwa-act__btn--play {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.fatwa-act__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 0.1s ease, background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.fatwa-act__btn:active {
+  transform: scale(0.96);
+}
+
+.fatwa-act__btn--compact {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.fatwa-act__btn--play {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.fatwa-act__btn--playing {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.fatwa-act__btn--busy {
+  color: var(--text);
+}
+
+.fatwa-act__btn--error,
+.fatwa-act__btn--delete {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.fatwa-act__btn--source {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 40%, transparent);
+}
+
+.fatwa-act__spin {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent);
+  border-top-color: var(--primary);
+  animation: fatwa-spin 0.7s linear infinite;
+}
+
+/* --- صفحة التفاصيل --- */
+
+.fat-detail {
+  padding: 18px 2px 10px;
+}
+
+.fat-toast {
+  position: fixed;
+  top: calc(var(--header-h) + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 160;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--ok-border);
+  color: var(--ok-text);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow);
+  animation: fat-toast-in 0.2s ease;
+  pointer-events: none;
+}
+
+@keyframes fat-toast-in {
+  from {
+    transform: translate(-50%, -8px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+.fat-toast--error {
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.fat-detail__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.fat-detail__cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fat-detail__num {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.fat-offline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
+  font-size: 12.5px;
+}
+
+.fat-detail__qcard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.fat-detail__qtitle {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.fat-detail__question {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.8;
+  color: var(--text);
+}
+
+.fat-detail__answer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, rgba(16, 185, 129, 0.14), rgba(16, 185, 129, 0.03));
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  border-inline-start: 4px solid var(--gold);
+}
+
+.fat-detail__answer-label {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #04120c;
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.fat-detail__answer-text {
+  margin: 0;
+  font-family: 'Quran', 'KFGQPC Uthman Taha Naskh', 'Traditional Arabic', serif;
+  font-size: 16.5px;
+  line-height: 2.05;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fat-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.fat-detail__nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.fat-detail__nav-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  text-align: start;
+  transition: border-color 0.15s ease, transform 0.1s ease;
+}
+
+.fat-detail__nav-btn:active {
+  transform: scale(0.985);
+}
+
+.fat-detail__nav-btn--next {
+  text-align: end;
+}
+
+.fat-detail__nav-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fat-detail__nav-text em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.fat-detail__nav-text strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fat-detail__nav-btn .icon {
+  flex-shrink: 0;
+  color: var(--gold);
+}
+
+/* --- شيت نبذة الشيخ --- */
+
+.bio-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bio-sheet__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
+  animation: tasbih-fade-in 0.2s ease-out;
+}
+
+.bio-sheet__card {
+  position: relative;
+  width: 100%;
+  max-width: 620px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px 20px 0 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  box-shadow: 0 -18px 50px rgba(0, 0, 0, 0.45);
+  animation: sheet-up 0.26s cubic-bezier(0.2, 0.9, 0.3, 1);
+  overflow: hidden;
+}
+
+.bio-sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  flex-shrink: 0;
+}
+
+.bio-sheet__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.bio-sheet__close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  transition: transform 0.1s ease;
+}
+
+.bio-sheet__close:active {
+  transform: scale(0.9);
+}
+
+.bio-sheet__body {
+  padding: 18px 18px 26px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bio-sheet__full {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 2;
+  color: var(--text);
+}
+
+.bio-sheet__facts {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bio-sheet__facts li {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+}
+
+.bio-sheet__fact-label {
+  flex-shrink: 0;
+  min-width: 74px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.bio-sheet__fact-value {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.bio-sheet__note {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.8;
+}
+
+.bio-sheet__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* --- استجابة صغيرة --- */
+
+@media (min-width: 640px) {
+  .fat-cat__list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fatwa-row .fatwa-act {
+    flex-direction: row;
+  }
+}

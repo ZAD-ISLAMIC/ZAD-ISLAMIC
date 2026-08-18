@@ -10,6 +10,9 @@ const AdhkarScreen = lazy(() => import('./screens/AdhkarScreen.jsx'))
 const AdhkarCategoryScreen = lazy(() => import('./screens/AdhkarCategoryScreen.jsx'))
 const HisnMuslimScreen = lazy(() => import('./screens/HisnMuslimScreen.jsx'))
 const HisnMuslimCategoryScreen = lazy(() => import('./screens/HisnMuslimCategoryScreen.jsx'))
+const FatwasScreen = lazy(() => import('./screens/FatwasScreen.jsx'))
+const FatwasCategoryScreen = lazy(() => import('./screens/FatwasCategoryScreen.jsx'))
+const FatwaDetailScreen = lazy(() => import('./screens/FatwaDetailScreen.jsx'))
 const PrayerScreen = lazy(() => import('./screens/PrayerScreen.jsx'))
 const TasbihScreen = lazy(() => import('./screens/TasbihScreen.jsx'))
 const RadioScreen = lazy(() => import('./screens/RadioScreen.jsx'))
@@ -34,6 +37,9 @@ export function App() {
           <Route path="/adhkar/:categoryKey" element={<AdhkarCategoryScreen />} />
           <Route path="/hisn" element={<HisnMuslimScreen />} />
           <Route path="/hisn/:categoryId" element={<HisnMuslimCategoryScreen />} />
+          <Route path="/fatwas" element={<FatwasScreen />} />
+          <Route path="/fatwas/:slug" element={<FatwasCategoryScreen />} />
+          <Route path="/fatwas/:slug/:id" element={<FatwaDetailScreen />} />
           <Route path="/prayer" element={<PrayerScreen />} />
           <Route path="/tasbih" element={<TasbihScreen />} />
           <Route path="/radio" element={<RadioScreen />} />

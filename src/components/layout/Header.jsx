@@ -1,8 +1,12 @@
-import React from 'react'
+import React, { useSyncExternalStore } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTheme } from '../../hooks/useTheme.mjs'
 import { useClock } from '../../hooks/useClock.mjs'
-import { getHeaderMeta } from '../../utils/headerTitle.mjs'
+import {
+  getHeaderMeta,
+  subscribeHeader,
+  getDynamicTitle,
+} from '../../utils/headerTitle.mjs'
 import { Icon } from '../ui/Icon.jsx'
 
 export function Header() {
@@ -10,7 +14,9 @@ export function Header() {
   const navigate = useNavigate()
   const { theme, toggle } = useTheme()
   const time = useClock()
-  const { title, back } = getHeaderMeta(pathname)
+  const { title: metaTitle, back } = getHeaderMeta(pathname)
+  const dynamicTitle = useSyncExternalStore(subscribeHeader, getDynamicTitle)
+  const title = back ? dynamicTitle || metaTitle : metaTitle
   const isLight = theme === 'light'
 
   const goBack = () => (back === 'history' ? navigate(-1) : navigate(back))

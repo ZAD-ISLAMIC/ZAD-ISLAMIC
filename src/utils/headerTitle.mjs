@@ -3,6 +3,7 @@ import { SURAH_META } from '../services/surahsMeta.mjs'
 import azkarData from '../resources/data/azkar.json' with { type: 'json' }
 import hisnData from '../resources/data/hisnmuslim.json' with { type: 'json' }
 import mp3quranData from '../resources/data/mp3quran.json' with { type: 'json' }
+import fatwasIndex from '../resources/data/fatwas/index.json' with { type: 'json' }
 
 /* جداول خفيفة للبحث — نستورد ملفات JSON مباشرة بدل خدمات كاملة
    كي لا تُسحب ملفات ثقيلة (quran.json ~5MB، ملفات الصوت) إلى الهيدر. */
@@ -10,12 +11,14 @@ import mp3quranData from '../resources/data/mp3quran.json' with { type: 'json' }
 const RECITER_BY_ID = new Map(mp3quranData.map((r) => [r.id, r]))
 const ADHKAR_BY_KEY = new Map(azkarData.map((c) => [c.key, c]))
 const HISN_BY_ID = new Map(hisnData.map((c) => [String(c.id), c]))
+const FATWA_BY_SLUG = new Map(fatwasIndex.map((c) => [c.slug, c]))
 
 const TITLES = {
   '/home': 'الرئيسية',
   '/quran': 'المصحف',
   '/adhkar': 'الأذكار',
   '/hisn': 'حصن المسلم',
+  '/fatwas': 'فتاوى ابن باز',
   '/prayer': 'المواقيت',
   '/tasbih': 'المسبحة',
   '/radio': 'الراديو',
@@ -31,6 +34,31 @@ const ROOT_BACK_HOME = NAV_ITEMS.map((i) => i.path).filter(
   (p) => !BOTTOM_NAV_PATHS.has(p) && p !== '/home'
 )
 
+/* ------------------------------------------------------------------ *
+ * عنوان ديناميكي يُحقنه من الشاشة الفرعية (مثل عنوان الفتوى على صفحتها)
+ * — تُحدَّد الفتوى داخل الشاشة لأن تحميل فئتها يبقى لازيًا، ولا يجوز
+ * سحب كل الفتاوى إلى الهيدر للتسمية. الهيدر يقرأه عبر useSyncExternalStore.
+ * ------------------------------------------------------------------ */
+
+let dynamicTitle = null
+const headerListeners = new Set()
+
+export function setDynamicTitle(title) {
+  const next = title ? String(title) : null
+  if (next === dynamicTitle) return
+  dynamicTitle = next
+  for (const fn of headerListeners) fn()
+}
+
+export function subscribeHeader(fn) {
+  headerListeners.add(fn)
+  return () => headerListeners.delete(fn)
+}
+
+export function getDynamicTitle() {
+  return dynamicTitle
+}
+
 /**
  * يحوّل مسار الصفحة إلى بيانات الهيدر:
  * { title, back } — اسم الصفحة + وجهة زر الرجوع إن وُجدت.
@@ -43,7 +71,14 @@ const ROOT_BACK_HOME = NAV_ITEMS.map((i) => i.path).filter(
  * تبقى الصفحات الفرعية للأسئلة بعنوان القسم العام.
  */
 export function getHeaderMeta(pathname) {
-  const segments = pathname.split('/').filter(Boolean)
+  const raw = pathname.split('/').filter(Boolean)
+  const segments = raw.map((s) => {
+    try {
+      return decodeURIComponent(s)
+    } catch {
+      return s
+    }
+  })
   const base = `/${segments[0] || 'home'}`
   const isSubPage = segments.length > 1
 
@@ -59,6 +94,9 @@ export function getHeaderMeta(pathname) {
     } else if (base === '/hisn') {
       const category = HISN_BY_ID.get(String(segments[1]))
       if (category?.category) title = category.category
+    } else if (base === '/fatwas') {
+      const category = FATWA_BY_SLUG.get(segments[1])
+      if (category?.name) title = category.name
     } else if (base === '/reciters') {
       const reciter = RECITER_BY_ID.get(Number(segments[1]))
       if (reciter?.name) title = reciter.name

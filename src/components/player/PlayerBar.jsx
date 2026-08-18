@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import { hasSurah, hasFile } from '../../services/reciterStorage.mjs'
 import { HISN_NS } from '../../services/hisnmuslim.mjs'
+import { FATWA_NS } from '../../services/fatwas.mjs'
 import { usePlayer } from '../../hooks/usePlayer.mjs'
 import { Icon } from '../ui/Icon.jsx'
 
@@ -31,11 +32,14 @@ export function PlayerBar() {
 
   const isLive = track.kind === 'radio'
   const isHisn = track.kind === 'hisn'
+  const isFatwa = track.kind === 'fatwa'
   const stored = isLive
     ? false
     : isHisn
       ? hasFile(HISN_NS, track.fileName)
-      : hasSurah(track.reciterId, track.surahNumber)
+      : isFatwa
+        ? hasFile(FATWA_NS, track.fileName)
+        : hasSurah(track.reciterId, track.surahNumber)
   const percent =
     player.duration > 0
       ? Math.min(100, (player.time / player.duration) * 100)
@@ -62,6 +66,8 @@ export function PlayerBar() {
             <Icon name="radio" size={22} />
           ) : isHisn ? (
             <Icon name="shield" size={22} />
+          ) : isFatwa ? (
+            <Icon name="feather" size={22} />
           ) : (
             arabicDigits(track.surahNumber)
           )}
@@ -71,8 +77,10 @@ export function PlayerBar() {
           <span className="player-mini__reciter">
             {isHisn
               ? track.sub || 'حصن المسلم'
-              : track.category || track.reciterName}
-            {!isLive && !isHisn && track.rewaya ? ` • ${track.rewaya}` : ''}
+              : isFatwa
+                ? `${track.sub || 'فتاوى ابن باز'} • ابن باز`
+                : track.category || track.reciterName}
+            {!isLive && !isHisn && !isFatwa && track.rewaya ? ` • ${track.rewaya}` : ''}
           </span>
         </span>
         {isLive ? (
@@ -148,8 +156,8 @@ export function PlayerBar() {
 
             <div className="player-full__art">
               <span className="player-full__badge">
-                <Icon name={isLive ? 'radio' : isHisn ? 'shield' : 'note'} size={34} />
-                {!isLive && !isHisn && (
+                <Icon name={isLive ? 'radio' : isHisn ? 'shield' : isFatwa ? 'feather' : 'note'} size={34} />
+                {!isLive && !isHisn && !isFatwa && (
                   <span className="player-full__badge-num">
                     {arabicDigits(track.surahNumber)}
                   </span>
@@ -164,8 +172,10 @@ export function PlayerBar() {
                   ? track.category || 'بث مباشر'
                   : isHisn
                     ? track.sub || 'حصن المسلم'
-                    : track.reciterName}
-                {!isLive && !isHisn && track.rewaya ? ` • ${track.rewaya}` : ''}
+                    : isFatwa
+                      ? `${track.sub || 'فتاوى ابن باز'} • ابن باز`
+                      : track.reciterName}
+                {!isLive && !isHisn && !isFatwa && track.rewaya ? ` • ${track.rewaya}` : ''}
               </p>
               {isLive && (
                 <p className="player-full__live-badge">

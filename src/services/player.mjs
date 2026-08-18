@@ -1,6 +1,7 @@
 import { audioUrl } from './reciters.mjs'
 import { getLocalUrl, localUrlFor } from './reciterStorage.mjs'
 import { HISN_NS } from './hisnmuslim.mjs'
+import { FATWA_NS } from './fatwas.mjs'
 import { storage } from './storage.mjs'
 
 const LAST_KEY = 'player.last'
@@ -152,6 +153,7 @@ function handleAudioError() {
   const offline = typeof navigator !== 'undefined' && !navigator.onLine
   const isRadio = state.track?.kind === 'radio'
   const isHisn = state.track?.kind === 'hisn'
+  const isFatwa = state.track?.kind === 'fatwa'
   const message = isRadio
     ? offline
       ? 'لا يوجد اتصال بالإنترنت — البث المباشر يتطلب اتصالاً'
@@ -162,9 +164,13 @@ function handleAudioError() {
       ? offline
         ? 'لا يوجد اتصال بالإنترنت ولا نسخة محفوظة لهذا الذكر'
         : 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً، أو حمّله للاستماع دون إنترنت'
-      : offline
-        ? 'لا يوجد اتصال بالإنترنت ولا نسخة محلية محفوظة لهذه السورة'
-        : 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً'
+      : isFatwa
+        ? offline
+          ? 'لا يوجد اتصال بالإنترنت ولا نسخة محفوظة لهذه الفتوى'
+          : 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً، أو حمّله للاستماع دون إنترنت'
+        : offline
+          ? 'لا يوجد اتصال بالإنترنت ولا نسخة محلية محفوظة لهذه السورة'
+          : 'تعذّر تشغيل هذا المقطع — قد يكون الرابط معطلاً'
   patch({ playing: false, status: 'error', error: message })
 }
 
@@ -221,6 +227,7 @@ async function loadTrack(queue, index, { autoplay }) {
 
     const isRadio = track.kind === 'radio'
     const isHisn = track.kind === 'hisn'
+    const isFatwa = track.kind === 'fatwa'
     const offline = typeof navigator !== 'undefined' && !navigator.onLine
     let url
     if (isRadio) {
@@ -229,6 +236,11 @@ async function loadTrack(queue, index, { autoplay }) {
       const local = await localUrlFor(HISN_NS, track.fileName)
       if (local) url = local
       else if (offline) throw new Error('offline-hisn')
+      else url = track.url
+    } else if (isFatwa) {
+      const local = await localUrlFor(FATWA_NS, track.fileName)
+      if (local) url = local
+      else if (offline) throw new Error('offline-fatwa')
       else url = track.url
     } else {
       const local = await getLocalUrl(track.reciterId, track.surahNumber)
@@ -357,22 +369,29 @@ function syncMediaSession(enabled = true) {
     }
     const isRadio = state.track.kind === 'radio'
     const isHisn = state.track.kind === 'hisn'
+    const isFatwa = state.track.kind === 'fatwa'
     ms.metadata = new MediaMetadata({
       title: isRadio
         ? state.track.name || 'إذاعة'
         : isHisn
           ? state.track.name || 'حصن المسلم'
-          : state.track.surahName || 'سورة',
+          : isFatwa
+            ? state.track.name || 'فتوى'
+            : state.track.surahName || 'سورة',
       artist: isRadio
         ? state.track.category || 'التقوى'
         : isHisn
           ? 'حصن المسلم'
-          : state.track.reciterName || 'التقوى',
+          : isFatwa
+            ? 'ابن باز'
+            : state.track.reciterName || 'التقوى',
       album: isRadio
         ? 'التقوى — الراديو'
         : isHisn
           ? 'التقوى — حصن المسلم'
-          : 'التقوى — المصحف',
+          : isFatwa
+            ? 'التقوى — الفتاوى'
+            : 'التقوى — المصحف',
     })
     ms.setActionHandler('play', () => toggle())
     ms.setActionHandler('pause', () => toggle())
