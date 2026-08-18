@@ -36,7 +36,10 @@ export default function SettingsReadingScreen() {
     <section className="screen settings-page">
       <SettingsGroup title="حجم خط المصحف">
         <div className="settings-preview">
-          <span className="settings-preview__label">معاينة</span>
+          <span className="settings-preview__label">
+            <Icon name="book-open" size={13} />
+            معاينة
+          </span>
           <span className="settings-preview__text settings-preview__text--quran" style={{ fontSize: `${quranSize}px` }}>
             {QURAN_PREVIEW}
           </span>
@@ -55,7 +58,10 @@ export default function SettingsReadingScreen() {
 
       <SettingsGroup title="حجم خط التفسير">
         <div className="settings-preview">
-          <span className="settings-preview__label">معاينة</span>
+          <span className="settings-preview__label">
+            <Icon name="feather" size={13} />
+            معاينة
+          </span>
           <span className="settings-preview__text settings-preview__text--tafseer" style={{ fontSize: `${tafseerSize}px` }}>
             {TAFSEER_PREVIEW}
           </span>
@@ -80,8 +86,8 @@ export default function SettingsReadingScreen() {
           value={continuation}
         />
         {continuation && (
-          <div style={{ padding: '12px 14px', borderTop: '1px solid color-mix(in srgb, var(--border) 55%, transparent)' }}>
-            <button className="settings-action settings-action--danger" onClick={() => setConfirm(true)} type="button">
+          <div style={{ padding: '12px 14px' }}>
+            <button className="settings-btn settings-btn--danger settings-btn--block" onClick={() => setConfirm(true)} type="button">
               <Icon name="trash" size={16} />
               مسح موضع القراءة
             </button>

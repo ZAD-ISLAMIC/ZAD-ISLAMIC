@@ -6,6 +6,7 @@ import {
 } from '../../services/settingsStorage.mjs'
 import { Icon } from '../../components/ui/Icon.jsx'
 import { SettingsGroup } from '../../components/settings/SettingsGroup.jsx'
+import { SettingsHero } from '../../components/settings/SettingsHero.jsx'
 import { SettingsConfirm } from '../../components/settings/SettingsConfirm.jsx'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import '../../styles/settings.css'
@@ -34,10 +35,12 @@ export default function SettingsDownloadsScreen() {
 
   return (
     <section className="screen settings-page">
-      <div className="settings-dl-total">
-        <span className="settings-dl-total__label">إجمالي التخزين المستخدم</span>
-        <span className="settings-dl-total__value">{formatBytes(totalBytes)}</span>
-      </div>
+      <SettingsHero
+        icon={<Icon name="download" size={24} />}
+        title="التخزين المستخدم"
+        sub="المحتوى المحمّل على جهازك"
+        value={formatBytes(totalBytes)}
+      />
 
       <SettingsGroup title="الأقسام المحمّلة">
         {stats.map((s) => {
@@ -55,16 +58,18 @@ export default function SettingsDownloadsScreen() {
                     : `${arabicDigits(s.count)} ${s.countLabel}${s.reciters ? ` — ${arabicDigits(s.reciters)} قرّاء` : ''}`}
                 </span>
               </span>
-              <span className="settings-dl-row__size">{formatBytes(s.bytes)}</span>
-              {!empty && (
+              {!empty && <span className="settings-dl-row__size">{formatBytes(s.bytes)}</span>}
+              {empty ? (
+                <Icon name="check" size={18} className="settings-dl-row__check" />
+              ) : (
                 <button
-                  className="settings-mini-btn"
+                  className="settings-dl-del"
+                  aria-label={`حذف ${s.label}`}
                   disabled={busyId === s.id}
                   onClick={() => setTarget(s)}
                   type="button"
-                  style={{ color: 'var(--danger-text)', background: 'var(--danger-bg)', borderColor: 'var(--danger-border)' }}
                 >
-                  {busyId === s.id ? 'جارٍ الحذف…' : 'حذف'}
+                  {busyId === s.id ? <Icon name="refresh" size={17} /> : <Icon name="trash" size={17} />}
                 </button>
               )}
             </div>
@@ -72,7 +77,7 @@ export default function SettingsDownloadsScreen() {
         })}
       </SettingsGroup>
 
-      <p className="settings-note">
+      <p className="settings-note settings-note--flush">
         حذف المحتوى المحمّل يحرّر مساحة الجهاز فقط، ولا يؤثر على المحتوى عبر الإنترنت — يمكنك إعادة تحميله
         في أي وقت.
       </p>

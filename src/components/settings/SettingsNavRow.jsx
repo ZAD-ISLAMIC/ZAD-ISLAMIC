@@ -18,7 +18,7 @@ export function SettingsNavRow({
       value={value}
       danger={danger}
       onClick={onClick}
-      trailing={<Icon name="arrow-left" size={16} className="settings-navrow__chevron" />}
+      trailing={<Icon name="arrow-left" size={16} className="settings-row__chevron" />}
     />
   )
 }

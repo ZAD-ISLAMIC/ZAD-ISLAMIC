@@ -10,6 +10,7 @@ import {
 import { isCordova } from '../../services/device.mjs'
 import { refreshWatch } from '../../services/prayerWatch.mjs'
 import { Icon } from '../../components/ui/Icon.jsx'
+import { SettingsHero } from '../../components/settings/SettingsHero.jsx'
 import { SettingsGroup } from '../../components/settings/SettingsGroup.jsx'
 import '../../styles/settings.css'
 
@@ -19,11 +20,18 @@ const TABS = [
   { id: 'manual', label: 'إدخال يدوي' },
 ]
 
+function formatCoords(loc) {
+  if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lon)) return ''
+  const lat = `${Math.abs(loc.lat).toFixed(3)}° ${loc.lat >= 0 ? 'شمال' : 'جنوب'}`
+  const lon = `${Math.abs(loc.lon).toFixed(3)}° ${loc.lon >= 0 ? 'شرق' : 'غرب'}`
+  return `خط العرض ${lat} — خط الطول ${lon}`
+}
+
 export default function SettingsLocationScreen() {
   const [tab, setTab] = useState('gps')
   const [current, setCurrent] = useState(() => getCurrentLocation())
 
-  const currentText =
+  const currentName =
     (current && (current.cityAr || current.countryAr))
       ? [current.cityAr, current.countryAr].filter(Boolean).join('، ')
       : (current?.label || 'غير محدد')
@@ -36,28 +44,27 @@ export default function SettingsLocationScreen() {
 
   return (
     <section className="screen settings-page">
-      <SettingsGroup title="الموقع الحالي">
-        <div className="settings-dl-total">
-          <span className="settings-dl-total__label">
-            <span style={{ display: 'inline-block', marginInlineEnd: 6, verticalAlign: '-3px' }}>
-              <Icon name="landmark" size={16} />
-            </span>
-            {currentText}
-          </span>
-        </div>
-        <div className="settings-loc-tabs">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={`settings-loc-tab${tab === t.id ? ' settings-loc-tab--active' : ''}`}
-              onClick={() => setTab(t.id)}
-              type="button"
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </SettingsGroup>
+      <SettingsHero
+        icon={<Icon name="landmark" size={24} />}
+        title="الموقع الحالي"
+        sub={formatCoords(current)}
+        value={currentName}
+      />
+
+      <div className="settings-tabs" role="tablist" aria-label="طريقة تحديد الموقع">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            className={`settings-tabs__tab${tab === t.id ? ' settings-tabs__tab--active' : ''}`}
+            role="tab"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            type="button"
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {tab === 'gps' && <GpsTab applyLocation={applyLocation} />}
       {tab === 'list' && <ListTab applyLocation={applyLocation} />}
@@ -95,23 +102,31 @@ function GpsTab({ applyLocation }) {
   }
 
   return (
-    <SettingsGroup title="تحديد موقعي تلقائيًا">
-      <p className="settings-note">حدد موقعك تلقائيًا باستخدام GPS للحصول على مواقيت دقيقة لمدينتك.</p>
-      <div style={{ padding: '14px 14px 0' }}>
-        <button className="settings-action settings-action--primary" onClick={start} disabled={busy} type="button">
-          <Icon name="target" size={16} />
-          {busy ? 'جارٍ التحديد…' : 'تحديد موقعي'}
+    <SettingsGroup title="الموقع">
+      <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <button className="settings-btn settings-btn--primary settings-btn--block" onClick={start} disabled={busy} type="button">
+          <Icon name="target" size={18} />
+          {busy ? 'جارٍ التحديد…' : 'تحديد موقعي تلقائيًا'}
         </button>
-        {done && <p className="settings-note">تم تحديث الموقع بنجاح.</p>}
+        <p className="settings-note settings-note--flush">
+          يستخدم تحديد الموقع إحداثيات GPS للحصول على مواقيت دقيقة لمدينتك. لا تُرسل بياناتك في أي مكان.
+        </p>
+        {done && (
+          <span className="settings-chip settings-chip--ok">
+            <Icon name="check" size={13} />
+            تم تحديث الموقع بنجاح
+          </span>
+        )}
         {error && (
-          <p className="settings-loc-err">
-            {error}
+          <div className="settings-status" style={{ color: 'var(--danger-text)' }}>
+            <Icon name="alert" size={16} />
+            <span style={{ flex: 1 }}>{error}</span>
             {showOpen && (
-              <button className="settings-mini-btn" style={{ marginInlineStart: 8 }} onClick={openSettings} type="button">
+              <button className="settings-link settings-link--danger" onClick={openSettings} type="button">
                 فتح الإعدادات
               </button>
             )}
-          </p>
+          </div>
         )}
       </div>
     </SettingsGroup>
@@ -122,9 +137,12 @@ function ListTab({ applyLocation }) {
   const [countries, setCountries] = useState([])
   const [code, setCode] = useState('')
   const [cities, setCities] = useState([])
+  const [currentLabel, setCurrentLabel] = useState('')
 
   useEffect(() => {
     getCountries().then(setCountries).catch(() => {})
+    const loc = getCurrentLocation()
+    setCurrentLabel(loc ? (loc.cityAr || loc.label || '') : '')
   }, [])
 
   const onCountry = (e) => {
@@ -137,6 +155,7 @@ function ListTab({ applyLocation }) {
   const pick = async (city) => {
     const loc = await locationFromCoords(city.lat, city.lon, 'geo')
     await applyLocation(loc)
+    setCurrentLabel(city.ar)
   }
 
   const countryList = useMemo(
@@ -150,9 +169,9 @@ function ListTab({ applyLocation }) {
   )
 
   return (
-    <SettingsGroup title="اختيار من القائمة">
-      <div style={{ padding: '14px 14px 0' }}>
-        <label className="settings-loc-field">
+    <SettingsGroup title="اختر من قائمة المدن">
+      <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <label className="settings-field">
           <span>الدولة</span>
           <select value={code} onChange={onCountry}>
             <option value="">اختر الدولة…</option>
@@ -160,14 +179,22 @@ function ListTab({ applyLocation }) {
           </select>
         </label>
         {code && (
-          <div className="settings-loc-cities">
-            {cities.map((c, i) => (
-              <button key={i} className="settings-loc-city" onClick={() => pick(c)} type="button">
+          <div className="settings-cities">
+            {cities.map((c) => (
+              <button
+                key={`${c.lat}-${c.lon}`}
+                className={`settings-city${currentLabel === c.ar ? ' settings-city--current' : ''}`}
+                onClick={() => pick(c)}
+                type="button"
+              >
                 <span>{c.ar}</span>
-                <small>{c.en}</small>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  <small>{c.en}</small>
+                  {currentLabel === c.ar && <Icon name="check" size={15} className="settings-city__check" />}
+                </span>
               </button>
             ))}
-            {!cities.length && <p className="settings-note">لا توجد مدن لهذه الدولة.</p>}
+            {!cities.length && <p className="settings-note settings-note--flush">لا توجد مدن لهذه الدولة.</p>}
           </div>
         )}
       </div>
@@ -196,25 +223,31 @@ function ManualTab({ applyLocation }) {
   }
 
   return (
-    <SettingsGroup title="إدخال يدوي">
-      <p className="settings-note">أدخل الإحداثيات يدويًا (يمكنك استخدام خرائط Google للحصول عليها).</p>
-      <div style={{ padding: '14px 14px 0' }}>
-        <label className="settings-loc-field">
-          <span>خط العرض (Latitude)</span>
-          <input type="number" inputMode="decimal" dir="ltr" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="21.4225" />
-        </label>
-        <label className="settings-loc-field">
-          <span>خط الطول (Longitude)</span>
-          <input type="number" inputMode="decimal" dir="ltr" value={lon} onChange={(e) => setLon(e.target.value)} placeholder="39.8262" />
-        </label>
-        <label className="settings-loc-field">
-          <span>اسم الموقع (اختياري)</span>
-          <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="مكة المكرمة" />
-        </label>
-        {error && <p className="settings-loc-err">{error}</p>}
-        {done && <p className="settings-note">تم حفظ الموقع بنجاح.</p>}
-        <button className="settings-action settings-action--primary" onClick={submit} type="button">
-          <Icon name="check" size={16} />
+    <SettingsGroup title="إدخال الإحداثيات يدويًا">
+      <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="settings-field__group">
+          <label className="settings-field">
+            <span>خط العرض (Latitude)</span>
+            <input type="number" inputMode="decimal" dir="ltr" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="21.4225" />
+          </label>
+          <label className="settings-field">
+            <span>خط الطول (Longitude)</span>
+            <input type="number" inputMode="decimal" dir="ltr" value={lon} onChange={(e) => setLon(e.target.value)} placeholder="39.8262" />
+          </label>
+          <label className="settings-field">
+            <span>اسم الموقع (اختياري)</span>
+            <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="مكة المكرمة" />
+          </label>
+        </div>
+        {error && <p className="settings-note settings-note--flush" style={{ color: 'var(--danger-text)' }}>{error}</p>}
+        {done && (
+          <span className="settings-chip settings-chip--ok">
+            <Icon name="check" size={13} />
+            تم حفظ الموقع بنجاح
+          </span>
+        )}
+        <button className="settings-btn settings-btn--primary settings-btn--block" onClick={submit} type="button">
+          <Icon name="check" size={18} />
           حفظ الموقع
         </button>
       </div>

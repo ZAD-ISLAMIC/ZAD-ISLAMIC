@@ -1,6 +1,9 @@
 export const APP_NAME = 'التقوى'
 export const APP_VERSION = '3.0.0'
 
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa'
+export const GITHUB_REPO_URL = 'https://github.com/rn0x/altaqwaa-android/'
+
 export const NAV_ITEMS = [
   { path: '/home', label: 'الرئيسية', icon: 'home' },
   { path: '/quran', label: 'القرآن', icon: 'book' },

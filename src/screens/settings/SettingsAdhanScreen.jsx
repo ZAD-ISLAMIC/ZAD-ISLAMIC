@@ -9,12 +9,14 @@ import {
   testAdhanNow,
   setAdhanVolume,
 } from '../../services/prayerWatch.mjs'
-import { ADHAN_VOICES, CUSTOM_ADHAN, saveCustomAdhan, getCustomAdhanBlob, playAzan } from '../../services/sound.mjs'
+import { ADHAN_VOICES, CUSTOM_ADHAN, saveCustomAdhan, getCustomAdhanBlob, playAzan, stopAzan } from '../../services/sound.mjs'
 import { Icon } from '../../components/ui/Icon.jsx'
 import { SettingsGroup } from '../../components/settings/SettingsGroup.jsx'
 import { SettingsSwitch } from '../../components/settings/SettingsSwitch.jsx'
 import { SettingsSlider } from '../../components/settings/SettingsSlider.jsx'
 import { SettingsRow } from '../../components/settings/SettingsRow.jsx'
+import { SettingsRadioRow } from '../../components/settings/SettingsRadioRow.jsx'
+import { SettingsHero } from '../../components/settings/SettingsHero.jsx'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import '../../styles/settings.css'
 
@@ -25,12 +27,14 @@ export default function SettingsAdhanScreen() {
   const [status, setStatus] = useState(null)
   const [testMsg, setTestMsg] = useState('')
   const [audio, setAudio] = useState(null)
+  const [previewing, setPreviewing] = useState(false)
   const fileRef = useRef(null)
 
   useEffect(() => {
     getCustomAdhanBlob().then((blob) => setHasCustom(!!blob))
     getWatchStatus().then(setStatus)
     getAudioState().then(setAudio)
+    return () => stopAzan()
   }, [])
 
   const refreshStatus = () => getWatchStatus().then(setStatus)
@@ -51,6 +55,21 @@ export default function SettingsAdhanScreen() {
     await apply({ adhanSound: CUSTOM_ADHAN })
   }
 
+  const handlePreview = async () => {
+    if (previewing) {
+      stopAzan()
+      setPreviewing(false)
+      return
+    }
+    const sound = await playAzan()
+    if (sound) {
+      setPreviewing(true)
+      const done = () => setPreviewing(false)
+      sound.addEventListener('ended', done)
+      sound.addEventListener('error', done)
+    }
+  }
+
   const handleTest = () => {
     const ok = testAdhanNow()
     setTestMsg(
@@ -69,86 +88,92 @@ export default function SettingsAdhanScreen() {
     setAdhanVolume(value)
   }
 
+  const audioStateText =
+    audio && audio.ringerMode === 'silent'
+      ? 'الصوت عادي: حاليًا صامت — لن يرنّ الأذان'
+      : null
+
   return (
     <section className="screen settings-page">
-      <SettingsGroup title="تفعيل الأذان">
-        <SettingsSwitch
-          icon={<Icon name="volume" size={20} />}
-          label="الأذان والتنبيهات"
-          description={config.adhanEnabled ? 'مفعّل — يرنّ الأذان حتى مع إغلاق التطبيق' : 'متوقف'}
-          checked={!!config.adhanEnabled}
-          onChange={(v) => {
-            setConfig((c) => ({ ...c, adhanEnabled: v }))
-            apply({ adhanEnabled: v })
+      <SettingsHero
+        icon={<Icon name="volume" size={24} />}
+        title={config.adhanEnabled ? 'الأذان مفعّل' : 'الأذان متوقف'}
+        sub="يرنّ الأذان عند دخول وقت الصلاة حتى مع إغلاق التطبيق"
+        variant={config.adhanEnabled ? '' : ''}
+      >
+        <button
+          className={`switch${config.adhanEnabled ? ' switch--on' : ''}`}
+          role="switch"
+          aria-checked={!!config.adhanEnabled}
+          aria-label="تبديل الأذان والتنبيهات"
+          onClick={(e) => {
+            e.stopPropagation()
+            setConfig((c) => ({ ...c, adhanEnabled: !c.adhanEnabled }))
+            apply({ adhanEnabled: !config.adhanEnabled })
             setNativeOk(hasNativeWatch())
           }}
-        />
-        <p className="settings-note">
-          عند وقت الصلاة يظهر إشعار بسيط وتفتح نافذة الأذان داخل التطبيق لعرض الصلاة الحالية والتالية.
-        </p>
-        <div style={{ padding: '12px 14px', borderTop: '1px solid color-mix(in srgb, var(--border) 55%, transparent)' }}>
-          <button className="settings-action settings-action--surface" onClick={handleTest} type="button">
-            <Icon name="play" size={16} />
-            جرّب الآن (رنين بعد ثوانٍ)
-          </button>
-          {testMsg && <p className="settings-note">{testMsg}</p>}
-        </div>
-      </SettingsGroup>
+          type="button"
+        >
+          <i />
+        </button>
+        <button className="settings-btn settings-btn--surface settings-btn--sm" onClick={handleTest} type="button">
+          <Icon name="play" size={13} />
+          جرّب الآن
+        </button>
+      </SettingsHero>
+
+      {testMsg && <p className="settings-note" style={{ marginTop: -10, marginBottom: 14 }}>{testMsg}</p>}
+      {audioStateText && <p className="settings-note" style={{ marginTop: -10, marginBottom: 14 }}>{audioStateText}</p>}
 
       <SettingsGroup title="صوت الأذان">
-        <div className="set-sheet__list">
-          {ADHAN_VOICES.map((v) => (
-            <button
-              key={v.file}
-              className={`set-sheet__row${config.adhanSound === v.file ? ' set-sheet__row--active' : ''}`}
-              onClick={() => apply({ adhanSound: v.file })}
-              type="button"
-            >
-              <span>{v.label}</span>
-              {config.adhanSound === v.file && <Icon name="check" size={16} />}
-            </button>
-          ))}
-          {hasCustom && (
-            <button
-              className={`set-sheet__row${config.adhanSound === CUSTOM_ADHAN ? ' set-sheet__row--active' : ''}`}
-              onClick={() => apply({ adhanSound: CUSTOM_ADHAN })}
-              type="button"
-            >
-              <span>صوت مخصص (من جهازك)</span>
-              {config.adhanSound === CUSTOM_ADHAN && <Icon name="check" size={16} />}
-            </button>
-          )}
+        {ADHAN_VOICES.map((v) => (
+          <SettingsRadioRow
+            key={v.file}
+            icon={<Icon name="mic" size={20} />}
+            label={v.label}
+            active={config.adhanSound === v.file}
+            showCheck={false}
+            onClick={() => apply({ adhanSound: v.file })}
+          />
+        ))}
+        {hasCustom && (
+          <SettingsRadioRow
+            key={CUSTOM_ADHAN}
+            icon={<Icon name="file" size={20} />}
+            label="صوت مخصص (من جهازك)"
+            active={config.adhanSound === CUSTOM_ADHAN}
+            showCheck={false}
+            onClick={() => apply({ adhanSound: CUSTOM_ADHAN })}
+          />
+        )}
+        <div className="settings-azchooser">
+          <button className="settings-azchooser__btn settings-azchooser__btn--play" onClick={handlePreview} type="button">
+            <Icon name={previewing ? 'pause' : 'play'} size={14} />
+            {previewing ? 'إيقاف التجربة' : 'تجربة الصوت المحدد'}
+          </button>
+          <button className="settings-azchooser__btn" onClick={() => fileRef.current?.click()} type="button">
+            <Icon name={hasCustom ? 'refresh' : 'plus'} size={14} />
+            {hasCustom ? 'استبدال الصوت المخصص' : 'إضافة صوت من جهازك'}
+          </button>
         </div>
         <input
           ref={fileRef}
           type="file"
           accept="audio/*"
-          className="set-sheet__file"
+          style={{ display: 'none' }}
           onChange={importAdhan}
           aria-label="اختر ملف صوت للأذان"
         />
-        <div className="set-sheet__row-buttons">
-          <button className="set-sheet__test" onClick={() => playAzan()} type="button">
-            تجربة الصوت
-          </button>
-          <button className="set-sheet__test" onClick={() => fileRef.current?.click()} type="button">
-            {hasCustom ? 'استبدال الصوت المخصص' : 'إضافة صوت من جهازك'}
-          </button>
-        </div>
       </SettingsGroup>
 
       <SettingsGroup title="حجم صوت الأذان">
         <SettingsSlider
           icon={<Icon name="volume" size={20} />}
-          label="مستوى الصوت"
-          description="مستوى رنين الأذان"
+          label="مستوى الرنين"
+          description="يرنّ الأذان بهذا المستوى حتى لو كان الهاتف صامتًا"
           value={volumePercent}
           onChange={changeAdhanVolume}
         />
-        <p className="settings-note">
-          يحدّد مستوى رنين الأذان. عند تعطيل «احترام وضع الصوت» يرنّ الأذان بهذا المستوى حتى لو كان الهاتف
-          صامتًا، ويعود مستوى منبّه الهاتف لأصله بعد الانتهاء.
-        </p>
       </SettingsGroup>
 
       <SettingsGroup title="احترام وضع الصوت">
@@ -160,14 +185,17 @@ export default function SettingsAdhanScreen() {
           onChange={(v) => apply({ respectSoundMode: v })}
         />
         {audio && (
-          <p className="settings-note">
-            الحالة الآن:{' '}
-            {audio.ringerMode === 'silent'
-              ? 'صامت'
-              : audio.ringerMode === 'vibrate'
-                ? 'اهتزاز'
-                : `صوت عادي (منبّه ${arabicDigits(audio.alarmVolume || 0)}/${arabicDigits(audio.alarmMax || 0)})`}
-          </p>
+          <div className="settings-status">
+            <Icon name="volume" size={16} />
+            <span>
+              الحالة الآن:{' '}
+              {audio.ringerMode === 'silent'
+                ? 'صامت'
+                : audio.ringerMode === 'vibrate'
+                  ? 'اهتزاز'
+                  : `صوت عادي (منبّه ${arabicDigits(audio.alarmVolume || 0)}/${arabicDigits(audio.alarmMax || 0)})`}
+            </span>
+          </div>
         )}
       </SettingsGroup>
 
@@ -198,26 +226,42 @@ export default function SettingsAdhanScreen() {
           }
           onOpen={() => openSystemSetting('battery')}
         />
-        <p className="settings-note">
+        <p className="settings-note" style={{ margin: '12px 14px 14px' }}>
           على أجهزة Xiaomi/MIUI افتح أيضًا: الإعدادات ← التطبيقات ← التطبيق ← «التحكم في البطارية» = لا قيود،
           وفعّل «التشغيل التلقائي عند بدء التشغيل».
         </p>
         {nativeOk === false && (
-          <p className="settings-note">الإضافة غير متوفرة — الأذان يظهر داخل التطبيق فقط.</p>
+          <p className="settings-note" style={{ margin: '12px 14px 14px' }}>
+            الإضافة غير متوفرة — الأذان يظهر داخل التطبيق فقط.
+          </p>
         )}
       </SettingsGroup>
     </section>
   )
 }
 
-function PermissionRow({ title, desc, hint, onOpen }) {
+function PermissionRow({ title, ok, hint, onOpen }) {
+  const chip = ok === null ? (
+    <span className="settings-chip">جارٍ الفحص</span>
+  ) : ok ? (
+    <span className="settings-chip settings-chip--ok">
+      <Icon name="check" size={13} />
+      مفوّض
+    </span>
+  ) : (
+    <span className="settings-chip settings-chip--warn">
+      <Icon name="alert" size={13} />
+      ينقص الإذن
+    </span>
+  )
+
   return (
     <SettingsRow
       icon={<Icon name="shield" size={20} />}
       label={title}
-      description={desc || hint || ''}
+      description={hint}
       onClick={onOpen}
-      trailing={<span className="settings-mini-btn">فتح الإعدادات</span>}
+      trailing={<span className="settings-perm__status">{chip}</span>}
     />
   )
 }

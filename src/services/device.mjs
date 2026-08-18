@@ -1,3 +1,5 @@
+import { APP_NAME } from '../constants/app.mjs'
+
 export function isCordova() {
   return typeof window !== 'undefined' && !!(window.cordova && window.cordova.platformId)
 }
@@ -81,6 +83,41 @@ export async function copyText(text) {
 }
 
 /* ------------------------------------------------------------------ *
+ * مشاركة التطبيق: تفتح نافذة المشاركة الأصلية على الجهاز
+ * (SocialSharing plugin عند توفّره، وإلا Web Share API) وتعيد `true`
+ * عند نجاح الفتح. لو لم تتوفر أي قناة نافذة نظامية يرجع `false`
+ * ليتولّى المتصل النسخ يدويًا.
+ * ------------------------------------------------------------------ */
+
+export function shareApp({ title = APP_NAME, text = '' } = {}) {
+  const social = window.plugins?.socialsharing
+  if (social?.share) {
+    try {
+      social.share(
+        text,
+        title,
+        null,
+        null,
+        (ok) => ok,
+        () => {}
+      )
+      return true
+    } catch {
+      /* fall through to Web Share API */
+    }
+  }
+  if (navigator.share) {
+    try {
+      navigator.share({ title, text }).catch(() => {})
+      return true
+    } catch {
+      return false
+    }
+  }
+  return false
+}
+
+/* ------------------------------------------------------------------ *
  * فتح الرابط الخارجي (مصدر الأسئلة) بأمان:
  * - على الجهاز: متصفح النظام خارج التطبيق (InAppBrowser _system).
  * - على الويب: تبويب جديد (window.open _blank).
@@ -105,4 +142,25 @@ export function openExternal(url) {
     console.warn('openExternal failed', error)
     return false
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * إغلاق التطبيق (زر الرجوع عند طلب الخروج). تعمل على Cordova فقط —
+ * على الويب ترجع `false` ليتصرّف المتصل كما يشاء.
+ * ------------------------------------------------------------------ */
+
+export function exitApp() {
+  try {
+    if (window.cordova?.App?.exitApp) {
+      window.cordova.App.exitApp()
+      return true
+    }
+    if (window.navigator?.app?.exitApp) {
+      window.navigator.app.exitApp()
+      return true
+    }
+  } catch (error) {
+    console.warn('exitApp failed', error)
+  }
+  return false
 }
