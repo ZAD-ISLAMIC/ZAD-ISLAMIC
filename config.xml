@@ -28,6 +28,25 @@
 
   <platform name="android">
     <preference name="deployment-target" value="13.0" />
+
+    <!-- Launcher icons (adaptive + legacy), generated from src/resources/icons -->
+    <icon density="ldpi" src="res/icon/android/ic-ldpi.png" foreground="res/icon/android/fg-ldpi.png" background="res/icon/android/bg-ldpi.png" monochrome="res/icon/android/mono-ldpi.png" />
+    <icon density="mdpi" src="res/icon/android/ic-mdpi.png" foreground="res/icon/android/fg-mdpi.png" background="res/icon/android/bg-mdpi.png" monochrome="res/icon/android/mono-mdpi.png" />
+    <icon density="hdpi" src="res/icon/android/ic-hdpi.png" foreground="res/icon/android/fg-hdpi.png" background="res/icon/android/bg-hdpi.png" monochrome="res/icon/android/mono-hdpi.png" />
+    <icon density="xhdpi" src="res/icon/android/ic-xhdpi.png" foreground="res/icon/android/fg-xhdpi.png" background="res/icon/android/bg-xhdpi.png" monochrome="res/icon/android/mono-xhdpi.png" />
+    <icon density="xxhdpi" src="res/icon/android/ic-xxhdpi.png" foreground="res/icon/android/fg-xxhdpi.png" background="res/icon/android/bg-xxhdpi.png" monochrome="res/icon/android/mono-xxhdpi.png" />
+    <icon density="xxxhdpi" src="res/icon/android/ic-xxxhdpi.png" foreground="res/icon/android/fg-xxxhdpi.png" background="res/icon/android/bg-xxxhdpi.png" monochrome="res/icon/android/mono-xxxhdpi.png" />
+
+    <!-- Native splash: the Android 12+ system splash is mandatory and cannot
+         be disabled. Instead of drawing the icon (which would duplicate the
+         in-app splash a moment later), paint it as a bare navy screen: fully
+         transparent animated icon, navy background and navy icon circle, zero
+         animation. The in-app splash (index.html #app-splash) is therefore the
+         only branded splash the user ever sees. -->
+    <preference name="AndroidWindowSplashScreenBackground" value="#0a1428" />
+    <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/screen/android/splash-transparent.png" />
+    <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#0a1428" />
+    <preference name="AndroidWindowSplashScreenAnimationDuration" value="0" />
   </platform>
 
   <!-- Runs after `cordova prepare` and before compiling: strips the stale

@@ -417,7 +417,8 @@ public final class AdhanPlayback {
         }
 
         NotificationCompat.Builder b = new NotificationCompat.Builder(c, CHANNEL_ADHAN);
-        b.setSmallIcon(c.getApplicationInfo().icon)
+        int smallIcon = c.getResources().getIdentifier("ic_stat_taqwa", "drawable", c.getPackageName());
+        b.setSmallIcon(smallIcon != 0 ? smallIcon : c.getApplicationInfo().icon)
                 .setContentTitle(title)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

@@ -21,7 +21,13 @@ run('node scripts/dedupe-platform.mjs')
 
 run('vite build')
 
-// Ensure cordova plugins are synced (copies our modified plugin sources)
+// Publish launcher / native splash layers into res/ (Cordova standard source
+// folders) and notification icons into the platform; must run before prepare
+// so the config.xml <icon>/splash entries see their source files.
+run('python3 scripts/generate-icons.py')
+
+// Ensure cordova plugins are synced (copies our modified plugin sources);
+// also copies the res/ icon + splash layers into the platform.
 run('cordova prepare')
 
 // `cordova build` re-runs prepare, so the manifest cleanup happens in the

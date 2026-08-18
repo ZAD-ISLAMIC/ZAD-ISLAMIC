@@ -10,8 +10,124 @@
     <meta name="theme-color" content="#0a1428" />
     <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <title>التقوى</title>
+    <style id="app-splash-styles">
+      html,
+      body {
+        background: #0a1428;
+      }
+      /* الشاشة الأولى — ثابتة حتى يقارب الجافاسكربت ثم تُخفى بـ .is-leaving */
+      #app-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+        color: #eef3fb;
+        font-family: 'Vazirmatn', 'Noto Naskh Arabic', 'Segoe UI', Tahoma, sans-serif;
+        background:
+          radial-gradient(120% 90% at 50% -12%, rgba(16, 185, 129, 0.18), transparent 58%),
+          radial-gradient(95% 75% at 88% 108%, rgba(212, 175, 55, 0.12), transparent 55%),
+          radial-gradient(95% 75% at 10% 106%, rgba(96, 130, 255, 0.16), transparent 52%),
+          linear-gradient(180deg, #0b1a33 0%, #0a1428 55%, #07101f 100%);
+        background-attachment: fixed;
+      }
+      #app-splash::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: -38%;
+        width: 170vmax;
+        height: 170vmax;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.16) 0%, rgba(212, 175, 55, 0) 55%);
+        filter: blur(12px);
+        animation: splash-glow 5.5s ease-in-out infinite;
+        pointer-events: none;
+      }
+      #app-splash .splash-ic {
+        width: min(34vw, 148px);
+        aspect-ratio: 1;
+        border-radius: 22%;
+        background: #fff;
+        box-shadow:
+          0 20px 60px rgba(0, 0, 0, 0.55),
+          0 0 0 1px rgba(255, 255, 255, 0.10),
+          0 0 90px rgba(16, 185, 129, 0.28);
+        animation: splash-pop 0.8s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+      }
+      #app-splash h1 {
+        margin-top: 26px;
+        font-size: clamp(30px, 9vw, 44px);
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        color: #f5f7fb;
+        animation: splash-rise 0.9s 0.12s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+        text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+      }
+      #app-splash .splash-tag {
+        margin-top: 10px;
+        font-size: clamp(13px, 3.6vw, 16px);
+        font-weight: 400;
+        color: #8ba1c7;
+        letter-spacing: 0.4px;
+        animation: splash-rise 0.9s 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+      }
+      #app-splash .splash-bar {
+        position: absolute;
+        bottom: max(env(safe-area-inset-bottom, 0px), 22px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(58vw, 230px);
+        height: 3px;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+      }
+      #app-splash .splash-bar i {
+        display: block;
+        position: absolute;
+        inset: 0;
+        transform: translateX(100%);
+        background: linear-gradient(90deg, transparent, #d4af37, transparent);
+        animation: splash-slide 1.5s ease-in-out infinite;
+      }
+      #app-splash.is-leaving {
+        opacity: 0;
+        transform: scale(1.04);
+        transition: opacity 0.45s ease, transform 0.45s ease;
+        pointer-events: none;
+      }
+      @keyframes splash-glow {
+        0%,
+        100% { opacity: 0.5; }
+        50% { opacity: 1; }
+      }
+      @keyframes splash-pop {
+        from { opacity: 0; transform: scale(0.68) translateY(18px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      @keyframes splash-rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes splash-slide {
+        from { transform: translateX(100%); }
+        to { transform: translateX(-100%); }
+      }
+    </style>
   </head>
   <body>
+    <div id="app-splash" role="status" aria-label="جاري تحميل التقوى">
+      <img class="splash-ic" src="./icons/app-icon-512.png" alt="" draggable="false" />
+      <h1>التقوى</h1>
+      <p class="splash-tag">تطبيق إسلامي متكامل</p>
+      <div class="splash-bar"><i></i></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script src="cordova.js"></script>

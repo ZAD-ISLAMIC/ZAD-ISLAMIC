@@ -7,6 +7,7 @@ import { initPlayer } from './services/player.mjs'
 import { prewarmBackend } from './services/reciterStorage.mjs'
 import { onDeviceReady } from './services/device.mjs'
 import { startWatchLoop } from './services/prayerWatch.mjs'
+import { armSplashDismissal } from './services/splash.mjs'
 import './styles/theme.css'
 import './styles/global.css'
 
@@ -14,6 +15,7 @@ applyTheme(getInitialTheme())
 initPlayer()
 prewarmBackend()
 startWatchLoop()
+armSplashDismissal()
 
 onDeviceReady(() => syncSystemBars(getInitialTheme()))
 

@@ -103,3 +103,36 @@ if (!step3.includes(DEBUG_RECEIVER)) {
     console.log('[patch-manifest] injected PrayerDebugReceiver')
   }
 }
+
+// The white flash between the native splash and the WebView's first paint
+// comes from cordova's default `cdv_background_color` (#FAF8FF light, or the
+// v34/system variants). The app is always navy (#0a1428), so pin the color in
+// every cdv_colors.xml bucket. cordova prepare rewrites values/cdv_colors.xml
+// on each run; the -v34 / -night files come from the platform template and are
+// only present after `platform add`. This hook runs after prepare, so both
+// cases are caught and this is idempotent.
+const COLORS_DIR = resolve(ROOT, 'platforms/android/app/src/main/res')
+const NAVY = '#0a1428'
+const colorsFiles = [
+  resolve(COLORS_DIR, 'values/cdv_colors.xml'),
+  resolve(COLORS_DIR, 'values-v34/cdv_colors.xml'),
+  resolve(COLORS_DIR, 'values-night/cdv_colors.xml'),
+  resolve(COLORS_DIR, 'values-night-v34/cdv_colors.xml'),
+]
+
+for (const file of colorsFiles) {
+  let xml
+  try {
+    xml = readFileSync(file, 'utf-8')
+  } catch {
+    continue
+  }
+  const next = xml.replace(
+    /(<color name="cdv_background_color">)([^<]*)(<\/color>)/,
+    `$1${NAVY}$3`
+  )
+  if (next !== xml) {
+    writeFileSync(file, next)
+    console.log(`[patch-manifest] pinned cdv_background_color → ${NAVY} in ${file.split('/res/')[1]}`)
+  }
+}

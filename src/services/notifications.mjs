@@ -43,7 +43,7 @@ export function notifyComplete(dhikr) {
       foreground: true,
       vibrate: [0, 60, 40, 60, 40, 90],
       sound: undefined,
-      icon: 'res://icon',
+      icon: 'res://ic_stat_taqwa',
     })
   } catch (error) {
     console.warn('[tasbih] local notification failed', error)
