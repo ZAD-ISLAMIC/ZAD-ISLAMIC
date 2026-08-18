@@ -26,6 +26,7 @@ export default function QuranSurahScreen() {
       onNext={
         index < SURAHS.length - 1 ? () => navigate(`/quran/${index + 1}`) : null
       }
+      onTafseer={(verse) => navigate(`/tafseer/${index + 1}?verse=${verse}`)}
     />
   )
 }

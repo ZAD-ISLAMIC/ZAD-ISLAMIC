@@ -4,6 +4,7 @@ export const APP_VERSION = '3.0.0'
 export const NAV_ITEMS = [
   { path: '/home', label: 'الرئيسية', icon: 'home' },
   { path: '/quran', label: 'القرآن', icon: 'book' },
+  { path: '/tafseer', label: 'التفسير الميسر', icon: 'book-open' },
   { path: '/adhkar', label: 'الأذكار', icon: 'beads' },
   { path: '/hisn', label: 'حصن المسلم', icon: 'shield' },
   { path: '/history', label: 'الموسوعة التاريخية', icon: 'scroll' },
@@ -26,6 +27,7 @@ export const BOTTOM_NAV_ITEMS = [
 
 export const SCREENS_META = {
   quran: { title: 'القرآن الكريم', description: 'قراءة المصحف والاستماع للقراء' },
+  tafseer: { title: 'التفسير الميسر', description: 'تفسير كتاب الله بأسلوب سهل قريب' },
   adhkar: { title: 'الأذكار', description: 'أذكار الصباح والمساء وأذكار النوم' },
   hisn: { title: 'حصن المسلم', description: 'أذكار النبي ﷺ — استمع وحمّل للاستماع دون إنترنت' },
   history: { title: 'الموسوعة التاريخية', description: 'أحداث مرتبطة بالإسلام والمسلمين من مصادر موثوقة' },

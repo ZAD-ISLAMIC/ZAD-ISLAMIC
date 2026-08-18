@@ -5,6 +5,7 @@ import hisnData from '../resources/data/hisnmuslim.json' with { type: 'json' }
 import mp3quranData from '../resources/data/mp3quran.json' with { type: 'json' }
 import fatwasIndex from '../resources/data/fatwas/index.json' with { type: 'json' }
 import historyIndex from '../resources/data/history/index.json' with { type: 'json' }
+import tafseerIndex from '../resources/data/tafseer/index.json' with { type: 'json' }
 
 /* جداول خفيفة للبحث — نستورد ملفات JSON مباشرة بدل خدمات كاملة
    كي لا تُسحب ملفات ثقيلة (quran.json ~5MB، ملفات الصوت) إلى الهيدر. */
@@ -14,10 +15,12 @@ const ADHKAR_BY_KEY = new Map(azkarData.map((c) => [c.key, c]))
 const HISN_BY_ID = new Map(hisnData.map((c) => [String(c.id), c]))
 const FATWA_BY_SLUG = new Map(fatwasIndex.map((c) => [c.slug, c]))
 const HISTORY_ERA_BY_KEY = new Map(historyIndex.map((e) => [e.key, e]))
+const TAFSEER_BY_NO = new Map(tafseerIndex.map((s) => [s.n, s]))
 
 const TITLES = {
   '/home': 'الرئيسية',
   '/quran': 'المصحف',
+  '/tafseer': 'التفسير الميسر',
   '/adhkar': 'الأذكار',
   '/hisn': 'حصن المسلم',
   '/fatwas': 'فتاوى ابن باز',
@@ -91,6 +94,9 @@ export function getHeaderMeta(pathname) {
     if (base === '/quran') {
       const meta = SURAH_META[Number(segments[1])]
       if (meta?.name) title = `سورة ${meta.name}`
+    } else if (base === '/tafseer') {
+      const surah = TAFSEER_BY_NO.get(Number(segments[1]))
+      if (surah?.name) title = `تفسير سورة ${surah.name}`
     } else if (base === '/adhkar') {
       const category = ADHKAR_BY_KEY.get(segments[1])
       if (category?.category) title = category.category

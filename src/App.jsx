@@ -6,6 +6,8 @@ import { Loader } from './components/ui/Loader.jsx'
 const HomeScreen = lazy(() => import('./screens/HomeScreen.jsx'))
 const QuranScreen = lazy(() => import('./screens/QuranScreen.jsx'))
 const QuranSurahScreen = lazy(() => import('./screens/QuranSurahScreen.jsx'))
+const TafseerScreen = lazy(() => import('./screens/TafseerScreen.jsx'))
+const TafseerSuraScreen = lazy(() => import('./screens/TafseerSuraScreen.jsx'))
 const AdhkarScreen = lazy(() => import('./screens/AdhkarScreen.jsx'))
 const AdhkarCategoryScreen = lazy(() => import('./screens/AdhkarCategoryScreen.jsx'))
 const HisnMuslimScreen = lazy(() => import('./screens/HisnMuslimScreen.jsx'))
@@ -36,6 +38,8 @@ export function App() {
           <Route path="/home" element={<HomeScreen />} />
           <Route path="/quran" element={<QuranScreen />} />
           <Route path="/quran/:surahIndex" element={<QuranSurahScreen />} />
+          <Route path="/tafseer" element={<TafseerScreen />} />
+          <Route path="/tafseer/:surahIndex" element={<TafseerSuraScreen />} />
           <Route path="/adhkar" element={<AdhkarScreen />} />
           <Route path="/adhkar/:categoryKey" element={<AdhkarCategoryScreen />} />
           <Route path="/hisn" element={<HisnMuslimScreen />} />

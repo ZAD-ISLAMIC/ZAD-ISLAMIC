@@ -21,7 +21,7 @@ function getScrollRoot() {
   return document.querySelector('.shell__main')
 }
 
-export function QuranReader({ surahIndex, initialVerse, onPrev, onNext }) {
+export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafseer }) {
   const surah = useMemo(() => parseSurah(surahIndex), [surahIndex])
   const [fontSize, setFontSize] = useLocalStorage(FONT_SIZE_KEY, 26)
   const [reading, setReading] = useLocalStorage(READING_KEY, null)
@@ -153,6 +153,15 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext }) {
           </div>
 
           <div className="quran-reader__controls">
+            {onTafseer && (
+              <button
+                className="quran-reader__btn quran-reader__btn--tafseer"
+                aria-label="فتح تفسير هذه الآية"
+                onClick={() => onTafseer(current)}
+              >
+                <Icon name="book-open" size={18} />
+              </button>
+            )}
             <button
               className="quran-reader__btn"
               aria-label="تصغير الخط"
