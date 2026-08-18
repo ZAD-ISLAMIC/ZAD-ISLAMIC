@@ -16,6 +16,7 @@ const FatwasScreen = lazy(() => import('./screens/FatwasScreen.jsx'))
 const FatwasCategoryScreen = lazy(() => import('./screens/FatwasCategoryScreen.jsx'))
 const FatwaDetailScreen = lazy(() => import('./screens/FatwaDetailScreen.jsx'))
 const PrayerScreen = lazy(() => import('./screens/PrayerScreen.jsx'))
+const QiblaScreen = lazy(() => import('./screens/QiblaScreen.jsx'))
 const TasbihScreen = lazy(() => import('./screens/TasbihScreen.jsx'))
 const RadioScreen = lazy(() => import('./screens/RadioScreen.jsx'))
 const RecitersScreen = lazy(() => import('./screens/RecitersScreen.jsx'))
@@ -59,6 +60,7 @@ export function App() {
           <Route path="/fatwas/:slug" element={<FatwasCategoryScreen />} />
           <Route path="/fatwas/:slug/:id" element={<FatwaDetailScreen />} />
           <Route path="/prayer" element={<PrayerScreen />} />
+          <Route path="/qibla" element={<QiblaScreen />} />
           <Route path="/tasbih" element={<TasbihScreen />} />
           <Route path="/radio" element={<RadioScreen />} />
           <Route path="/reciters" element={<RecitersScreen />} />

@@ -265,6 +265,14 @@ const PATHS = {
   ],
 
   note: ['M9 18V5l12-2v13', 'M9 18a3 3 0 1 1-6 0', 'M21 16a3 3 0 1 1-6 0'],
+
+  'arrow-up': ['M12 19V5', 'M5 12l7-7 7 7'],
+
+  kaaba: [
+    'M3 8l9-4 9 4v9l-9 4-9-4z',
+    'M12 4v17',
+    'M3 12.5h18',
+  ],
 }
 
 export function Icon({ name, size = 24, className = '' }) {

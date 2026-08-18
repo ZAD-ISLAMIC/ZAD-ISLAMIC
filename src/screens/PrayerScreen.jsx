@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   onWatchSnapshot,
   getWatchSnapshot,
@@ -16,6 +17,7 @@ import { SettingsSheet } from '../components/prayer/SettingsSheet.jsx'
 const LABELS = getPrayerLabels()
 
 export default function PrayerScreen() {
+  const navigate = useNavigate()
   const [snapshot, setSnapshot] = useState(() => getWatchSnapshot())
   const [now, setNow] = useState(() => Date.now())
   const [showLocation, setShowLocation] = useState(false)
@@ -110,6 +112,12 @@ export default function PrayerScreen() {
         <Icon name="gear" size={16} />
         <span>إعدادات الحساب والطريقة</span>
         <Icon name="chevron-down" size={14} />
+      </button>
+
+      <button className="prayer__settings qibla-shortcut" onClick={() => navigate('/qibla')} type="button">
+        <Icon name="kaaba" size={17} />
+        <span>اتجاه القبلة</span>
+        <Icon name="arrow-up" size={14} />
       </button>
 
       <ul className="prayer-list">

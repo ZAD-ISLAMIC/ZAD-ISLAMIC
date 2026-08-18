@@ -1,0 +1,570 @@
+/* =================================================================== *
+ * صفحة اتجاه القبلة
+ * =================================================================== */
+
+.qibla {
+  padding-top: 6px;
+}
+
+.qibla__verse {
+  margin: 10px 0 4px;
+  text-align: center;
+  font-family: 'Quran', 'Vazirmatn', serif;
+  font-size: 17px;
+  color: var(--gold);
+  line-height: 1.9;
+  text-shadow: 0 1px 10px rgba(212, 175, 55, 0.16);
+}
+
+.qibla__card {
+  position: relative;
+  margin-top: 8px;
+  padding: 20px 16px 18px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(212, 175, 55, 0.13), transparent 52%),
+    linear-gradient(160deg, var(--surface), var(--bg-card));
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* ------------------------------------------------------------------ *
+ * البوصلة
+ * ------------------------------------------------------------------ */
+
+.qibla-dial {
+  position: relative;
+  width: min(78vw, 322px);
+  aspect-ratio: 1;
+  margin: 4px auto 10px;
+}
+
+.qibla-dial__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.qibla-dial__ring {
+  fill: none;
+  stroke: color-mix(in srgb, var(--border) 92%, transparent);
+  stroke-width: 1.2;
+}
+
+.qibla-dial__ring-inner {
+  fill: none;
+  stroke: color-mix(in srgb, var(--border) 55%, transparent);
+  stroke-width: 0.8;
+}
+
+.qibla-dial__tick {
+  stroke: color-mix(in srgb, var(--text-muted) 60%, transparent);
+  stroke-width: 1.1;
+}
+
+.qibla-dial__tick--major {
+  stroke: var(--gold);
+  stroke-width: 2;
+}
+
+.qibla-dial__num {
+  fill: var(--text-muted);
+  font-family: 'Vazirmatn', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.qibla-dial__card {
+  fill: var(--text);
+  font-family: 'Vazirmatn', sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* الاتجاه الحالي — سهم ثابت أعلى الديال */
+.qibla-dial__index {
+  fill: var(--primary);
+}
+
+/* عقرب الكعبة */
+.qibla-dial__needle {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.qibla-dial__shaft {
+  stroke: var(--gold);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.qibla-dial__head {
+  fill: var(--gold);
+}
+
+.qibla-dial__hub {
+  fill: color-mix(in srgb, var(--bg-card) 92%, var(--gold) 8%);
+  stroke: color-mix(in srgb, var(--border) 80%, var(--gold) 20%);
+  stroke-width: 1.5;
+}
+
+.qibla-dial__dot {
+  fill: var(--gold);
+}
+
+/* حالة المحاذاة */
+.qibla-dial--aligned .qibla-dial__ring {
+  stroke: var(--ok);
+  stroke-width: 2;
+  animation: qibla-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes qibla-glow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* حالة المعايرة */
+.qibla-dial--calib .qibla-dial__ring {
+  stroke: var(--gold);
+  stroke-dasharray: 6 5;
+}
+
+/* حالة القراءة */
+.qibla-dial--starting .qibla-dial__rotor,
+.qibla-dial--starting .qibla-dial__needle {
+  opacity: 0.35;
+}
+
+.qibla-dial__state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.qibla-dial__spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-top-color: var(--gold);
+  animation: qibla-spin 0.8s linear infinite;
+}
+
+@keyframes qibla-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * قراءة الانحراف
+ * ------------------------------------------------------------------ */
+
+.qibla-delta {
+  position: relative;
+  margin-top: 2px;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.qibla-arc {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 48px;
+  opacity: 0.85;
+}
+
+.qibla-arc__track,
+.qibla-arc__fill {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.qibla-arc__track {
+  stroke: color-mix(in srgb, var(--border) 65%, transparent);
+}
+
+.qibla-arc__fill {
+  stroke: var(--gold);
+}
+
+.qibla-delta__ok {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+}
+
+.qibla-delta--ok .qibla-arc__fill {
+  stroke: var(--ok);
+}
+
+.qibla-delta__ok strong {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ok-text);
+}
+
+.qibla-delta__badge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--on-primary);
+  background: var(--ok);
+  box-shadow: 0 6px 18px rgba(52, 211, 153, 0.35);
+}
+
+.qibla-delta__turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding-top: 8px;
+}
+
+.qibla-delta__arrow {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  transition: transform 0.25s ease;
+}
+
+.qibla-delta__turn-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.4;
+}
+
+.qibla-delta__turn-text small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.qibla-delta__turn-text strong {
+  font-size: 19px;
+  font-weight: 800;
+}
+
+/* ------------------------------------------------------------------ *
+ * الإحصاءات والدقة
+ * ------------------------------------------------------------------ */
+
+.qibla-stats {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.qibla-acc {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.qibla-acc--warn {
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+}
+
+.qibla-stats__grid {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.qibla-stats__grid li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 4px;
+  border-radius: 13px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  text-align: center;
+  min-width: 0;
+}
+
+.qibla-stats__grid small {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.qibla-stats__grid b {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.qibla-stats__grid em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ *
+ * بطاقة الموقع
+ * ------------------------------------------------------------------ */
+
+.qibla-loc {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.qibla-loc__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.qibla-loc__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.qibla-loc__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.qibla-loc__name {
+  font-size: 14.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qibla-loc__coords {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.qibla-loc__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.qibla-loc__btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+
+.qibla-loc__btn:active {
+  transform: scale(0.97);
+}
+
+.qibla-loc__btn:disabled {
+  opacity: 0.55;
+}
+
+.qibla-loc__btn--primary {
+  color: var(--on-primary);
+  background: var(--primary);
+  border-color: transparent;
+}
+
+.qibla-loc__hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.qibla-loc__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--danger-text);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  padding: 9px 11px;
+  border-radius: 10px;
+}
+
+.qibla-loc__error span {
+  flex: 1;
+  min-width: 0;
+}
+
+.qibla-loc__link {
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--danger-text);
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ *
+ * حالات تعطّل المستشعر
+ * ------------------------------------------------------------------ */
+
+.qibla-broken {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px 6px;
+  text-align: center;
+}
+
+.qibla-broken__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+}
+
+.qibla-broken h3 {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.qibla-broken > p {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  max-width: 300px;
+}
+
+.qibla-broken__static {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 12px 22px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+.qibla-broken__static span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.qibla-broken__static strong {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.qibla-broken__static em {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--primary);
+}
+
+.qibla-broken__detail {
+  font-size: 11.5px !important;
+  color: var(--danger-text) !important;
+}
+
+.qibla-broken__retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.qibla-broken__retry:active {
+  transform: scale(0.97);
+}
+
+/* ------------------------------------------------------------------ *
+ * تقليل الحركة
+ * ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .qibla-dial__spinner {
+    animation-duration: 2s;
+  }
+  .qibla-dial--aligned .qibla-dial__ring {
+    animation: none;
+  }
+  .qibla-delta__arrow {
+    transition: none;
+  }
+}

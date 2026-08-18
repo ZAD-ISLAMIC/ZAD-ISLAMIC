@@ -47,13 +47,21 @@ export function haversineKm(aLat, aLon, bLat, bLon) {
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
 }
 
+const CHUNK = 10000
+const slep = () => new Promise((resolve) => setTimeout(resolve, 0))
+
 /**
  * Reverse-geocode coordinates to the nearest city in geo.json.
  * maxKm caps how far a match can be; returns null when nothing is close.
+ *
+ * Processes cities in chunks and yields to the event loop between batches so
+ * the UI (e.g. the Qibla compass animation) never stalls on the 141k-city
+ * scan, even though geo.json is only loaded by the prayer-times path.
  */
 export async function findNearestCity(lat, lon, maxKm = 200) {
   const { countries } = await loadGeo()
   let best = null
+  let seen = 0
   for (const c of countries) {
     const cDist = haversineKm(lat, lon, c.lat, c.lon)
     for (const [ar, en, clat, clon] of c.cities) {
@@ -73,6 +81,10 @@ export async function findNearestCity(lat, lon, maxKm = 200) {
       }
       // If the country capital is close but the city list is huge, early-exit
       if (d < 1) break
+      if (++seen >= CHUNK) {
+        seen = 0
+        await slep()
+      }
     }
     if (cDist < 2 && best && best.d < 5) break
   }

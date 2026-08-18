@@ -1,0 +1,22 @@
+{
+  "name": "com.rn0x.qibla",
+  "version": "1.0.0",
+  "description": "Tilt-compensated compass azimuth stream for the Qibla screen (Cordova, Android)",
+  "author": "rn0x",
+  "cordova": {
+    "id": "com.rn0x.qibla",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "compass",
+    "sensor",
+    "rotation-vector",
+    "azimuth",
+    "qibla",
+    "android"
+  ],
+  "license": "MIT"
+}

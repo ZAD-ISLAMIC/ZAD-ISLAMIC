@@ -175,13 +175,17 @@ export function messageFor(code) {
  * Build a full location object from coordinates: best city match + timezone.
  * @returns {Promise<{ lat, lon, method, countryAr, cityAr, label, tz, ... }>}
  */
-export async function locationFromCoords(lat, lon, method = 'gps') {
+export async function locationFromCoords(lat, lon, method = 'gps', { exact = false } = {}) {
   const tz = getDeviceTimeZone()
   let matched = null
-  try {
-    matched = await findNearestCity(lat, lon)
-  } catch {
-    matched = null
+  if (!exact) {
+    // Only the city-snapped path (prayer times) needs reverse geocoding; the
+    // Qibla uses the raw GPS fix so it must never block on the geo.json load.
+    try {
+      matched = await findNearestCity(lat, lon)
+    } catch {
+      matched = null
+    }
   }
   const base = {
     lat,
@@ -192,7 +196,7 @@ export async function locationFromCoords(lat, lon, method = 'gps') {
     cityAr: matched?.cityAr || '',
     countryCode: matched?.countryCode || '',
   }
-  if (matched && (method === 'geo' || method === 'gps')) {
+  if (!exact && matched && (method === 'geo' || method === 'gps')) {
     // use the city's canonical center so times match its official timezone
     base.lat = matched.lat
     base.lon = matched.lon
