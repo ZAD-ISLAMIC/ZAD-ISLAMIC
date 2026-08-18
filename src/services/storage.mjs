@@ -28,6 +28,18 @@ export const storage = {
     }
   },
 
+  /** كل المفاتيح المحفوظة (بدون بادئة التطبيق). */
+  keys() {
+    try {
+      const prefix = getPrefix()
+      return Object.keys(window.localStorage)
+        .filter((k) => k.startsWith(prefix))
+        .map((k) => k.slice(prefix.length))
+    } catch {
+      return []
+    }
+  },
+
   clear() {
     const keys = Object.keys(window.localStorage).filter((k) =>
       k.startsWith(getPrefix())

@@ -28,6 +28,14 @@ test('getHeaderMeta resolves the decoded adhkar key too', () => {
   assert.equal(meta.back, 'history')
 })
 
+test('getHeaderMeta resolves settings sub-pages back to /settings', () => {
+  assert.equal(getHeaderMeta('/settings/reading').title, 'القراءة والخطوط')
+  assert.equal(getHeaderMeta('/settings/reading').back, '/settings')
+  assert.equal(getHeaderMeta('/settings/support').title, 'الدعم والتبرع')
+  assert.equal(getHeaderMeta('/settings/unknown').title, 'الإعدادات')
+  assert.equal(getHeaderMeta('/settings/unknown').back, '/settings')
+})
+
 /* ------------------------------------------------------------------ *
  * Dynamic title store — the fatwa detail screen feeds its own title
  * ------------------------------------------------------------------ */

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useCallback, useSyncExternalStore } from 'react'
 import { storage } from '../services/storage.mjs'
 import { useLocalStorage } from './useLocalStorage.mjs'
 
@@ -14,9 +14,36 @@ export const STATUS_BAR_COLORS = {
   light: '#ffffff',
 }
 
+function systemPrefersDark() {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  )
+}
+
+function subscribeSystemTheme(fn) {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return () => {}
+  }
+  const mq = window.matchMedia('(prefers-color-scheme: dark)')
+  mq.addEventListener('change', fn)
+  return () => mq.removeEventListener('change', fn)
+}
+
+function getSystemThemeSnapshot() {
+  return systemPrefersDark() ? 'dark' : 'light'
+}
+
+/** Resolve the effective theme: "system" follows the OS preference. */
+export function resolveTheme(theme) {
+  return theme === 'system' ? getSystemThemeSnapshot() : theme
+}
+
 export function syncSystemBars(theme) {
-  const navColor = THEME_COLORS[theme] || THEME_COLORS.dark
-  const statusBarColor = STATUS_BAR_COLORS[theme] || STATUS_BAR_COLORS.dark
+  const resolved = resolveTheme(theme)
+  const navColor = THEME_COLORS[resolved] || THEME_COLORS.dark
+  const statusBarColor = STATUS_BAR_COLORS[resolved] || STATUS_BAR_COLORS.dark
   const opts = { statusBarColor, navBarColor: navColor }
 
   try {
@@ -35,26 +62,43 @@ export function syncSystemBars(theme) {
 }
 
 export function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme
+  const resolved = resolveTheme(theme)
+  document.documentElement.dataset.theme = resolved
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta && THEME_COLORS[theme]) {
-    meta.setAttribute('content', THEME_COLORS[theme])
+  if (meta && THEME_COLORS[resolved]) {
+    meta.setAttribute('content', THEME_COLORS[resolved])
   }
-  syncSystemBars(theme)
+  syncSystemBars(resolved)
 }
 
 export function getInitialTheme() {
   return storage.get(THEME_KEY, 'dark')
 }
 
+/** The currently configured theme preference ("system" | "dark" | "light"). */
 export function useTheme() {
   const [theme, setTheme] = useLocalStorage(THEME_KEY, 'dark')
 
+  // Re-resolve "system" whenever the OS scheme flips.
+  const systemTheme = useSyncExternalStore(subscribeSystemTheme, getSystemThemeSnapshot)
+
   useEffect(() => {
     applyTheme(theme)
-  }, [theme])
+  }, [theme, systemTheme])
 
-  const toggle = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))
+  const set = useCallback(
+    (next) => setTheme(next),
+    [setTheme]
+  )
 
-  return { theme, toggle }
+  const toggle = useCallback(
+    () =>
+      setTheme((t) => {
+        const resolved = resolveTheme(t)
+        return resolved === 'dark' ? 'light' : 'dark'
+      }),
+    [setTheme]
+  )
+
+  return { theme, setTheme: set, toggle, resolved: resolveTheme(theme) }
 }

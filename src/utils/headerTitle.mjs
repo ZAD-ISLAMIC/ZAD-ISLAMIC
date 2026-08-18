@@ -36,6 +36,17 @@ const TITLES = {
   '/settings': 'الإعدادات',
 }
 
+const SETTINGS_TITLES = {
+  reading: 'القراءة والخطوط',
+  prayer: 'حساب المواقيت',
+  adhan: 'الأذان والتنبيهات',
+  location: 'الموقع',
+  downloads: 'التنزيلات والتخزين',
+  data: 'البيانات والخصوصية',
+  support: 'الدعم والتبرع',
+  about: 'حول التطبيق',
+}
+
 /* الصفحات الجذرية (تظهر في الشبكة الرئيسية) غير الموجودة في شريط التنقل السفلي
    — يظهر فيها زر رجوع إلى القائمة الرئيسية. */
 const BOTTOM_NAV_PATHS = new Set(BOTTOM_NAV_ITEMS.map((i) => i.path))
@@ -118,11 +129,16 @@ export function getHeaderMeta(pathname) {
     } else if (base === '/khutbah') {
       const category = KHUTBAH_BY_SLUG.get(segments[1])
       if (category?.name) title = category.name
+    } else if (base === '/settings') {
+      const sub = SETTINGS_TITLES[segments[1]]
+      if (sub) title = sub
     }
   }
 
   let back = null
-  if (isSubPage) {
+  if (base === '/settings' && isSubPage) {
+    back = '/settings'
+  } else if (isSubPage) {
     back = 'history'
   } else if (ROOT_BACK_HOME.includes(base)) {
     back = '/home'

@@ -12,12 +12,12 @@ import { Icon } from '../ui/Icon.jsx'
 export function Header() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const { theme, toggle } = useTheme()
+  const { theme, toggle, resolved } = useTheme()
   const time = useClock()
   const { title: metaTitle, back } = getHeaderMeta(pathname)
   const dynamicTitle = useSyncExternalStore(subscribeHeader, getDynamicTitle)
   const title = back ? dynamicTitle || metaTitle : metaTitle
-  const isLight = theme === 'light'
+  const isLight = resolved === 'light'
 
   const goBack = () => (back === 'history' ? navigate(-1) : navigate(back))
 

@@ -24,6 +24,14 @@ const QuizScreen = lazy(() => import('./screens/QuizScreen.jsx'))
 const QuizCategoryScreen = lazy(() => import('./screens/QuizCategoryScreen.jsx'))
 const QuizSessionScreen = lazy(() => import('./screens/QuizSessionScreen.jsx'))
 const SettingsScreen = lazy(() => import('./screens/SettingsScreen.jsx'))
+const SettingsReadingScreen = lazy(() => import('./screens/settings/SettingsReadingScreen.jsx'))
+const SettingsPrayerScreen = lazy(() => import('./screens/settings/SettingsPrayerScreen.jsx'))
+const SettingsAdhanScreen = lazy(() => import('./screens/settings/SettingsAdhanScreen.jsx'))
+const SettingsLocationScreen = lazy(() => import('./screens/settings/SettingsLocationScreen.jsx'))
+const SettingsDownloadsScreen = lazy(() => import('./screens/settings/SettingsDownloadsScreen.jsx'))
+const SettingsDataScreen = lazy(() => import('./screens/settings/SettingsDataScreen.jsx'))
+const SettingsSupportScreen = lazy(() => import('./screens/settings/SettingsSupportScreen.jsx'))
+const SettingsAboutScreen = lazy(() => import('./screens/settings/SettingsAboutScreen.jsx'))
 const HistoryScreen = lazy(() => import('./screens/HistoryScreen.jsx'))
 const HistoryEraScreen = lazy(() => import('./screens/HistoryEraScreen.jsx'))
 const HistoryEventScreen = lazy(() => import('./screens/HistoryEventScreen.jsx'))
@@ -59,6 +67,14 @@ export function App() {
           <Route path="/quiz/:categoryEnglish" element={<QuizCategoryScreen />} />
           <Route path="/quiz/:categoryEnglish/:topicSlug/:level" element={<QuizSessionScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/settings/reading" element={<SettingsReadingScreen />} />
+          <Route path="/settings/prayer" element={<SettingsPrayerScreen />} />
+          <Route path="/settings/adhan" element={<SettingsAdhanScreen />} />
+          <Route path="/settings/location" element={<SettingsLocationScreen />} />
+          <Route path="/settings/downloads" element={<SettingsDownloadsScreen />} />
+          <Route path="/settings/data" element={<SettingsDataScreen />} />
+          <Route path="/settings/support" element={<SettingsSupportScreen />} />
+          <Route path="/settings/about" element={<SettingsAboutScreen />} />
           <Route path="/history" element={<HistoryScreen />} />
           <Route path="/history/:eraKey" element={<HistoryEraScreen />} />
           <Route path="/history/:eraKey/:id" element={<HistoryEventScreen />} />
