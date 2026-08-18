@@ -5,28 +5,28 @@ export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com
 export const GITHUB_REPO_URL = 'https://github.com/rn0x/altaqwaa-android/'
 
 export const NAV_ITEMS = [
-  { path: '/home', label: 'الرئيسية', icon: 'home' },
-  { path: '/quran', label: 'القرآن', icon: 'book' },
-  { path: '/tafseer', label: 'التفسير الميسر', icon: 'book-open' },
-  { path: '/adhkar', label: 'الأذكار', icon: 'beads' },
-  { path: '/hisn', label: 'حصن المسلم', icon: 'shield' },
-  { path: '/history', label: 'الموسوعة التاريخية', icon: 'scroll' },
-  { path: '/fatwas', label: 'فتاوى ابن باز', icon: 'feather' },
-  { path: '/khutbah', label: 'الخطب', icon: 'minbar' },
-  { path: '/prayer', label: 'المواقيت', icon: 'moon' },
-  { path: '/quiz', label: 'الأسئلة', icon: 'trophy' },
-  { path: '/tasbih', label: 'المسبحة', icon: 'bead' },
-  { path: '/radio', label: 'الراديو', icon: 'radio' },
-  { path: '/reciters', label: 'القرّاء', icon: 'mic' },
-  { path: '/settings', label: 'الإعدادات', icon: 'gear' },
+  { path: '/home', label: 'الرئيسية', short: 'الرئيسية', icon: 'home', accent: '#7c9cff' },
+  { path: '/quran', label: 'القرآن', short: 'المصحف', icon: 'book', accent: '#10b981' },
+  { path: '/tafseer', label: 'التفسير الميسر', short: 'التفسير', icon: 'book-open', accent: '#2dd4bf' },
+  { path: '/adhkar', label: 'الأذكار', short: 'الأذكار', icon: 'hand', accent: '#d4af37' },
+  { path: '/hisn', label: 'حصن المسلم', short: 'حصن المسلم', icon: 'shield', accent: '#60a5fa' },
+  { path: '/history', label: 'الموسوعة التاريخية', short: 'التاريخ', icon: 'scroll', accent: '#b48cff' },
+  { path: '/fatwas', label: 'فتاوى ابن باز', short: 'الفتاوى', icon: 'feather', accent: '#f59e0b' },
+  { path: '/khutbah', label: 'الخطب', short: 'الخطب', icon: 'minbar', accent: '#fb923c' },
+  { path: '/prayer', label: 'المواقيت', short: 'المواقيت', icon: 'moon-star', accent: '#7c9cff' },
+  { path: '/quiz', label: 'الأسئلة', short: 'الأسئلة', icon: 'help', accent: '#a78bfa' },
+  { path: '/tasbih', label: 'المسبحة', short: 'المسبحة', icon: 'beads', accent: '#34d399' },
+  { path: '/radio', label: 'الراديو', short: 'الراديو', icon: 'radio', accent: '#f472b6' },
+  { path: '/reciters', label: 'القرّاء', short: 'القرّاء', icon: 'mic', accent: '#38bdf8' },
+  { path: '/settings', label: 'الإعدادات', short: 'الإعدادات', icon: 'sliders', accent: '#64748b' },
 ]
 
 export const BOTTOM_NAV_ITEMS = [
   { path: '/home', label: 'الرئيسية', icon: 'home' },
   { path: '/quran', label: 'القرآن', icon: 'book' },
-  { path: '/prayer', label: 'المواقيت', icon: 'moon' },
-  { path: '/adhkar', label: 'الأذكار', icon: 'beads' },
-  { path: '/settings', label: 'الإعدادات', icon: 'gear' },
+  { path: '/prayer', label: 'المواقيت', icon: 'moon-star' },
+  { path: '/adhkar', label: 'الأذكار', icon: 'hand' },
+  { path: '/settings', label: 'الإعدادات', icon: 'sliders' },
 ]
 
 export const SCREENS_META = {

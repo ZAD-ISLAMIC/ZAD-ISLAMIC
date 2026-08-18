@@ -32,6 +32,10 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafsee
   const verseEls = useRef(new Map())
   const saveTimer = useRef(null)
   const scrollRaf = useRef(null)
+  // While the programmatic anchor-scroll settles, ignore scroll tracking so
+  // the centred verse keeps its highlight instead of being corrected to the
+  // one above (the 45% tracking line is not the 50% centre line).
+  const suppressTrackRef = useRef(false)
 
   const persist = useCallback(
     (verse) => {
@@ -59,6 +63,7 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafsee
   )
 
   const trackCurrent = useCallback(() => {
+    if (suppressTrackRef.current) return
     const root = getScrollRoot()
     if (!root || verseEls.current.size === 0) return
     const rootRect = root.getBoundingClientRect()
@@ -101,9 +106,17 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafsee
   useEffect(() => {
     if (!initialVerse || !verseEls.current.has(initialVerse)) return
     const el = verseEls.current.get(initialVerse)
+    // Pin the anchor verse explicitly so the highlight matches the deep link.
+    currentRef.current = initialVerse
+    setCurrent(initialVerse)
+    suppressTrackRef.current = true
     requestAnimationFrame(() => {
       el.scrollIntoView({ block: 'center' })
     })
+    const release = setTimeout(() => {
+      suppressTrackRef.current = false
+    }, 500)
+    return () => clearTimeout(release)
   }, [initialVerse])
 
   useEffect(() => {

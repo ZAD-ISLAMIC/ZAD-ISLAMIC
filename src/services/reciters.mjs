@@ -1,4 +1,4 @@
-import mp3quranData from '../resources/data/mp3quran.json'
+import mp3quranData from '../resources/data/mp3quran.json' with { type: 'json' }
 import { SURAH_META } from './surahsMeta.mjs'
 
 const TASHKEEL =

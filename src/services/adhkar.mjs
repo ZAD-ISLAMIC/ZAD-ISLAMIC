@@ -1,4 +1,4 @@
-import azkarData from '../resources/data/azkar.json'
+import azkarData from '../resources/data/azkar.json' with { type: 'json' }
 import { storage } from './storage.mjs'
 import { arabicDigits } from './quran.mjs'
 

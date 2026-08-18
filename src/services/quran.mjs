@@ -1,4 +1,4 @@
-import quranData from '../resources/data/quran.json'
+import quranData from '../resources/data/quran.json' with { type: 'json' }
 import { arabicDigits } from '../utils/arabic.mjs'
 
 export const SURAHS = quranData
