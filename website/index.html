@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>التقوى — تطبيق إسلامي متكامل | مصحف، أذكار، مواقيت صلاة، قبلة والمزيد</title>
+  <meta name="description" content="التقوى: رفيق المسلم اليومي — مصحف كامل مع القرّاء، تفسير ميسر، مواقيت الصلاة مع إشعارات الأذان، اتجاه القبلة، الأذكار وحصن المسلم، راديو، فتاوى ومسابح. مجاني، مفتوح المصدر وبلا إعلانات.">
+  <meta name="keywords" content="التقوى, تطبيق إسلامي, مصحف, قرآن, تفسير, أذكار, حصن المسلم, مواقيت الصلاة, القبلة, راديو القرآن, فتاوى ابن باز, ختمة, تسبيح">
+  <meta name="author" content="Rayan Almalki">
+  <meta name="theme-color" content="#071122">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="التقوى">
+  <meta property="og:locale" content="ar_AR">
+  <meta property="og:title" content="التقوى — تطبيق إسلامي متكامل">
+  <meta property="og:description" content="مصحف كامل مع القرّاء، تفسير ميسر، مواقيت الصلاة وإشعارات الأذان، القبلة، الأذكار، الراديو والمزيد. مجاني وبلا إعلانات.">
+  <meta property="og:url" content="https://rn0x.github.io/altaqwaa-android/">
+  <meta property="og:image" content="https://rn0x.github.io/altaqwaa-android/assets/og-image.png">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="التقوى — تطبيق إسلامي متكامل">
+  <meta name="twitter:description" content="مصحف، تفسير، مواقيت صلاة، قبلة، أذكار وراديو. مجاني ومفتوح المصدر.">
+  <meta name="twitter:image" content="https://rn0x.github.io/altaqwaa-android/assets/og-image.png">
+
+  <link rel="canonical" href="https://rn0x.github.io/altaqwaa-android/">
+  <link rel="icon" type="image/png" href="assets/app-icon-512.png">
+  <link rel="apple-touch-icon" href="assets/app-icon-512.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="site.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "التقوى",
+    "alternateName": "Al-Taqwaa",
+    "operatingSystem": "Android",
+    "applicationCategory": "LifestyleApplication",
+    "applicationSubCategory": "Islamic",
+    "softwareVersion": "3.0.0",
+    "inLanguage": "ar",
+    "description": "تطبيق إسلامي متكامل: مصحف مع القرّاء، تفسير ميسر، مواقيت الصلاة، اتجاه القبلة، الأذكار وحصن المسلم، المسبحة، راديو، فتاوى ابن باز، الخطب، الموسوعة التاريخية والأسئلة التفاعلية.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "SAR"
+    },
+    "installUrl": "https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa",
+    "codeRepository": "https://github.com/rn0x/altaqwaa-android",
+    "author": {
+      "@type": "Person",
+      "name": "Rayan Almalki",
+      "url": "https://i8x.net"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "التقوى"
+    },
+    "screenshot": [
+      "https://rn0x.github.io/altaqwaa-android/assets/screens/الرئيسية_الوضع_النهاري.jpg",
+      "https://rn0x.github.io/altaqwaa-android/assets/screens/المصحف_الفاتحة.jpg",
+      "https://rn0x.github.io/altaqwaa-android/assets/screens/الاذكار_الرئيسية.jpg"
+    ]
+  }
+  </script>
+  <noscript><style>.reveal{opacity:1;transform:none}.faq-a{max-height:none!important}</style></noscript>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "هل تطبيق التقوى مجاني؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "نعم، التطبيق مجاني بالكامل ومفتوح المصدر، بلا إعلانات وبدون اشتراكات." }
+      },
+      {
+        "@type": "Question",
+        "name": "هل يحتاج التطبيق إنترنت؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "غالبية المحتوى يعمل بدون إنترنت. يحتاج الإنترنت فقط لراديو البث المباشر وتحميل الصوتيات والفتاوى والخطب الإضافية." }
+      },
+      {
+        "@type": "Question",
+        "name": "هل يجمع التطبيق بياناتي الشخصية؟",
+        "acceptedAnswer": { "@type": "Answer", "text": "لا. التطبيق لا يطلب حساباً ولا يجمع ولا يشارك أي بيانات شخصية؛ كل المحتوى مخزّن على جهازك." }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ===== الشريط العلوي ===== -->
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#top">
+        <img src="assets/app-icon-512.png" alt="شعار تطبيق التقوى" width="40" height="40">
+        <span class="brand-name">التق<em>وى</em></span>
+      </a>
+
+      <nav aria-label="التنقل الرئيسي">
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#features">المميزات</a></li>
+          <li><a href="#screens">لقطات الشاشة</a></li>
+          <li><a href="#download">التحميل</a></li>
+          <li><a href="#faq">الأسئلة الشائعة</a></li>
+          <li><a href="privacy.html">الخصوصية</a></li>
+        </ul>
+      </nav>
+
+      <a href="#download" class="btn btn-primary nav-cta">حمّله الآن</a>
+
+      <button class="nav-toggle" id="navToggle" aria-label="فتح القائمة" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero" id="top">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <span class="hero-badge"><span class="dot"></span> مجاني · مفتوح المصدر · بلا إعلانات</span>
+        <h1>
+          رفيقك اليومي في
+          <span class="grad-text">القرآن</span> والأذكار
+          <br>
+          <span class="gold-text">والمواقيت</span> والقبلة
+        </h1>
+        <p class="lead">
+          مصحف كامل بصوت كبار القرّاء، تفسير ميسر، مواقيت صلاة بأذان دقيق، اتجاه القبلة،
+          حصن المسلم، راديو، فتاوى ابن باز والمزيد — كل هذا في تطبيق عربي أنيق يعمل على جهازك.
+        </p>
+
+        <div class="hero-cta">
+          <a href="https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa" target="_blank" rel="noopener" class="store-badge" data-track="play_hero">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5V3.5c0-.28.22-.5.5-.5L5 3l10 9-10 9-1.5-.5c-.28 0-.5-.22-.5-.5zm15.06-5.4L13.6 13l4.46-2.1c.28-.12.6.06.6.35v5.2c0 .3-.32.47-.6.35z"/><path d="M21 5.3c.35.3.4.8.1 1.1L11.6 17l4.9 5.6c.3.35.25.9-.15 1.2l-1.6 1.5-7.5-8.4L21 5.3z" opacity=".9"/><path d="M3 3.5c0-.28.22-.5.5-.5L5 3l10 9L3 21.5c-.28 0-.5-.22-.5-.5V3.5z" opacity=".6"/></svg>
+            <span><small>متوفر على</small><strong>Google Play</strong></span>
+          </a>
+          <a href="#" id="apkBtn" class="btn btn-primary btn-xl" data-track="apk_hero" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            تحميل APK مباشر
+          </a>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat"><div class="stat-num">v<span id="js-version">3.0.0</span></div><div class="stat-label">أحدث إصدار</div></div>
+          <div class="stat"><div class="stat-num"><span id="js-downloads">+2K</span></div><div class="stat-label">تحميل على GitHub</div></div>
+          <div class="stat"><div class="stat-num">12<span>+</span></div><div class="stat-label">قسم إسلامي</div></div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="phone-back" aria-hidden="true"><img src="assets/screens/المصحف_الفاتحة.jpg" alt="" loading="lazy"></div>
+        <div class="phone">
+          <div class="notch" aria-hidden="true"></div>
+          <div class="screen"><img src="assets/screens/الرئيسية_الوضع_النهاري.jpg" alt="واجهة تطبيق التقوى" loading="lazy"></div>
+        </div>
+        <div class="float-card top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          أذكار الصباح والمساء
+        </div>
+        <div class="float-card mid blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          قبلة دقيقة من أي مكان
+        </div>
+        <div class="float-card bottom gold">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          إشعارات الأذان
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== شريط الإحصائيات ===== -->
+  <div class="ribbon">
+    <div class="container">
+      <div class="ribbon-inner">
+        <div class="ribbon-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <b>114 <em>سورة</em></b>
+          <small>بكامل المصحف</small>
+        </div>
+        <div class="ribbon-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+          <b>30 <em>جزء</em></b>
+          <small>استماع كامل</small>
+        </div>
+        <div class="ribbon-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20z"/><path d="m9 12 2 2 4-4"/></svg>
+          <b>5 <em>صلوات</em></b>
+          <small>مواقيت وإشعارات</small>
+        </div>
+        <div class="ribbon-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.5 4H3l4 3-2 4 7 4 7-4-2-4 4-3h-7.5L12 3z"/></svg>
+          <b>1000 <em>+</em></b>
+          <small>أذكار وفتاوى وموارد</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== المميزات ===== -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="section-tag">✦ المميزات</span>
+        <h2>كل ما يحتاجه المسلم — في تطبيق واحد</h2>
+        <p>محتوى إسلامي موثوق من مصادر معتمدة، بتصميم عربي أنيق نهاري وليلي يعمل بسلاسة على أي جهاز.</p>
+      </div>
+
+      <div class="features-grid">
+        <article class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div>
+          <h3>المصحف والاستماع</h3>
+          <p>قراءة كاملة للمصحف مع الاستماع بصوت كبار القرّاء، وخطة ختمة منظمة.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </div>
+          <h3>التفسير الميسّر</h3>
+          <p>تفسير الآيات بأسلوب سهل قريب لكل قارئ، ملازم للصفحة أثناء القراءة.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>مواقيت الصلاة</h3>
+          <p>مواقيت دقيقة حسب موقعك مع إشعارات الأذان ووضع الصوت، يدعم المدن الفعلية.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <h3>اتجاه القبلة</h3>
+          <p>بوصلة دقيقة تحدد القبلة من أي مكان، سهلة الاستخدام وبدقة عالية.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.4 3A5.2 5.2 0 0 0 12 5.2 5.2 5.2 0 0 0 7.6 3 5.2 5.2 0 0 0 2.4 8.2c0 7 9.6 12.8 9.6 12.8s9.6-5.8 9.6-12.8A5.2 5.2 0 0 0 16.4 3z"/></svg>
+          </div>
+          <h3>الأذكار وحصن المسلم</h3>
+          <p>أذكار الصباح والمساء والنوم، مقروءة ومسموعة، تعمل بدون إنترنت.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          </div>
+          <h3>المسبحة الإلكترونية</h3>
+          <p>تسبيح بعدّاد يدوي أو صوتي، مع حفظ عددك وإحصائيات التقدم.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          </div>
+          <h3>راديو التقوى</h3>
+          <p>بث مباشر لأفضل القنوات القرآنية، مع مشغّل وأنواع وأذاعة مريحة.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <h3>مكتبة القرّاء</h3>
+          <p>اختيار قارئك المفضل من بين كبار القرّاء للاستماع لآيات المصحف.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          </div>
+          <h3>فتاوى ابن باز</h3>
+          <p>فتاوى مكتوبة ومسموعة لسماحة الشيخ ابن باز رحمه الله، مرتبة وبحث سهل.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg>
+          </div>
+          <h3>خطب المنبر</h3>
+          <p>خطب منبرية قيّمة مع مرفقات PDF و Word للتداول والاستفادة.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          </div>
+          <h3>الموسوعة التاريخية</h3>
+          <p>أحداث السيرة والتاريخ الإسلامي من مصادر موثوقة، مقسمة لسنوات وأحداث.</p>
+        </article>
+
+        <article class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h3>أسئلة تفاعلية</h3>
+          <p>أبواب مقفلة ونجوم وإنجازات تجعل التعلم والمراجعة ممتعاً ومحفزاً.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== لقطات الشاشة ===== -->
+  <section class="section" id="screens" style="padding-top:0">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="section-tag">✦ لقطات من التطبيق</span>
+        <h2>تصميم عربي أنيق بروح إسلامية</h2>
+        <p>وضع نهاري وليلي مريح للعين، وألوان مستوحاة من الطابع الإسلامي الأصيل.</p>
+      </div>
+
+      <div class="screens reveal">
+        <div class="screens-track">
+          <figure class="screen-item"><img src="assets/screens/سبلاش_داخلي.jpg" alt="شاشة البداية" loading="lazy" width="172" height="364"><small>شاشة البداية</small></figure>
+          <figure class="screen-item"><img src="assets/screens/الرئيسية_الوضع_النهاري.jpg" alt="الرئيسية - الوضع النهاري" loading="lazy" width="172" height="364"><small>الرئيسية النهارية</small></figure>
+          <figure class="screen-item"><img src="assets/screens/المواقيت.jpg" alt="مواقيت الصلاة" loading="lazy" width="172" height="364"><small>مواقيت الصلاة</small></figure>
+          <figure class="screen-item"><img src="assets/screens/المصحف_الفاتحة.jpg" alt="صفحة المصحف" loading="lazy" width="172" height="364"><small>المصحف</small></figure>
+          <figure class="screen-item"><img src="assets/screens/الاذكار_الرئيسية.jpg" alt="الأذكار" loading="lazy" width="172" height="364"><small>الأذكار</small></figure>
+          <figure class="screen-item"><img src="assets/screens/اتجاه_القبلة.jpg" alt="اتجاه القبلة" loading="lazy" width="172" height="364"><small>اتجاه القبلة</small></figure>
+          <figure class="screen-item"><img src="assets/screens/المسبحة_تبويب_يدوي.jpg" alt="المسبحة الإلكترونية" loading="lazy" width="172" height="364"><small>المسبحة الإلكترونية</small></figure>
+          <figure class="screen-item"><img src="assets/screens/راديو.jpg" alt="راديو التقوى" loading="lazy" width="172" height="364"><small>راديو التقوى</small></figure>
+          <figure class="screen-item"><img src="assets/screens/القراء.jpg" alt="مكتبة القرّاء" loading="lazy" width="172" height="364"><small>القرّاء</small></figure>
+          <figure class="screen-item"><img src="assets/screens/فتاوى_ابن_باز.jpg" alt="فتاوى ابن باز" loading="lazy" width="172" height="364"><small>فتاوى ابن باز</small></figure>
+          <figure class="screen-item"><img src="assets/screens/الموسوعة_التاريخية.jpg" alt="الموسوعة التاريخية" loading="lazy" width="172" height="364"><small>الموسوعة التاريخية</small></figure>
+          <figure class="screen-item"><img src="assets/screens/الاسئلة_الرئيسية.jpg" alt="الأسئلة التفاعلية" loading="lazy" width="172" height="364"><small>الأسئلة التفاعلية</small></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== كيف تبدأ ===== -->
+  <section class="section" id="howto" style="padding-top:0">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="section-tag">✦ ابدأ الآن</span>
+        <h2>في أقل من دقيقة تبدأ رحلتك</h2>
+      </div>
+      <div class="how-grid">
+        <div class="how-card reveal">
+          <div class="step">1</div>
+          <h3>حمّل التطبيق</h3>
+          <p>من متجر Google Play أو مباشرة عبر الملف من GitHub Releases.</p>
+        </div>
+        <div class="how-card reveal">
+          <div class="step">2</div>
+          <h3>اضبط موقعك</h3>
+          <p>حدد موقعك تلقائياً لتحصل على مواقيت دقيقة واتجاه القبلة.</p>
+        </div>
+        <div class="how-card reveal">
+          <div class="step">3</div>
+          <h3>ابدأ الاستفادة</h3>
+          <p>اقرأ واستمع وأذَّكر وحصّن نفسك — كل شيء متاح أينما كنت.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== التحميل ===== -->
+  <section class="section" id="download" style="padding-top:0">
+    <div class="container">
+      <div class="cta-final reveal">
+        <span class="section-tag">✦ التحميل</span>
+        <h2>ابدأ رحلتك مع <span class="grad-text" style="background:linear-gradient(135deg,#f4d45f,#d4af37);-webkit-background-clip:text;background-clip:text;color:transparent">التقوى</span></h2>
+        <p>مجاني بالكامل، بدون إعلانات، وبياناتك تبقى على جهازك. <span id="js-meta"></span></p>
+
+        <div class="hero-cta">
+          <a href="https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa" target="_blank" rel="noopener" class="store-badge" data-track="play_cta">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20.5V3.5c0-.28.22-.5.5-.5L5 3l10 9-10 9-1.5-.5c-.28 0-.5-.22-.5-.5zm15.06-5.4L13.6 13l4.46-2.1c.28-.12.6.06.6.35v5.2c0 .3-.32.47-.6.35z"/><path d="M21 5.3c.35.3.4.8.1 1.1L11.6 17l4.9 5.6c.3.35.25.9-.15 1.2l-1.6 1.5-7.5-8.4L21 5.3z" opacity=".9"/><path d="M3 3.5c0-.28.22-.5.5-.5L5 3l10 9L3 21.5c-.28 0-.5-.22-.5-.5V3.5z" opacity=".6"/></svg>
+            <span><small>متوفر على</small><strong>Google Play</strong></span>
+          </a>
+          <a href="#" id="apkBtn2" class="btn btn-gold btn-xl" data-track="apk_cta" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            تحميل APK مباشر
+          </a>
+        </div>
+
+        <p style="font-size:0.9rem;margin:0">
+          <a href="https://github.com/rn0x/altaqwaa-android/releases" target="_blank" rel="noopener">جميع الإصدارات السابقة على GitHub</a>
+          <span aria-hidden="true"> · </span>
+          <a href="https://github.com/rn0x/altaqwaa-android" target="_blank" rel="noopener">الكود المصدري (GPL-3.0)</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== الأسئلة الشائعة ===== -->
+  <section class="section" id="faq" style="padding-top:0">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="section-tag">✦ الأسئلة الشائعة</span>
+        <h2>أسئلة يكثر طرحها</h2>
+      </div>
+
+      <div class="faq-list reveal">
+        <div class="faq-item open">
+          <button class="faq-q" aria-expanded="true">هل تطبيق التقوى مجاني؟ <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>نعم، التطبيق مجاني بالكامل ومفتوح المصدر، بلا إعلانات ولا اشتراكات، وبدون أي عمليات شراء داخل التطبيق.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">هل يحتاج التطبيق إنترنت؟ <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>غالبية المحتوى — المصحف، التفسير، الأذكار، الفتاوى — يعمل بدون إنترنت. الإنترنت يُستخدم فقط لراديو البث المباشر، وتحميل الصوتيات والفتاوى والخطب الإضافية.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">هل يجمع التطبيق بياناتي الشخصية؟ <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>إطلاقاً. لا يطلب التطبيق حساباً ولا يجمع ولا يحفظ ولا يشارك أي بيانات شخصية. كل المحتوى والتقدم مخزّن محلياً على جهازك.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">ما هي الأذونات التي يحتاجها التطبيق؟ <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>الموقع فقط لتحديد مواقيت الصلاة واتجاه القبلة حسب منطقتك، والإشعارات لتنبيهات الأذان، والإنترنت للمحتوى المباشر. يمكنك إدارة كل ذلك من إعدادات الجهاز.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">كيف أحذف بياناتي أو ألغيها؟ <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>ببساطة: حذف التطبيق من جهازك يحذف كل بياناتك نهائياً، لأنها لا تُخزَّن في أي مكان آخر.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q" aria-expanded="false">كيف أحصل على التحديثات؟ <svg class="chev" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>التحديثات تصل تلقائياً عبر Google Play، وعبر GitHub Releases لأي إصدار جديد أو ملف APK مباشر.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="#top">
+            <img src="assets/app-icon-512.png" alt="شعار تطبيق التقوى" width="40" height="40">
+            <span class="brand-name">التق<em>وى</em></span>
+          </a>
+          <p>تطبيق إسلامي مجاني ومفتوح المصدر، رفيق المسلم اليومي في القرآن والأذكار والمواقيت وأكثر.</p>
+        </div>
+        <div class="footer-col">
+          <h4>التحميل</h4>
+          <ul>
+            <li><a href="https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa" target="_blank" rel="noopener">Google Play</a></li>
+            <li><a href="https://github.com/rn0x/altaqwaa-android/releases" target="_blank" rel="noopener">GitHub Releases</a></li>
+            <li><a href="#apkBtn" id="footerApk">تحميل APK مباشر</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>المزيد</h4>
+          <ul>
+            <li><a href="privacy.html">سياسة الخصوصية</a></li>
+            <li><a href="https://github.com/rn0x/altaqwaa-android" target="_blank" rel="noopener">المصدر المفتوح</a></li>
+            <li><a href="https://github.com/rn0x/altaqwaa-android/blob/main/LICENSE" target="_blank" rel="noopener">الرخصة GPL-3.0</a></li>
+            <li><a href="https://i8x.net" target="_blank" rel="noopener">تواصل مع المطور</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span>© <span id="js-year">2026</span> تطبيق التقوى — جميع الحقوق محفوظة.</span>
+        <span>صُنع بحب لإثراء المحتوى الإسلامي · <a href="https://github.com/rn0x/altaqwaa-android" target="_blank" rel="noopener">GitHub</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* --- القائمة المتنقلة --- */
+      var navToggle = document.getElementById('navToggle');
+      var navLinks = document.getElementById('navLinks');
+      navToggle.addEventListener('click', function () {
+        var open = navLinks.classList.toggle('open');
+        navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+
+      /* --- الأكورديون للأسئلة --- */
+      var faqItems = document.querySelectorAll('.faq-item');
+      faqItems.forEach(function (item) {
+        var q = item.querySelector('.faq-q');
+        q.addEventListener('click', function () {
+          var isOpen = item.classList.contains('open');
+          faqItems.forEach(function (i) { i.classList.remove('open'); i.querySelector('.faq-q').setAttribute('aria-expanded', 'false'); });
+          if (!isOpen) { item.classList.add('open'); q.setAttribute('aria-expanded', 'true'); }
+        });
+      });
+
+      /* --- أنيميشن الظهور عند التمرير --- */
+      var revealEls = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.12 });
+        revealEls.forEach(function (el) { io.observe(el); });
+      } else {
+        revealEls.forEach(function (el) { el.classList.add('in'); });
+      }
+
+      /* --- أحدث إصدار من GitHub Releases (مع إسقاط آمن) --- */
+      var GH_REPO = 'rn0x/altaqwaa-android';
+      var versionEl = document.getElementById('js-version');
+      var downloadsEl = document.getElementById('js-downloads');
+      var apkBtn = document.getElementById('apkBtn');
+      var apkBtn2 = document.getElementById('apkBtn2');
+      var footerApk = document.getElementById('footerApk');
+      var metaEl = document.getElementById('js-meta');
+      var releaseUrl = 'https://github.com/' + GH_REPO + '/releases';
+
+      function formatDownload(n) {
+        if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.0', '') + 'M';
+        if (n >= 1000) return (n / 1000).toFixed(1).replace('.0', '') + 'K';
+        return String(n);
+      }
+
+      function setApk(href, label) {
+        [apkBtn, apkBtn2, footerApk].forEach(function (b) {
+          if (!b) return;
+          b.href = href;
+          b.setAttribute('target', '_blank');
+          if (label && b === footerApk) b.textContent = label;
+        });
+      }
+
+      setApk(releaseUrl);
+
+      fetch('https://api.github.com/repos/' + GH_REPO + '/releases/latest', {
+        headers: { 'Accept': 'application/vnd.github+json' }
+      }).then(function (r) { return r.ok ? r.json() : Promise.reject(); }).then(function (data) {
+        if (versionEl && data.tag_name) versionEl.textContent = data.tag_name.replace(/^v/i, '') || data.tag_name;
+
+        var apk = (data.assets || []).filter(function (a) { return /\.apk$/i.test(a.name); })[0];
+        if (apk && apk.browser_download_url) {
+          setApk(apk.browser_download_url, 'تحميل APK ' + (data.tag_name || ''));
+          var size = (apk.size / 1048576).toFixed(0);
+          if (metaEl) metaEl.innerHTML = 'آخر إصدار <b style="color:#d4af37">' + (data.tag_name || '') + '</b> — حجم الملف متوفر الآن.';
+        } else if (metaEl) {
+          metaEl.innerHTML = 'آخر إصدار <b style="color:#d4af37">' + (data.tag_name || '') + '</b>.';
+        }
+
+        if (downloadsEl) {
+          var total = data.assets.reduce(function (acc, a) { return acc + (a.download_count || 0); }, 0);
+          if (total > 0) downloadsEl.textContent = '+' + formatDownload(total);
+        }
+      }).catch(function () {
+        /* الإنترنت غير متاح أو رسوم API — تبقى القيم الافتراضية */
+      });
+
+      /* --- السنة في التذييل --- */
+      var y = new Date().getFullYear();
+      document.getElementById('js-year').textContent = y;
+
+      /* --- تتبع مخصص بدون خدمات خارجية: يرسل إشارة شكل لنافذة أحادية الصفحة فقط --- */
+      document.querySelectorAll('[data-track]').forEach(function (a) {
+        a.addEventListener('click', function () {
+          try { localStorage.setItem('atq_dl_' + a.getAttribute('data-track'), String(Date.now())); } catch (e) {}
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

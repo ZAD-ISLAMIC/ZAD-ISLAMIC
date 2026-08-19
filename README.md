@@ -25,6 +25,14 @@
   <img src="https://img.shields.io/github/downloads/rn0x/altaqwaa-android/total?style=for-the-badge&logo=github&logoColor=white&label=GitHub%20Releases&color=0a1428" alt="تحميل من GitHub Releases">
 </a>
 
+## 🌐 الموقع التعريفي
+
+صفحة تحميل احترافية + سياسة خصوصية جاهزة لمتجر جوجل بلاي (في مجلد `website/`):
+
+- [الموقع التعريفي](https://rn0x.github.io/altaqwaa-android/) — صفحة هبوط عربي RTL بكل المميزات واللقطات والتحميل
+- [سياسة الخصوصية](https://rn0x.github.io/altaqwaa-android/privacy.html) — بعربي وإنجليزي، جاهزة للتقديم في Google Play
+- النشر تلقائي عبر [GitHub Actions](.github/workflows/deploy-website.yml) عند أي تعديل على `website/`
+
 ## ✨ المميزات
 
 - 📖 **المصحف** — قراءة كاملة مع الاستماع بصوت كبار القرّاء
@@ -88,6 +96,7 @@ npm run dev                 # خادم تطوير مع HMR على http://localho
 npm run build               # بناء web assets إلى www/
 npm run build:apk           # بناء APK Debug
 npm run build:apk:release   # بناء APK Release موقّع
+npm run build:aab:release   # بناء AAB (Android App Bundle) موقّع لـ Google Play
 npm run run:android         # بناء + تثبيت مباشرة على الجهاز
 ```
 
@@ -127,6 +136,6 @@ npm run keystore   # يولد مفتاح keystore + build.json
 
 <div align="center">
 
-[🌐 المتجر](https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa) · [🐙 GitHub](https://github.com/rn0x/altaqwaa-android) · [⬇️ Releases](https://github.com/rn0x/altaqwaa-android/releases)
+[🌐 المتجر](https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa) · [🌐 الموقع](https://rn0x.github.io/altaqwaa-android/) · [🔒 الخصوصية](https://rn0x.github.io/altaqwaa-android/privacy.html) · [🐙 GitHub](https://github.com/rn0x/altaqwaa-android) · [⬇️ Releases](https://github.com/rn0x/altaqwaa-android/releases)
 
 </div>
