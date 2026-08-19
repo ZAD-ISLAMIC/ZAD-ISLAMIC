@@ -167,3 +167,24 @@ platforms/android/app/build/outputs/apk/release/
 > يعرض `scripts/build.mjs` على cordova ملف `build.json` (الـ gitignored) عند
 > البناء الريليز عبر الوسم `--buildConfig build.json`. على جهاز جديد انسخ
 > `build.example.json` → `build.json` أو شغّل `npm run keystore`.
+
+## بناء AAB لـ Google Play
+
+متجر Google Play يستقبل حزمة **AAB** (Android App Bundle) الموقّعة للرفع:
+
+```bash
+npm run build:aab:release
+```
+
+مسار الحزمة الناتجة:
+```
+platforms/android/app/build/outputs/bundle/release/
+```
+
+`scripts/build.mjs` عند بناء الـ bundle:
+1. يفرض لغة JVM الإنجليزية في `platforms/android/gradle.properties`
+   (`-Duser.language=en -Duser.country=US`) — لأن bundletool يعتمد على لغة النظام،
+   وتحت اللغة العربية (`ar_SA`) يولّد أسماء dex بالأرقام العربية المشرقية
+   (`classes٢.dex`) فيفشل بناء الـ bundle.
+2. يستعمل `cordova compile` بدل `cordova build` لأن `build` يعيد تنفيذ
+   `cordova prepare` الذي يعيد ضبط `org.gradle.jvmargs` إلى الافتراضي.

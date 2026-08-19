@@ -14,6 +14,7 @@
     "postinstall": "node scripts/patch-cordova.mjs",
     "build:apk": "node scripts/build.mjs",
     "build:apk:release": "node scripts/build.mjs --release",
+    "build:aab:release": "node scripts/build.mjs --release --bundle",
     "install:apk": "node scripts/install.mjs",
     "keystore": "node scripts/create-keystore.mjs",
     "test:adhan": "node scripts/adhantest.mjs --install",

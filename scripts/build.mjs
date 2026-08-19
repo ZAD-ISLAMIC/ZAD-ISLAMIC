@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process'
 
 const release = process.argv.includes('--release')
+const bundle = process.argv.includes('--bundle')
 
 function run(command) {
   console.log(`\n> ${command}`)
@@ -30,10 +31,22 @@ run('python3 scripts/generate-icons.py')
 // also copies the res/ icon + splash layers into the platform.
 run('cordova prepare')
 
-// `cordova build` re-runs prepare, so the manifest cleanup happens in the
-// before_compile hook (config.xml) — just before javac/d8/packaging.
+// Force an English JVM locale for Gradle/bundletool. Under an Arabic OS locale
+// (ar_SA) bundletool formats dex indices with Arabic-Indic digits (classes٢.dex),
+// breaking --packageType=bundle. Must run after `cordova prepare` because prepare
+// resets org.gradle.jvmargs to Cordova's default each time.
+if (release) run('node scripts/patch-gradle-props.mjs')
 
-run(`cordova build android${release ? ' --release --buildConfig build.json' : ''}`)
+// Use `cordova compile` (not build) so the jvmargs patch above survives — build
+// re-runs prepare, which would wipe it. The manifest cleanup still runs via the
+// before_compile hook (config.xml), just before javac/d8/packaging.
+run(`cordova compile android${release ? ' --release --buildConfig build.json' : ''}${bundle ? ' -- --packageType=bundle' : ''}`)
 
-console.log('\nBuild complete. APK output:')
-console.log(release ? 'platforms/android/app/build/outputs/apk/release/' : 'platforms/android/app/build/outputs/apk/debug/')
+console.log('\nBuild complete. Output:')
+console.log(
+  bundle
+    ? 'platforms/android/app/build/outputs/bundle/release/'
+    : release
+      ? 'platforms/android/app/build/outputs/apk/release/'
+      : 'platforms/android/app/build/outputs/apk/debug/'
+)
