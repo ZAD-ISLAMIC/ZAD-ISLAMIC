@@ -5,14 +5,17 @@
 mirror للقراءة فقط ولا يقبل PR. لذلك خطوة التقديم النهائية تتم عبر **GitLab Merge Request**.
 
 كل شيء في هذا الريبو جاهز: البناء من المصدر، `scripts/fdroid-build.sh`،
-والملف reference `metadata/com.rn0x.altaqwaa.yml.example`.
+والملف المباشر `metadata/com.rn0x.altaqwaa.yml` (النسخة الرسمية الجاهزة للنسخ).
 
-## قبل البدء — تثبيت الحسابات
+> **متطلب حاسم**: يجب تنفيذ هذه الخطوات من **حساب GitLab شخصي** (مثل `rn0x`).
+> توكنات المشاريع/البوت لا تملك صلاحية إنشاء fork، وGitLab لا يسمح بفتح MR إلا
+> من فرعٍ داخل fork صالح لهذا المستودع (Team «fdroid/fdroiddata»).
 
-1. أنشئ/امسك حسابًا على GitLab (gitlab.com).
-2. (اختياري) وثّق هوية التطبيق عبر:
-   - `com.rn0x.altaqwaa` package مطابق لملف التفاصيل في متجر Google Play.
-3. (اختياري لكنه يسهّل القبول) أدر `f-droid.org` في ملف `LICENSE` والروابط.
+## قبل البدء — الحسابات
+
+1. سجّل دخولًا بحساب GitLab شخصي (gitlab.com).
+2. تأكد أن اسم حسابك يظهر fork سابقًا أو يمكنك الضغط على **Fork** في صفحة
+   `fdroid/fdroiddata`.
 
 ## الخطوات في GitLab
 
@@ -22,18 +25,14 @@ mirror للقراءة فقط ولا يقبل PR. لذلك خطوة التقدي�
 - ستحصل على fork باسمك: `https://gitlab.com/<you>/fdroiddata`
 
 ملاحظة: مجلد الـ fork ضخم (تاريخ ضخم) — استخدم الـ fork من web UI وعدّله عبر
-web IDE أو clone ضحل عند الحاجة.
+web IDE عند الحاجة.
 
 ### 2. أضف ملف الـ metadata
 المسار المطلوب بالضبط: `metadata/com.rn0x.altaqwaa.yml`
 
-استخدم محتوى الـ `metadata/com.rn0x.altaqwaa.yml.example` في هذا الريبو
-كنموذج، لكن **بلا امتداد `.example`**، وبإعادة طباعته عبر `fdroid rewritemeta`
-إن أردت ضبط الصيغة.
-
-باستخدام **Web IDE** من GitLab:
-- أنشئ مجلد `metadata` إن لم يكن موجودًا.
-- أنشئ الملف وألصق المحتوى (مرفق أدناه نسخة نظيفة).
+استخدم محتوى الـ `metadata/com.rn0x.altaqwaa.yml` (النظيف) في هذا الريبو مباشرة:
+- في Web IDE أنشئ مجلد `metadata` إن لم يوجد.
+- أنشئ الملف والصق محتوى الذي بالريبو (أو أنسخ الملف عبر git push).
 - Commit إلى فرع جديد مثل `add-com-rn0x-altaqwaa`.
 
 ### 3. افتح الـ Merge Request
@@ -76,11 +75,14 @@ NOTES
 
 ## ملف الـ metadata (محتوى مرجعي)
 
-انظر `metadata/com.rn0x.altaqwaa.yml.example` في هذا الريبو للنسخة المحدّثة
-المطابقة لما سُيقبل. الصيغة قد تتقبل تعديلات صغيرة من `fdroid rewritemeta`.
+## ملف الـ metadata (محتوى مرجعي)
+
+استخدم `metadata/com.rn0x.altaqwaa.yml` (في جذر هذا الريبو) فهو الملف الجاهز
+لوضعه كما هو داخل `metadata/` في الفورك. الحقل `versionCode` في build = 30001
+(مطابق لما ينتجه Cordova عن «3.0.1» — تحققنا عبر `aapt`).
 
 ## بعد الدمج
 
 - يُبنى التطبيق تلقائيًا ضمن دورة f-droid (كل أسبوع تقريبًا).
-- يُظهر للجميع في f-droid.org/app/com.rn0x.altaqwaa
+- يظهر للجميع في f-droid.org/app/com.rn0x.altaqwaa
 - التحديثات تُلتقط تلقائيًا من وسوم `vX.Y.Z` الجديدة في الريبو (AutoUpdateMode).
