@@ -3,6 +3,13 @@ import { execSync } from 'node:child_process'
 const release = process.argv.includes('--release')
 const bundle = process.argv.includes('--bundle')
 const skipNative = process.argv.includes('--skip-native') || process.env.SKIP_NATIVE_BUILD === '1'
+const skipSigning = process.argv.includes('--no-sign')
+const isFdroid = process.env.FDROID_BUILD === '1'
+
+// Ensure `vite`, `cordova`, `python3` etc. resolve even when PATH does not
+// include node_modules/.bin (e.g. F-Droid build server invokes this directly).
+const localBin = new URL('../node_modules/.bin', import.meta.url).pathname
+process.env.PATH = `${localBin}:${process.env.PATH || ''}`
 
 function run(command) {
   console.log(`\n> ${command}`)
@@ -50,7 +57,14 @@ if (release) run('node scripts/patch-gradle-props.mjs')
 // Use `cordova compile` (not build) so the jvmargs patch above survives — build
 // re-runs prepare, which would wipe it. The manifest cleanup still runs via the
 // before_compile hook (config.xml), just before javac/d8/packaging.
-run(`cordova compile android${release ? ' --release --buildConfig build.json' : ''}${bundle ? ' -- --packageType=bundle' : ''}`)
+// For F-Droid (isFdroid / skipSigning) we build a release APK WITHOUT the local
+// keystore: F-Droid signs APKs with its own key, and build.json contains
+// secrets that must never reach the build server. Cordova then emits
+// app-release-unsigned.apk.
+const signingArgs = isFdroid || skipSigning ? '' : ' --buildConfig build.json'
+// For F-Droid enforce APK output even if a previous run cached ber BNDLE mode.
+const pkgTypeArg = bundle ? ' -- --packageType=bundle' : (isFdroid ? ' -- --packageType=apk' : '')
+run(`cordova compile android${release ? ' --release' : ''}${release ? signingArgs : ''}${pkgTypeArg}`)
 
 console.log('\nBuild complete. Output:')
 console.log(
