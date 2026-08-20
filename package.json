@@ -12,6 +12,7 @@
     "clean:all": "node scripts/clean.mjs --all",
     "cordova:setup": "node scripts/setup.mjs",
     "postinstall": "node scripts/patch-cordova.mjs",
+    "build:native": "node cordova-plugins/moonshine-stt/src/android/native/build.mjs",
     "build:apk": "node scripts/build.mjs",
     "build:apk:release": "node scripts/build.mjs --release",
     "build:aab:release": "node scripts/build.mjs --release --bundle",

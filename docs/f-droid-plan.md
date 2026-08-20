@@ -1,54 +1,43 @@
 # رفع التطبيق على F-Droid — خارطة الطريق
 
-هذا ملف التخطيط لرفع «التقوى» إلى مستودع [F-Droid](https://f-droid.org). يرتبط بالطلب
-[#9](https://github.com/rn0x/altaqwaa-android/issues/9).
+يرتبط بالطلب [#9](https://github.com/rn0x/altaqwaa-android/issues/9).
 
 > **مبدأ مهم:** F-Droid لا يستضيف الـ APK الجاهز — بل **يعيد بناء التطبيق من سورس
-> المصدر** (من مستودعنا) ويوقّعه بمفتاحه الخاص، ثم ينشره في توزيعته. لذلك
-> المتطلب الجوهري هو أن يكون المشروع **قابلًا للبناء من المقطَع** بلا ملفات
-> ثنائية جاهزة دون مصدر.
+> المصدر** (من مستودعنا) ويوقّعه بمفتاحه الخاص. المتطلب الجوهري: المشروع
+> **قابل للبناء من المقطَع** بلا ملفات ثنائية جاهزة دون مصدر.
 
-## ما نُفِّذ بالفعل في الريبو (تمهيدًا)
+## ما نُفِّذ بالفعل في الريبو
 
-- أُزيل `"private": true` من `package.json`.
-- أُضيف `"license": "GPL-3.0"` في `package.json` (يتطابق مع `LICENSE` GPL-3.0).
-- أُنشئ `CHANGELOG.md` لتوثيق الإصدارات.
-- الريبو يمتلك `LICENSE` (GPL-3.0) ومفتوح المصدر بصراحة في README.
+- أُزيل `"private": true`، وأُضيف `"license": "GPL-3.0"` في `package.json`.
+- أُنشئ `CHANGELOG.md`، والريبو يمتلك `LICENSE` GPL-3.0.
+- **حُل المانع الثنائي الأكبر** (إضافة Moonshine STT):
+  - نُشر مصدر النواة بالكامل داخل الريبو:
+    `cordova-plugins/moonshine-stt/src/android/native/transcribe.cpp` (نسخة `v0.2.0` من
+    `handy-computer/transcribe.cpp` + ggml، MIT) + طبقة JNI `native/jni/moonshine_jni.cpp`.
+  - أُزيلت مكتبات `.so` المبنية مسبقًا من git (كانت بلا مصدر)، وأصبحت **مُنتجة وقت
+    البناء** عبر `npm run build:native` (build.mjs يبنيها بـ NDK ثم ينسخها داخل plugin).
+  - بقي `libs/` مولّدًا ومُتجاهلًا؛ لا تُرفع ثنائيات.
+- `package-lock.json` ملتزم الآن لبناء npm قابل للتكرار.
+- يُحدَّث `scripts/sync-plugins.mjs` ليعكس `.so` المبنية حديثًا إلى المنصة (لأن
+  `cordova prepare` لا ينسخ الموجود).
+- دليل بناء مفصل: `docs/fdroid-build.md`.
 
-## الخطوات المتبقية لفتح PR في `fdroidserver`
+## ما تبقى لفتح الـ PR في `f-droid/fdroiddata`
 
-1. **معالجة ثغرة الملفات الثنائية — إضافة Moonshine STT.**
-   - الإضافة `com.altaqwaa.moonshinestt` تحوي ملفات ثنائية جاهزة للبناء **بدون مصدر**:
-     - مكتبات `.so` (arm64-v8a): `libggml*.so`, `libtranscribe.so`, `libmoonshine_stt.so`, `libc++_shared.so`
-     - نموذج `moonshine-tiny-ar-Q8_0.gguf` (~35MB)
-   - تعارض مع قاعدة F-Droid في **إعادة البناء من المصدر**.
-   - الحلول المقترحة (تتطلب قرارًا فنيًا):
-     a. توفير **مصدر البناء** لهذه النواة (مصدر GGML/Moonshine + خطوات build) في الريبو،
-        مع تحميل النموذج من رابط أصلي، أو
-     b. فصل الإضافة فتجعل الـ STT الصوتي ~اختياريًا~ قُابلًا للرفع (لا يُدرج في
-        البناء عن طريق FDroidPrebuildCfg)، أو
-     c. البناء عبر `scripts/build-fdroid.mjs` يقوم بتحميل النواة المشروعة وقت البناء
-        بدل الاعتماد على ثنائيات مدفونة في الريبو.
-
-2. **كتابة ملف build.rb** لمستودع `fdroidserver` يلائم تخطيط Cordova:
-   - إعداد بيئة (JDK 21, Android SDK, Gradle).
-   - تبادر `npm ci/install` لتثبيت التبعيات.
-   - `cordova platform add android` + `cordova prepare`.
-   - `cordova compile android → APK`.
-   - اختيار نموذج الأيقونات والسبلاش تلقائيًا (scripts موجودة).
-
-3. **وثوقية الشبكة**: إذا بقيت بعض الملفات من رابط خارجي، يجب توثيقها في ملف
-   `build.rb` وقائمة `RelatedBuildMetadata` (تحميل النواة والتحقق من الهاش) كي
-   تعبر التدقيق.
-
-4. **فتح الـ PR الرسمي**: يقدم الترويسة في `fdroidserver` بعنوان "Add altaqwaa",
-   يتضمّن ملف `build.rb`, الميتادا, والفئات/IEC.
-
-5. **ردّ وغلق **#9****: نُحدّث الريبو بهذه الجاهزية قبل إحالة الـ PR، ثم نغلق الطلب
-   عند الدمج.
+1. **كتابة `metadata/com.rn0x.altaqwaa.yml`** (أو ملف build.go على النمط السياقي) يحدد:
+   - `Builds` بإصدار الوسم (`vX.Y.Z`).
+   - أمر البناء بموجب `docs/fdroid-build.md`:
+     `npm ci` → `node cordova-plugins/moonshine-stt/src/android/native/build.mjs`
+     → إضافة منصة android → `cordova compile` (أو استحداث APK حسب خريطة Cordova).
+   - تحديد NDK 27 للتهيئة، وإزالة توقيع release المحلي.
+2. **إعداد Flask-build environment** في الفُروع: تقديم ترخيص NDK/التحقق من `ovr`-معتمد
+   (سماح F-Droid بتحميل NDK أو التناسق عبر `build-gradle` النظامي). الحالات كثيرها تستخدم `gradle.properties`.
+3. **رفع PR** في `f-droid/fdroiddata` بعنوان «Add com.rn0x.altaqwaa»، مع 담ة الميتاداتا
+   والسماح للفقط.
 
 ## حالة الإصدارات للصيانة
 
-- بكل إصدار جديد نقصد رفع سطر الإصدار (see `README.md`, `config.xml`, `constants`),
-  بناء APK موقّع ورفعه إلى GitHub Releases، ثم تحديث الريبو ليشير إلى `releases/latest`
-  (الموقع يتحدث ذاتيًا).
+- بكل إصدار جديد: نرافع سطر الإصدار (`config.xml`, `package.json`,
+  `src/constants/app.mjs`, وموضع `SettingsScreen.jsx`)، ثم `npm run build:apk:release`
+  ورفع الـ APK إلى GitHub Releases؛ فيُحدَّث الموقع تلقائيًا من `releases/latest`.
+- عند الدمج في F-Droid، يُغلى تحديث الريبو بمزج كل نسخة تلقائيًا.

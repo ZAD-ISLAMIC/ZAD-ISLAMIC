@@ -5,6 +5,11 @@ function run(command) {
   execSync(command, { stdio: 'inherit' })
 }
 
+// Build the Moonshine STT native engine from the vendored source first, so
+// the plugin's <source-file> entries (libs/arm64-v8a/*.so) exist when cordova
+// copies them during `platform add` / `prepare`.
+run('node cordova-plugins/moonshine-stt/src/android/native/build.mjs')
+
 run('cordova platform add android')
 run('cordova prepare')
 

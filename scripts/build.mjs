@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 
 const release = process.argv.includes('--release')
 const bundle = process.argv.includes('--bundle')
+const skipNative = process.argv.includes('--skip-native') || process.env.SKIP_NATIVE_BUILD === '1'
 
 function run(command) {
   console.log(`\n> ${command}`)
@@ -19,6 +20,14 @@ run('node scripts/sync-plugins.mjs')
 // Remove any stray Cordova core-class duplicates in the app module that
 // would break D8 dex-merging on release builds (platform rot).
 run('node scripts/dedupe-platform.mjs')
+
+// Build the Moonshine STT native engine from the vendored transcribe.cpp
+// source (NDK cross-compile inside the plugin) so the app's native libs are
+// reproducible from source (F-Droid requirement). Requires the Android NDK.
+// Skip with --skip-native (e.g. when only building web assets).
+if (!skipNative) {
+  run('node cordova-plugins/moonshine-stt/src/android/native/build.mjs')
+}
 
 run('vite build')
 

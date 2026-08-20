@@ -14,7 +14,7 @@
  * Idempotent and cheap: only files that differ are copied.
  */
 
-import { existsSync, readFileSync, copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, readFileSync, copyFileSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
 import { dirname, resolve, join } from 'node:path'
 import { readdirSync } from 'node:fs'
 
@@ -47,6 +47,21 @@ function ensureCopy(from, to) {
   const need =
     !existsSync(to) ||
     readFileSync(from, 'utf-8') !== readFileSync(to, 'utf-8')
+  if (!need) return
+  mkdirSync(dirname(to), { recursive: true })
+  copyFileSync(from, to)
+  console.log(`[sync-plugins] ✓ ${to}`)
+}
+
+/** Binary-safe variant of ensureCopy: compares sizes, not text contents. */
+function ensureCopyNative(from, to) {
+  if (!existsSync(from)) {
+    console.warn(`[sync-plugins] missing binary: ${from}`)
+    return
+  }
+  const need =
+    !existsSync(to) ||
+    statSync(from).size !== statSync(to).size
   if (!need) return
   mkdirSync(dirname(to), { recursive: true })
   copyFileSync(from, to)
@@ -87,6 +102,24 @@ for (const dir of pluginDirs) {
   ensureCopy(join(pluginRoot, 'plugin.xml'), join(PLUGINS, id, 'plugin.xml'))
   if (existsSync(join(pluginRoot, 'package.json'))) {
     ensureCopy(join(pluginRoot, 'package.json'), join(PLUGINS, id, 'package.json'))
+  }
+
+  // Mirror native libraries (.so) the same way: cordova prepare only copies
+  // them at first `plugin add`, so rebuilt binaries (from build:native) would
+  // never reach the platform unless we re-sync them here. `libs/arm64-v8a`
+  // in plugin.xml maps to app/src/main/jniLibs/arm64-v8a.
+  const soRegex = /<source-file\s+src="([^"]+\.so)"[^>]*target-dir="([^"]+)"/g
+  const soEntries = []
+  let so
+  while ((so = soRegex.exec(xml)) !== null) soEntries.push({ srcFile: so[1], targetDir: so[2] })
+  for (const { srcFile, targetDir } of soEntries) {
+    const from = join(pluginRoot, srcFile)
+    if (!existsSync(from)) continue
+    const toPlugins = join(PLUGINS, id, srcFile)
+    ensureCopyNative(from, toPlugins)
+    // plugin.xml target-dir "libs/arm64-v8a" is Cordova's jniLibs staging root.
+    const toJni = join(APP_JAVA, '..', 'jniLibs', targetDir.replace(/^libs\//, ''), srcFile.split('/').pop())
+    ensureCopyNative(from, toJni)
   }
 
   const wwwSrc = join(pluginRoot, 'www')

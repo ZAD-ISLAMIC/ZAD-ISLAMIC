@@ -1,0 +1,4 @@
+# Produced native libraries — built from the vendored transcribe.cpp source
+# by `npm run build:native` (NDK). Not tracked: the repo ships reproducible
+# source instead of prebuilt binaries (F-Droid requirement).
+libs/

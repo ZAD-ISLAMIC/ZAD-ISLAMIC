@@ -1,0 +1,60 @@
+# F-Droid metadata — altaqwaa (التقوى)
+# To be placed at metadata/com.rn0x.altaqwaa.yml in f-droid/fdroiddata
+# and submitted as a PR there. See docs/fdroid-build.md for build detail.
+
+Categories:
+  - Education
+  - Multimedia
+
+License: GPL-3.0-or-later
+AuthorName: Rayan Almalki
+AuthorEmail: rn0x.me@gmail.com
+WebSite: https://i8x.net
+SourceCode: https://github.com/rn0x/altaqwaa-android
+IssueTracker: https://github.com/rn0x/altaqwaa-android/issues
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 3.0.1
+CurrentVersionCode: 30001
+
+# https://f-droid.org/docs/Build_Metadata_Reference/
+VercodeOperation:
+  # convert "3.0.1" -> 30001 (major*10000 + minor*100 + patch)
+  - [ ]
+  - regex: ^(\d+)\.(\d+)\.(\d+)$
+    replace: ${1}${2}${3}
+
+Builds:
+  - versionName: 3.0.1
+    versionCode: 30001
+    commit: v3.0.1
+    subdir: .
+    sudo:
+      - apt-get update
+      - apt-get install -y openjdk-21-jdk-headless nodejs npm python3 python3-pil ninja-build
+    init:
+      - npm ci
+      - npm run build:native
+      - npx node cordova platform add android || true
+    prebuild:
+      # NDK pinned to the same major (27) the binaries were built with.
+      # F-Droid builders set ANDROID_NDK_ROOT when ndkVersion is configured
+      # in build.gradle; here we rely on the dialog default.
+      - echo "not needed"
+    build:
+      - npm run build:apk -- --skip-native
+    scandelete:
+      - platforms
+      - www
+    srclibs:
+      - litegal? # (placeholder — no external srclib needed; vendored in-repo)
+    output: app-debug.apk
+
+# The JVM/NDK are part of the build environment; add these to qualify for
+# NDK support, matching the .so provenance (NDK r27):
+#  - sdk: ndk:27
+MaintainerNotes: >-
+  Native STT engine is vendored from handly-computer/transcribe.cpp v0.2.0
+  (MIT) under cordova-plugins/.../native/ and compiled with NDK 27 at build
+  time. model file moonshine-tiny-ar-Q8_0.gguf is data (combined license).
