@@ -12,6 +12,15 @@ function run(command) {
 // Patch cordova-android's SystemWebChromeClient (IllegalStateException fix)
 run('node scripts/patch-cordova.mjs')
 
+// Build the Moonshine STT native engine from the vendored transcribe.cpp
+// source (NDK cross-compile inside the plugin) so the app's native libs are
+// reproducible from source (F-Droid requirement). Requires the Android NDK.
+// Must run BEFORE sync-plugins so the freshly built .so are mirrored into the
+// platform. Skip with --skip-native (e.g. when only building web assets).
+if (!skipNative) {
+  run('node cordova-plugins/moonshine-stt/src/android/native/build.mjs')
+}
+
 // Sync local plugin Java sources into plugins/ and the platform project
 // (cordova prepare does not overwrite already-copied Java files, so we
 // mirror our edited cordova-plugins sources here directly).
@@ -20,14 +29,6 @@ run('node scripts/sync-plugins.mjs')
 // Remove any stray Cordova core-class duplicates in the app module that
 // would break D8 dex-merging on release builds (platform rot).
 run('node scripts/dedupe-platform.mjs')
-
-// Build the Moonshine STT native engine from the vendored transcribe.cpp
-// source (NDK cross-compile inside the plugin) so the app's native libs are
-// reproducible from source (F-Droid requirement). Requires the Android NDK.
-// Skip with --skip-native (e.g. when only building web assets).
-if (!skipNative) {
-  run('node cordova-plugins/moonshine-stt/src/android/native/build.mjs')
-}
 
 run('vite build')
 
