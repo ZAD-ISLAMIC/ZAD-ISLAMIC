@@ -25,7 +25,7 @@ Description: |-
   الموسوعة التاريخية، فتاوى ابن باز، الخطب، وأنشطة تفاعلية.
   مجاني بالكامل دون إعلانات أو تتبع، ويعمل دون إنترنت للمحتوى المرفق.
   .
-Repository: https://github.com/rn0x/altaqwaa-android.git
+Repo: https://github.com/rn0x/altaqwaa-android.git
 RepoType: git
 
 AutoUpdateMode: Version
