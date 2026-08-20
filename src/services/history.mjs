@@ -1,5 +1,6 @@
 import historyIndex from '../resources/data/history/index.json' with { type: 'json' }
 import { HISTORY_TOTAL_COUNT, HISTORY_CHUNKS } from '../resources/data/history/chunks.mjs'
+import { arabicDigits } from '../utils/arabic.mjs'
 
 export const HISTORY_NS = 'history'
 
@@ -117,9 +118,8 @@ export async function searchHistory(query, { limit = 60 } = {}) {
 const ARABIC_DIGIT_MAP = Object.fromEntries(
   [...'٠١٢٣٤٥٦٧٨٩'].map((a, i) => [a, String(i)])
 )
-const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩'
 export function arabic(n) {
-  return String(n).replace(/\d/g, (d) => ARABIC_DIGITS[Number(d)])
+  return arabicDigits(n)
 }
 
 /** يستخرج أجزاء التاريخ من `event.date` إلى كائن منظم. */

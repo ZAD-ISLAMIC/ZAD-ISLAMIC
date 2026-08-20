@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SettingsGroup } from '../components/settings/SettingsGroup.jsx'
 import { SettingsSwitch } from '../components/settings/SettingsSwitch.jsx'
@@ -14,6 +14,13 @@ import { getCurrentLocation } from '../services/location.mjs'
 import { getSettings as getTasbihSettings, saveSettings as saveTasbihSettings } from '../services/tasbih.mjs'
 import { METHOD_BY_ID } from '../services/prayerTimes.mjs'
 import { getTotalStorageBytes, formatBytes } from '../services/settingsStorage.mjs'
+import {
+  subscribeDigits,
+  getDigitsStyle,
+  setDigitsStyle,
+  DIGIT_STYLE_EASTERN,
+  DIGIT_STYLE_WESTERN,
+} from '../utils/arabic.mjs'
 import '../styles/settings.css'
 
 const PLAYER_RATES = [
@@ -30,9 +37,15 @@ const THEME_OPTIONS = [
   { value: 'light', label: 'نهاري' },
 ]
 
+const DIGITS_OPTIONS = [
+  { value: DIGIT_STYLE_EASTERN, label: '٠-٩ مشرقية' },
+  { value: DIGIT_STYLE_WESTERN, label: '0-9 عادية' },
+]
+
 export default function SettingsScreen() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
+  const digitsStyle = useSyncExternalStore(subscribeDigits, getDigitsStyle)
 
   const [config, setConfig] = useState(() => loadConfig())
   const location = useMemo(() => getCurrentLocation(), [])
@@ -74,6 +87,14 @@ export default function SettingsScreen() {
           options={THEME_OPTIONS}
           value={theme}
           onChange={setTheme}
+        />
+        <SettingsSelect
+          icon={<Icon name="hash" size={20} />}
+          label="نمط الأرقام"
+          description="أرقام مشرقية (٠-٩) أو عادية (0-9) في كل التطبيق"
+          options={DIGITS_OPTIONS}
+          value={digitsStyle}
+          onChange={setDigitsStyle}
         />
         <SettingsNavRow
           icon={<Icon name="book-open" size={20} />}

@@ -1,7 +1,8 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useSyncExternalStore } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell.jsx'
 import { Loader } from './components/ui/Loader.jsx'
+import { subscribeDigits, getDigitsStyle } from './utils/arabic.mjs'
 
 const HomeScreen = lazy(() => import('./screens/HomeScreen.jsx'))
 const QuranScreen = lazy(() => import('./screens/QuranScreen.jsx'))
@@ -42,6 +43,7 @@ const KhutbahDetailScreen = lazy(() => import('./screens/KhutbahDetailScreen.jsx
 const NotFoundScreen = lazy(() => import('./screens/NotFoundScreen.jsx'))
 
 export function App() {
+  useSyncExternalStore(subscribeDigits, getDigitsStyle)
   return (
     <Suspense fallback={<Loader />}>
       <Routes>

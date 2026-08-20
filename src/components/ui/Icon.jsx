@@ -273,6 +273,8 @@ const PATHS = {
     'M12 4v17',
     'M3 12.5h18',
   ],
+
+  hash: ['M4 9h16', 'M4 15h16', 'M10 3L8 21', 'M16 3l-2 18'],
 }
 
 export function Icon({ name, size = 24, className = '' }) {
