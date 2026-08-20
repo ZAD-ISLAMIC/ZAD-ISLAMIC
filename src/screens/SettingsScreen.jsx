@@ -34,9 +34,9 @@ export default function SettingsScreen() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
 
-  const config = useMemo(() => loadConfig(), [])
+  const [config, setConfig] = useState(() => loadConfig())
   const location = useMemo(() => getCurrentLocation(), [])
-  const tasbih = useMemo(() => getTasbihSettings(), [])
+  const [tasbih, setTasbih] = useState(() => getTasbihSettings())
   const [playerRate, setPlayerRate] = useState(() => storage.get('player.rate', 1))
 
   const locationText =
@@ -55,6 +55,7 @@ export default function SettingsScreen() {
 
   const toggleAdhan = async () => {
     const next = updateConfig({ adhanEnabled: !config.adhanEnabled })
+    setConfig(next)
     await refreshWatch({ config: next })
   }
 
@@ -128,14 +129,14 @@ export default function SettingsScreen() {
           label="صوت المسبحة"
           description="نغمة عند كل تسبيحة في المسبحة الإلكترونية"
           checked={tasbih.sound}
-          onChange={(v) => saveTasbihSettings({ sound: v })}
+          onChange={(v) => setTasbih(saveTasbihSettings({ sound: v }))}
         />
         <SettingsSwitch
           icon={<Icon name="bolt" size={20} />}
           label="اهتزاز المسبحة"
           description="اهتزاز خفيف عند كل تسبيحة"
           checked={tasbih.vibration}
-          onChange={(v) => saveTasbihSettings({ vibration: v })}
+          onChange={(v) => setTasbih(saveTasbihSettings({ vibration: v }))}
         />
       </SettingsGroup>
 
