@@ -41,11 +41,11 @@ CurrentVersionCode: 30001
 Builds:
   - versionName: '3.0.1'
     versionCode: 30001
-    commit: v3.0.1
+    commit: v3.0.1-fdroid
     subdir: .
     sudo:
       - apt-get update
-      - apt-get install -y ninja-build openjdk-21-jdk-headless python3 python3-pil
+      - apt-get install -y cmake ninja-build openjdk-21-jdk-headless python3 python3-pil
       - curl -Lo node.tar.gz https://nodejs.org/dist/v22.14.0/node-v22.14.0-linux-x64.tar.gz
       - echo "9d942932535988091034dc94cc5f42b6dc8784d6366df3a36c4c9ccb3996f0c2  node.tar.gz"
         | sha256sum -c -
