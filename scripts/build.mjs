@@ -16,8 +16,14 @@ function run(command) {
   execSync(command, { stdio: 'inherit' })
 }
 
-// Patch cordova-android's SystemWebChromeClient (IllegalStateException fix)
-run('node scripts/patch-cordova.mjs')
+// Patch cordova-android's SystemWebChromeClient (IllegalStateException fix).
+// In the F-Droid builder we intentionally skip this: the platform is created
+// fresh and cordova-android's stock SystemWebChromeClient compiles reliably in
+// that environment; the patched variant adds an ActivityResultContracts usage
+// that the fdroid CordovaLib classpath does not provide (cannot find symbol).
+if (!isFdroid) {
+  run('node scripts/patch-cordova.mjs')
+}
 
 // Build the Moonshine STT native engine from the vendored transcribe.cpp
 // source (NDK cross-compile inside the plugin) so the app's native libs are
