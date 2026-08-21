@@ -54,28 +54,11 @@ run('python3 scripts/generate-icons.py')
 // also copies the res/ icon + splash layers into the platform.
 run('cordova prepare')
 
-// F-Droid fix: the build server compiles CordovaLib WITHOUT androidx.activity on
-// its classpath, so cordova-android's stock SystemWebChromeClient (which uses
-// ActivityResultContracts) fails with "cannot find symbol". We inject the
-// dependency into CordovaLib only. This does NOT change any app behavior — it
-// simply lets cordova-android's own (unmodified) source compile in that
-// environment. Must run AFTER `cordova prepare` because prepare can regenerate
-// CordovaLib/build.gradle.
+// F-Droid fix: rewire SystemWebChromeClient's permission flow so it does NOT
+// depend on androidx.activity (unavailable on the F-Droid CordovaLib classpath).
+// This keeps identical runtime behavior and must run AFTER `cordova prepare`.
 if (isFdroid) {
-  const fs = await import('node:fs')
-  const clGradle = 'platforms/android/CordovaLib/build.gradle'
-  if (fs.existsSync(clGradle)) {
-    let s = fs.readFileSync(clGradle, 'utf8')
-    if (!s.includes('androidx.activity:activity')) {
-      // The FIRST `dependencies {` block is inside buildscript{} (where
-      // `implementation()` is invalid). Inject into the LAST (project-level)
-      // dependencies block instead.
-      const i = s.lastIndexOf('dependencies {')
-      s = s.slice(0, i) + s.slice(i).replace('dependencies {', "dependencies {\n    implementation 'androidx.activity:activity:1.9.2'")
-      fs.writeFileSync(clGradle, s)
-      console.log('Injected androidx.activity into CordovaLib/build.gradle')
-    }
-  }
+  run('node scripts/fdroid-systemwebchrome-fix.mjs')
 }
 
 // Force an English JVM locale for Gradle/bundletool. Under an Arabic OS locale
