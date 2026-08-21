@@ -7,19 +7,19 @@
 
 set -euo pipefail
 
-echo "==> [1/4] Build native STT engine (transcribe.cpp + ggml + JNI) from source"
+echo "==> [1/5] Build native STT engine (transcribe.cpp + ggml + JNI) from source"
 npm run build:native
 
-echo "==> [2/4] Generate web assets (www/) so cordova recognizes the project"
+echo "==> [2/5] Generate web assets (www/) so cordova recognizes the project"
 npm run build
 
-echo "==> [3/4] Add cordova android platform if missing"
-if [ ! -d platforms/android ]; then
-  npx cordova platform add android
-fi
+echo "==> [3/5] Add cordova android platform (clean platforms/plugins)"
+rm -rf platforms plugins
+npx cordova platform add android
 
-echo "==> [4/4] Sync plugins onto platform (Java + built .so)"
+echo "==> [4/5] Sync native libs + plugin Java onto the platform"
 node scripts/sync-plugins.mjs
+npx cordova prepare
 
 echo "==> [5/5] Assemble release APK (unsigned; F-Droid signs with its key)"
 # Ensure no local signing config leaks into the build: F-Droid must never see
