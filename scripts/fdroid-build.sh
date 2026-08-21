@@ -13,9 +13,21 @@ npm run build:native
 echo "==> [2/5] Generate web assets (www/) so cordova recognizes the project"
 npm run build
 
-echo "==> [3/5] Seed plugins/ from local cordova-plugins (so cordova finds www js)"
+echo "==> [2b] Materialize local plugins into node_modules (cordova needs copies, not symlinks)"
+for d in com.rn0x.prayerlocation com.rn0x.prayerwatch com.rn0x.qibla com.rn0x.systemui com.altaqwaa.moonshinestt; do
+  src="cordova-plugins/$d"
+  # resolve the actual folder behind each file: reference in package.json
+  case "$d" in
+    com.altaqwaa.moonshinestt) p=cordova-plugins/moonshine-stt ;;
+    com.rn0x.systemui) p=cordova-plugins/system-ui ;;
+    *) p="cordova-plugins/$d" ;;
+  esac
+  rm -rf "node_modules/$d"
+  cp -r "$p" "node_modules/$d"
+done
+
+echo "==> [3/5] Add cordova android platform (clean platforms/plugins)"
 rm -rf plugins platforms
-node scripts/sync-plugins.mjs
 npx cordova platform add android
 
 echo "==> [4/5] Sync native libs + plugin Java onto the platform"
