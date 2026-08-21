@@ -22,6 +22,8 @@ if (!existsSync(MARKER)) {
   process.exit(0)
 }
 
+const src =
+  'node_modules/cordova-android/framework/src/org/apache/cordova/engine/SystemWebChromeClient.java'
 const target =
   'platforms/android/CordovaLib/src/org/apache/cordova/engine/SystemWebChromeClient.java'
 
@@ -30,7 +32,16 @@ if (!existsSync(target)) {
   process.exit(0)
 }
 
-let s = readFileSync(target, 'utf8')
+// Apply the fix to the PRISTINE framework source (the one cordova itself copies
+// into CordovaLib), then overwrite the platform copy. This avoids relying on the
+// exact shape of the platform-generated file (which cordova rewrites during
+// `platform add` and differs from the framework source).
+if (!existsSync(src)) {
+  console.log('[fdroid-fix] framework source not found — skipping')
+  process.exit(0)
+}
+
+let s = readFileSync(src, 'utf8')
 if (!s.includes('androidx.activity.result')) {
   console.log('[fdroid-fix] already free of androidx.activity.result — skip')
   process.exit(0)
