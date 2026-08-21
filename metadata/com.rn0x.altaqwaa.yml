@@ -1,14 +1,7 @@
-# F-Droid metadata — altaqwaa (التقوى)
-#
-# Official submission file for f-droid/fdroiddata
-# (merge into metadata/com.rn0x.altaqwaa.yml there).
-# Build recipe: scripts/fdroid-build.sh · docs/fdroid-build.md.
-
 Categories:
+  - Multimedia
   - Reading
   - Religion
-  - Multimedia
-
 License: GPL-3.0-or-later
 AuthorName: Rayan Almalki
 AuthorEmail: rn0x.me@gmail.com
@@ -26,16 +19,12 @@ Description: |-
   الموسوعة التاريخية، فتاوى ابن باز، الخطب، وأنشطة تفاعلية.
   مجاني بالكامل دون إعلانات أو تتبع، ويعمل دون إنترنت للمحتوى المرفق.
   .
-Repo: https://github.com/rn0x/altaqwaa-android.git
-RepoType: git
 
-AutoUpdateMode: None
-UpdateCheckMode: None
-CurrentVersion: 3.0.1
-CurrentVersionCode: 30001
+RepoType: git
+Repo: https://github.com/rn0x/altaqwaa-android.git
 
 Builds:
-  - versionName: '3.0.1'
+  - versionName: 3.0.1
     versionCode: 30001
     commit: v3.0.1-fdroid
     subdir: .
@@ -48,13 +37,12 @@ Builds:
       - tar xzf node.tar.gz --strip-components=1 -C /usr/local/
       - rm node.tar.gz
       - npm install -g npm@11.2.0
-    init:
-      - echo "source prepared"
+    init: echo "source prepared"
+    output: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
     build:
       - npm ci
       - sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - bash scripts/fdroid-build.sh
-    output: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
 
 MaintainerNotes: |-
   Native STT engine is vendored from handy-computer/transcribe.cpp v0.2.0
@@ -64,3 +52,8 @@ MaintainerNotes: |-
   CC-BY data. Builds require Node 20, JDK 21, Android SDK with NDK r27,
   CMake and Ninja.
   .
+
+AutoUpdateMode: None
+UpdateCheckMode: None
+CurrentVersion: 3.0.1
+CurrentVersionCode: 30001
