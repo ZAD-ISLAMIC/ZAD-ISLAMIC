@@ -70,6 +70,7 @@ const run = (args, cwd) => {
 // Common cmake configure args (shared libtranscribe + ggml, CPU-only).
 const common = [
   `-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN}`,
+  '-G Ninja',
   `-DANDROID_ABI=${ABI}`,
   '-DANDROID_PLATFORM=android-24',
   `-DANDROID_NDK=${NDK}`,
