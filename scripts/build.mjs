@@ -67,7 +67,11 @@ if (isFdroid) {
   if (fs.existsSync(clGradle)) {
     let s = fs.readFileSync(clGradle, 'utf8')
     if (!s.includes('androidx.activity:activity')) {
-      s = s.replace(/dependencies\s*\{/, (m) => `${m}\n    implementation 'androidx.activity:activity:1.9.2'`)
+      // The FIRST `dependencies {` block is inside buildscript{} (where
+      // `implementation()` is invalid). Inject into the LAST (project-level)
+      // dependencies block instead.
+      const i = s.lastIndexOf('dependencies {')
+      s = s.slice(0, i) + s.slice(i).replace('dependencies {', "dependencies {\n    implementation 'androidx.activity:activity:1.9.2'")
       fs.writeFileSync(clGradle, s)
       console.log('Injected androidx.activity into CordovaLib/build.gradle')
     }
