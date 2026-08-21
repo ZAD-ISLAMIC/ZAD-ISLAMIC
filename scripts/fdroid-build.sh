@@ -13,7 +13,7 @@ npm run build:native
 echo "==> [2/5] Generate web assets (www/) so cordova recognizes the project"
 npm run build
 
-echo "==> [2b] Materialize local plugins into node_modules (cordova needs copies, not symlinks)"
+echo "==> [2b/5] Materialize local plugins + drop them from cordova.plugins (avoid broken restore during platform add)"
 mkdir -p plugins
 for d in com.rn0x.prayerlocation com.rn0x.prayerwatch com.rn0x.qibla com.rn0x.systemui com.altaqwaa.moonshinestt; do
   case "$d" in
@@ -25,10 +25,23 @@ for d in com.rn0x.prayerlocation com.rn0x.prayerwatch com.rn0x.qibla com.rn0x.sy
   cp -r "$p" "node_modules/$d"
   cp -r "$p" "plugins/$d"
 done
+# temporarily remove local plugin entries so cordova platform add does not try
+# to restore them (and hit the missing-www bug); they are added manually below.
+node -e '
+const fs=require("fs");
+const p=JSON.parse(fs.readFileSync("package.json","utf8"));
+const keep={}
+for(const k in p.cordova.plugins){ if(["com.altaqwaa.moonshinestt","com.rn0x.prayerlocation","com.rn0x.prayerwatch","com.rn0x.qibla","com.rn0x.systemui"].includes(k)) continue; keep[k]=p.cordova.plugins[k] }
+p.cordova.plugins=keep;
+fs.writeFileSync("package.json", JSON.stringify(p,null,2)+"\n");
+'
 
-echo "==> [3/5] Add cordova android platform (clean platforms)"
+echo "==> [3/5] Add cordova android platform"
 rm -rf platforms
 npx cordova platform add android
+
+echo "==> [3b] Install local plugins explicitly (bypasses broken automatic restore)"
+npx cordova plugin add ./cordova-plugins/moonshine-stt ./cordova-plugins/com.rn0x.prayerlocation ./cordova-plugins/com.rn0x.prayerwatch ./cordova-plugins/com.rn0x.qibla ./cordova-plugins/system-ui
 
 echo "==> [4/5] Sync native libs + plugin Java onto the platform"
 node scripts/sync-plugins.mjs
