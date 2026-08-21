@@ -51,4 +51,11 @@ if [ -f build.json ]; then
 fi
 FDROID_BUILD=1 node scripts/build.mjs --release --skip-native
 
+echo "==> [6/6] Strip EXIF from generated metadata images (tools check scripts)"
+# rewritemeta may copy screenshots/icons that carry EXIF; strip them so the
+# fdroiddata `tools/check-exif-in-images.sh` check passes.
+if [ -d metadata ]; then
+  node scripts/strip-exif.mjs metadata || true
+fi
+
 echo "Build complete."
