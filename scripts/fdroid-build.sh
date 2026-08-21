@@ -13,26 +13,21 @@ npm run build:native
 echo "==> [2/5] Generate web assets (www/) so cordova recognizes the project"
 npm run build
 
-echo "==> [2b/5] Materialize local plugins + drop them from cordova.plugins (avoid broken restore during platform add)"
-mkdir -p plugins
+echo "==> [2b/5] Hide local plugins from cordova during platform add (avoid broken restore)"
+# Remove any leftover plugin dirs so cordova won't discover them.
+rm -rf plugins
 for d in com.rn0x.prayerlocation com.rn0x.prayerwatch com.rn0x.qibla com.rn0x.systemui com.altaqwaa.moonshinestt; do
-  case "$d" in
-    com.altaqwaa.moonshinestt) p=cordova-plugins/moonshine-stt ;;
-    com.rn0x.systemui) p=cordova-plugins/system-ui ;;
-    *) p="cordova-plugins/$d" ;;
-  esac
-  rm -rf "node_modules/$d" "plugins/$d"
-  cp -r "$p" "node_modules/$d"
-  cp -r "$p" "plugins/$d"
+  rm -rf "node_modules/$d"
 done
-# temporarily remove local plugin entries so cordova platform add does not try
-# to restore them (and hit the missing-www bug); they are added manually below.
+# temporarily remove local plugin entries (cordova.plugins AND file: devDeps)
+# so cordova platform add does not discover/install them (avoids the
+# missing-www ENOENT bug inside the fdroid builder); they are added manually below.
 node -e '
 const fs=require("fs");
 const p=JSON.parse(fs.readFileSync("package.json","utf8"));
-const keep={}
-for(const k in p.cordova.plugins){ if(["com.altaqwaa.moonshinestt","com.rn0x.prayerlocation","com.rn0x.prayerwatch","com.rn0x.qibla","com.rn0x.systemui"].includes(k)) continue; keep[k]=p.cordova.plugins[k] }
-p.cordova.plugins=keep;
+const LOCAL=["com.altaqwaa.moonshinestt","com.rn0x.prayerlocation","com.rn0x.prayerwatch","com.rn0x.qibla","com.rn0x.systemui"];
+for(const k of Object.keys(p.cordova.plugins)){ if(LOCAL.includes(k)) delete p.cordova.plugins[k]; }
+for(const k of Object.keys(p.devDependencies||{})){ if(LOCAL.includes(k)) delete p.devDependencies[k]; }
 fs.writeFileSync("package.json", JSON.stringify(p,null,2)+"\n");
 '
 
