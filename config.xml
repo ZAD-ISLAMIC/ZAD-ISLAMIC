@@ -52,4 +52,8 @@
   <!-- Runs after `cordova prepare` and before compiling: strips the stale
        foreground-service manifest entries that cordova itself cannot remove. -->
   <hook src="scripts/patch-manifest.mjs" type="before_compile" />
+  <!-- F-Droid only: rewires SystemWebChromeClient's permission flow away from
+       androidx.activity (unavailable on the F-Droid CordovaLib classpath). Active
+       only when the .fdroid_build marker exists. -->
+  <hook src="scripts/fdroid-systemwebchrome-fix.mjs" type="before_compile" />
 </widget>

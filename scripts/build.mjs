@@ -54,11 +54,13 @@ run('python3 scripts/generate-icons.py')
 // also copies the res/ icon + splash layers into the platform.
 run('cordova prepare')
 
-// F-Droid fix: rewire SystemWebChromeClient's permission flow so it does NOT
-// depend on androidx.activity (unavailable on the F-Droid CordovaLib classpath).
-// This keeps identical runtime behavior and must run AFTER `cordova prepare`.
+// F-Droid: leave a marker file so the before_compile hook (which runs AFTER
+// `cordova compile`'s internal prepare, i.e. right before javac) can rewire
+// SystemWebChromeClient. We cannot patch it here because `cordova compile`
+// re-runs prepare and would wipe our edit.
 if (isFdroid) {
-  run('node scripts/fdroid-systemwebchrome-fix.mjs')
+  const fs = await import('node:fs')
+  fs.writeFileSync('platforms/android/.fdroid_build', '')
 }
 
 // Force an English JVM locale for Gradle/bundletool. Under an Arabic OS locale

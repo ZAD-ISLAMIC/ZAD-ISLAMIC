@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 
-// F-Droid only fix: cordova-android 15's SystemWebChromeClient uses
+// F-Droid before_compile hook: cordova-android 15's SystemWebChromeClient uses
 // androidx.activity.result.ActivityResultLauncher / ActivityResultContracts to
 // request microphone/camera permissions. The F-Droid build server does not have
 // androidx.activity on CordovaLib's compile classpath, so the stock file fails
@@ -8,6 +8,15 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 // cordova core's requestPermissions() (CordovaInterface -> ActivityCompat), which
 // is always available and preserves identical runtime behavior. No app feature
 // is removed or changed.
+//
+// Runs as a `before_compile` cordova hook: it executes AFTER `cordova compile`'s
+// internal `prepare` (which would otherwise wipe an earlier edit) and right
+// before javac. Activated only when the F-Droid marker file exists.
+const MARKER = 'platforms/android/.fdroid_build'
+if (!existsSync(MARKER)) {
+  process.exit(0)
+}
+
 const target =
   'platforms/android/CordovaLib/src/org/apache/cordova/engine/SystemWebChromeClient.java'
 
