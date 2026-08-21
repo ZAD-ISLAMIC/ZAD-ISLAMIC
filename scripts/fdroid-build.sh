@@ -13,8 +13,9 @@ npm run build:native
 echo "==> [2/5] Generate web assets (www/) so cordova recognizes the project"
 npm run build
 
-echo "==> [3/5] Add cordova android platform (clean platforms/plugins)"
-rm -rf platforms plugins
+echo "==> [3/5] Seed plugins/ from local cordova-plugins (so cordova finds www js)"
+rm -rf plugins platforms
+node scripts/sync-plugins.mjs
 npx cordova platform add android
 
 echo "==> [4/5] Sync native libs + plugin Java onto the platform"
