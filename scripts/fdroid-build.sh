@@ -15,7 +15,7 @@ npm run build
 
 echo "==> [3/4] Add cordova android platform if missing"
 if [ ! -d platforms/android ]; then
-  npx cordova platform add android --nofetch
+  npx cordova platform add android
 fi
 
 echo "==> [4/4] Sync plugins onto platform (Java + built .so)"
