@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 
 // F-Droid before_compile hook: cordova-android 15's SystemWebChromeClient uses
