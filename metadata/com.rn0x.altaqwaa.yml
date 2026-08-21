@@ -29,14 +29,10 @@ Description: |-
 Repo: https://github.com/rn0x/altaqwaa-android.git
 RepoType: git
 
-AutoUpdateMode: Version
-UpdateCheckMode: Tags v3\.[0-9]+\.[0-9]+$
-UpdateCheckData: config.xml|android-versionCode="(\d+)"|.|version="([0-9.]+)"
+AutoUpdateMode: None
+UpdateCheckMode: None
 CurrentVersion: 3.0.1
 CurrentVersionCode: 30001
-
-# config.xml holds the explicit android-versionCode + version fields (Cordova
-# honors android-versionCode verbatim, so APK versionName/versionCode match).
 
 Builds:
   - versionName: '3.0.1'
@@ -53,14 +49,11 @@ Builds:
       - rm node.tar.gz
       - npm install -g npm@11.2.0
     init:
-      - npm ci
+      - echo "source prepared"
     build:
+      - npm ci
       - sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - bash scripts/fdroid-build.sh
-    scandelete:
-      - platforms
-      - www
-      - cordova-plugins/moonshine-stt/src/android/native/build
     output: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
 
 MaintainerNotes: |-
