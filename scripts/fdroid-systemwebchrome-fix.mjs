@@ -39,9 +39,9 @@ for (const line of lines) {
   // Replace the `permissionLauncher` field with an inline CordovaPlugin that
   // resolves pending PermissionListeners when cordova returns the result.
   if (line.includes('private final ActivityResultLauncher<String[]> permissionLauncher;')) {
-    out.push('    private final CordovaPlugin permissionPlugin = new CordovaPlugin() {')
+    out.push('    private final org.apache.cordova.CordovaPlugin permissionPlugin = new org.apache.cordova.CordovaPlugin() {')
     out.push('        @Override')
-    out.push('        public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {')
+    out.push('        public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws org.json.JSONException {')
     out.push('            boolean granted = true;')
     out.push('            for (int r : grantResults) { if (r != PackageManager.PERMISSION_GRANTED) granted = false; }')
     out.push('            java.util.List<PermissionListener> listeners;')
@@ -79,14 +79,6 @@ s = s.replace(
 s = s
   .replace('import androidx.activity.result.ActivityResultLauncher;\n', '')
   .replace('import androidx.activity.result.contract.ActivityResultContracts;\n', '')
-
-// Ensure CordovaPlugin + JSONException are imported.
-if (!s.includes('import org.apache.cordova.CordovaPlugin;')) {
-  s = s.replace(
-    'import org.apache.cordova.engine.SystemWebViewEngine;',
-    'import org.apache.cordova.engine.SystemWebViewEngine;\nimport org.apache.cordova.CordovaPlugin;\nimport org.json.JSONException;'
-  )
-}
 
 writeFileSync(target, s)
 console.log('[fdroid-fix] rewired SystemWebChromeClient permission flow to cordova core (no androidx.activity)')
