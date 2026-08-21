@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 
-// F-Droid before_compile hook: cordova-android 15's SystemWebChromeClient uses
+// F-Droid before_compile hook: cordova-android's SystemWebChromeClient uses
 // androidx.activity.result.ActivityResultLauncher / ActivityResultContracts to
 // request microphone/camera permissions. The F-Droid build server does not have
 // androidx.activity on CordovaLib's compile classpath, so the stock file fails
@@ -13,6 +13,10 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 // Runs as a `before_compile` cordova hook: it executes AFTER `cordova compile`'s
 // internal `prepare` (which would otherwise wipe an earlier edit) and right
 // before javac. Activated only when the F-Droid marker file exists.
+//
+// We deliberately avoid the upstream `PermissionListener` type (its exact shape
+// differs between cordova-android builds / the F-Droid platform copy) and define
+// our own `PermissionCallback` interface so the wiring is self-contained.
 const MARKER = 'platforms/android/.fdroid_build'
 if (!existsSync(MARKER)) {
   process.exit(0)
@@ -37,20 +41,20 @@ const out = []
 let skipBlock = false
 for (const line of lines) {
   // Replace the `permissionLauncher` field with an inline CordovaPlugin that
-  // resolves pending PermissionListeners when cordova returns the result.
+  // resolves pending PermissionCallback callbacks.
   if (line.includes('private final ActivityResultLauncher<String[]> permissionLauncher;')) {
     out.push('    private final org.apache.cordova.CordovaPlugin permissionPlugin = new org.apache.cordova.CordovaPlugin() {')
     out.push('        @Override')
     out.push('        public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws org.json.JSONException {')
     out.push('            boolean granted = true;')
     out.push('            for (int r : grantResults) { if (r != PackageManager.PERMISSION_GRANTED) granted = false; }')
-    out.push('            java.util.List<PermissionListener> listeners;')
+    out.push('            java.util.List<PermissionCallback> listeners;')
     out.push('            synchronized (pendingPermissionListeners) {')
     out.push('                listeners = new ArrayList<>(pendingPermissionListeners);')
     out.push('                pendingPermissionListeners.clear();')
     out.push('            }')
-    out.push('            for (PermissionListener listener : listeners) {')
-    out.push('                try { listener.onPermissionSelect(granted); } catch (Exception ignored) {}')
+    out.push('            for (PermissionCallback cb : listeners) {')
+    out.push('                try { cb.onResult(granted); } catch (Exception ignored) {}')
     out.push('            }')
     out.push('        }')
     out.push('    };')
@@ -79,6 +83,22 @@ s = s.replace(
 s = s
   .replace('import androidx.activity.result.ActivityResultLauncher;\n', '')
   .replace('import androidx.activity.result.contract.ActivityResultContracts;\n', '')
+
+// Replace any remaining upstream PermissionListener references with our own
+// self-contained PermissionCallback interface. Drop its import first so we
+// don't end up importing a non-existent org.apache.cordova.PermissionCallback.
+s = s.replace(/import .*PermissionListener;\n/, '')
+s = s.split('PermissionListener').join('PermissionCallback')
+s = s.split('onPermissionSelect').join('onResult')
+
+// Ensure the PermissionCallback interface is declared (only when the upstream
+// file did NOT already define a PermissionListener that we renamed to it).
+if (!s.includes('interface PermissionCallback')) {
+  s = s.replace(
+    'public class SystemWebChromeClient extends WebChromeClient {',
+    'public class SystemWebChromeClient extends WebChromeClient {\n\n    private interface PermissionCallback {\n        void onResult(boolean granted);\n    }'
+  )
+}
 
 writeFileSync(target, s)
 console.log('[fdroid-fix] rewired SystemWebChromeClient permission flow to cordova core (no androidx.activity)')
