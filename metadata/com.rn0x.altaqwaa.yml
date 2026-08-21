@@ -31,17 +31,18 @@ Builds:
       - apt-get update
       - apt-get install -y cmake ninja-build openjdk-21-jdk-headless python3 python3-pil
       - curl -Lo node.tar.gz https://nodejs.org/dist/v22.22.2/node-v22.22.2-linux-x64.tar.gz
-      - echo "978978a635eef872fa68beae09f0aad0bbbae6757e444da80b570964a97e62a3  node.tar.gz" | sha256sum -c -
+      - echo "978978a635eef872fa68beae09f0aad0bbbae6757e444da80b570964a97e62a3  node.tar.gz"
+        | sha256sum -c -
       - tar xzf node.tar.gz --strip-components=1 -C /usr/local/
       - rm node.tar.gz
       - npm install -g npm@11.2.0
-    ndk: r27b
     init: echo "source prepared"
     output: platforms/android/app/build/outputs/apk/release/app-release-unsigned.apk
     build:
       - npm ci
       - sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - bash scripts/fdroid-build.sh
+    ndk: r27b
 
 MaintainerNotes: |-
   Native STT engine is vendored from handly-computer/transcribe.cpp v0.2.0
