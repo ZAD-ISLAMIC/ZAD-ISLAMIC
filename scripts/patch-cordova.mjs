@@ -123,21 +123,31 @@ if (!existsSync(NODE_MODULES_FILE)) {
 }
 
 {
-  const content = readFileSync(NODE_MODULES_FILE, 'utf-8')
-
-  if (content.includes(PATCH_MARKER)) {
-    console.log('[patch-cordova] node_modules already patched — skipping.')
-  } else if (!content.includes(ORIGINAL_FIELD)) {
-    console.error('[patch-cordova] Unexpected framework content — cannot patch.')
-    process.exit(1)
+  if (process.env.FDROID_BUILD === '1') {
+    console.log('[patch-cordova] FDROID_BUILD detected — leaving framework pristine (platform handles it).')
   } else {
-    writeFileSync(NODE_MODULES_FILE, patchSource(content), 'utf-8')
-    console.log('[patch-cordova] ✓ node_modules SystemWebChromeClient.java patched.')
+    const content = readFileSync(NODE_MODULES_FILE, 'utf-8')
+
+    if (content.includes(PATCH_MARKER)) {
+      console.log('[patch-cordova] node_modules already patched — skipping.')
+    } else if (!content.includes(ORIGINAL_FIELD)) {
+      console.error('[patch-cordova] Unexpected framework content — cannot patch.')
+      process.exit(1)
+    } else {
+      writeFileSync(NODE_MODULES_FILE, patchSource(content), 'utf-8')
+      console.log('[patch-cordova] ✓ node_modules SystemWebChromeClient.java patched.')
+    }
   }
 }
 
 // ---- 2. Sync the patched framework into the platform's CordovaLib ----
-if (existsSync(PLATFORM_FILE)) {
+// In the F-Droid build environment the fresh platform file may differ from the
+// node_modules framework this patch was written against, so copying a patched
+// file that no longer matches would break compilation. In that case skip the
+// copy and let the pristine platform file compile.
+if (process.env.FDROID_BUILD === '1') {
+  console.log('[patch-cordova] FDROID_BUILD detected — using pristine platform file (skip patch sync).')
+} else if (existsSync(PLATFORM_FILE)) {
   const framework = readFileSync(NODE_MODULES_FILE, 'utf-8')
   const platform = readFileSync(PLATFORM_FILE, 'utf-8')
   if (framework === platform) {

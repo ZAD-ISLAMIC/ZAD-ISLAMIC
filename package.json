@@ -51,7 +51,7 @@
     "com.rn0x.qibla": "file:cordova-plugins/com.rn0x.qibla",
     "com.rn0x.systemui": "file:cordova-plugins/system-ui",
     "cordova": "^13.0.0",
-    "cordova-android": "^15.1.0",
+    "cordova-android": "15.1.0",
     "cordova-plugin-compat": "^1.2.0",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-file": "^4.3.3",
@@ -72,14 +72,14 @@
       "cordova-plugin-local-notification": {
         "ANDROIDX_CORE_VERSION": "1.12.0"
       },
-      "com.altaqwaa.moonshinestt": {},
       "com.rn0x.prayerlocation": {},
       "com.rn0x.qibla": {},
       "com.rn0x.prayerwatch": {},
       "com.rn0x.systemui": {},
       "cordova-plugin-inappbrowser": {},
       "cordova-plugin-file-opener2": {},
-      "cordova-plugin-x-socialsharing": {}
+      "cordova-plugin-x-socialsharing": {},
+      "com.altaqwaa.moonshinestt": {}
     }
   }
 }
