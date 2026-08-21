@@ -27,6 +27,7 @@
   <preference name="hostname" value="localhost" />
 
   <platform name="android">
+    <engine name="cordova-android" spec="15.1.0" />
     <preference name="deployment-target" value="13.0" />
 
     <!-- Launcher icons (adaptive + legacy), generated from src/resources/icons -->

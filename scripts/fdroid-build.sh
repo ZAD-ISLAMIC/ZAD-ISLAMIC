@@ -33,7 +33,7 @@ fs.writeFileSync("package.json", JSON.stringify(p,null,2)+"\n");
 
 echo "==> [3/5] Add cordova android platform"
 rm -rf platforms
-npx cordova platform add android
+npx cordova platform add android@15.1.0
 
 echo "==> [3b] Install local plugins explicitly (bypasses broken automatic restore)"
 npx cordova plugin add ./cordova-plugins/moonshine-stt ./cordova-plugins/com.rn0x.prayerlocation ./cordova-plugins/com.rn0x.prayerwatch ./cordova-plugins/com.rn0x.qibla ./cordova-plugins/system-ui
