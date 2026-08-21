@@ -14,9 +14,11 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 // internal `prepare` (which would otherwise wipe an earlier edit) and right
 // before javac. Activated only when the F-Droid marker file exists.
 //
-// We deliberately avoid the upstream `PermissionListener` type (its exact shape
-// differs between cordova-android builds / the F-Droid platform copy) and define
-// our own `PermissionCallback` interface so the wiring is self-contained.
+// The exact shape of the upstream file differs between cordova-android builds
+// (sometimes `permissionListener` is a field, sometimes a local `PermissionListener
+// listener`), so we key everything off `permissionLauncher` (present in all
+// variants) and rewrite that into a self-contained CordovaPlugin + a
+// `permissionListener` field, preserving the original onPermissionSelect flow.
 const MARKER = 'platforms/android/.fdroid_build'
 if (!existsSync(MARKER)) {
   process.exit(0)
@@ -31,11 +33,6 @@ if (!existsSync(target)) {
   console.log('[fdroid-fix] target not found — nothing to patch')
   process.exit(0)
 }
-
-// Apply the fix to the PRISTINE framework source (the one cordova itself copies
-// into CordovaLib), then overwrite the platform copy. This avoids relying on the
-// exact shape of the platform-generated file (which cordova rewrites during
-// `platform add` and differs from the framework source).
 if (!existsSync(src)) {
   console.log('[fdroid-fix] framework source not found — skipping')
   process.exit(0)
@@ -51,22 +48,16 @@ const lines = s.split('\n')
 const out = []
 let skipBlock = false
 for (const line of lines) {
-  // Replace the `permissionLauncher` field with an inline CordovaPlugin that
-  // resolves pending PermissionCallback callbacks.
-  if (line.includes('private final ActivityResultLauncher<String[]> permissionLauncher;')) {
+  // Replace the `permissionLauncher` field with a `permissionListener` field plus
+  // an inline CordovaPlugin that, on result, forwards to the original callback.
+  if (line.includes('ActivityResultLauncher<String[]> permissionLauncher;')) {
+    out.push('    private PermissionListener permissionListener;')
     out.push('    private final org.apache.cordova.CordovaPlugin permissionPlugin = new org.apache.cordova.CordovaPlugin() {')
     out.push('        @Override')
     out.push('        public void onRequestPermissionResult(int requestCode, String[] permissions, int[] grantResults) throws org.json.JSONException {')
     out.push('            boolean granted = true;')
     out.push('            for (int r : grantResults) { if (r != PackageManager.PERMISSION_GRANTED) granted = false; }')
-    out.push('            java.util.List<PermissionCallback> listeners;')
-    out.push('            synchronized (pendingPermissionListeners) {')
-    out.push('                listeners = new ArrayList<>(pendingPermissionListeners);')
-    out.push('                pendingPermissionListeners.clear();')
-    out.push('            }')
-    out.push('            for (PermissionCallback cb : listeners) {')
-    out.push('                try { cb.onResult(granted); } catch (Exception ignored) {}')
-    out.push('            }')
+    out.push('            if (permissionListener != null) permissionListener.onPermissionSelect(granted);')
     out.push('        }')
     out.push('    };')
     continue
@@ -85,8 +76,7 @@ for (const line of lines) {
 s = out.join('\n')
 
 // Wire the launch call to cordova core instead of the activity-result launcher.
-s = s.replace(
-  'permissionLauncher.launch(permissions);',
+s = s.split('permissionLauncher.launch(permissions);').join(
   'parentEngine.cordova.requestPermissions(permissionPlugin, 0, permissions);'
 )
 
@@ -95,19 +85,12 @@ s = s
   .replace('import androidx.activity.result.ActivityResultLauncher;\n', '')
   .replace('import androidx.activity.result.contract.ActivityResultContracts;\n', '')
 
-// Replace any remaining upstream PermissionListener references with our own
-// self-contained PermissionCallback interface. Drop its import first so we
-// don't end up importing a non-existent org.apache.cordova.PermissionCallback.
-s = s.replace(/import .*PermissionListener;\n/, '')
-s = s.split('PermissionListener').join('PermissionCallback')
-s = s.split('onPermissionSelect').join('onResult')
-
-// Ensure the PermissionCallback interface is declared (only when the upstream
-// file did NOT already define a PermissionListener that we renamed to it).
-if (!s.includes('interface PermissionCallback')) {
+// Ensure the upstream PermissionListener interface is present (some builds name
+// the local var `permissionListener` and rely on this interface being declared).
+if (!s.includes('interface PermissionListener')) {
   s = s.replace(
     'public class SystemWebChromeClient extends WebChromeClient {',
-    'public class SystemWebChromeClient extends WebChromeClient {\n\n    private interface PermissionCallback {\n        void onResult(boolean granted);\n    }'
+    'public class SystemWebChromeClient extends WebChromeClient {\n\n    private interface PermissionListener {\n        void onPermissionSelect(Boolean isGranted);\n    }'
   )
 }
 
