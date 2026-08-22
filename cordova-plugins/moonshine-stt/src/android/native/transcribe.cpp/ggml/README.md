@@ -26,7 +26,7 @@ cd ggml
 # install python dependencies in a virtual environment
 python3.10 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r ggml-model-build-deps.txt
 
 # build the examples
 mkdir build && cd build
