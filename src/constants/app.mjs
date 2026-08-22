@@ -1,5 +1,5 @@
 export const APP_NAME = 'التقوى'
-export const APP_VERSION = '3.0.1'
+export const APP_VERSION = '3.0.2'
 
 export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa'
 export const GITHUB_REPO_URL = 'https://github.com/rn0x/altaqwaa-android/'
