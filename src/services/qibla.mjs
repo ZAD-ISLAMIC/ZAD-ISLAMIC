@@ -24,6 +24,8 @@ import {
   locationFromCoords,
   saveLocation,
   messageFor,
+  watchCurrentPosition,
+  clearWatch,
 } from './location.mjs'
 import {
   qiblaBearing,
@@ -43,6 +45,14 @@ const CALIB_READINGS = 2          // consecutive reads needed to flip calib stat
 const ALIGN_ENTER = 2             // |delta| ≤ 2° → show "متجه نحو القبلة"
 const ALIGN_EXIT = 3.5            // |delta| > 3.5° → leave aligned (hysteresis)
 
+// Continuous location tracking (foreground only, while the Qibla screen is
+// visible). The native side filters by distance/time, so updates only arrive
+// when the device actually moves — this is event-driven, not a polling loop.
+const WATCH_MIN_DISTANCE_M = 200  // OS delivers a fix only after moving ~200m
+const WATCH_MIN_TIME_MS = 10000   // …or at most every 10s
+const COALESCE_M = 25             // skip GPS jitter smaller than this before recompute
+const PERSIST_MS = 5000           // throttle storage writes while traveling
+
 const IDLE_STATE = {
   status: 'idle', // idle | starting | running | calib-required | sensor-unavailable | websensor-unavailable
   sensor: null, // 'native' | 'webview' | null
@@ -55,6 +65,7 @@ const IDLE_STATE = {
   location: null,
   locationStatus: 'ok', // ok | error | locating
   locationError: null, // { code, message } | null
+  watching: false, // true while a continuous location watch is live
   error: null, // { code, message } | null (sensor-level)
 }
 
@@ -76,6 +87,11 @@ let uncalibStreak = 0 // consecutive uncalibrated readings
 let alignedState = false // sticky aligned flag (hysteresis)
 let autoLocating = false
 let autoLocatedOnce = false // only once per app session
+
+let watchId = null // active continuous-location watch handle (or null)
+let lastFixLat = null // last applied fix, for jitter coalescing
+let lastFixLon = null
+let lastPersistTs = 0 // throttle for saveLocation while traveling
 
 /* ------------------------------------------------------------------ *
  * Store (useSyncExternalStore-compatible)
@@ -115,6 +131,7 @@ function clip(src) {
     headingAccuracy: src.headingAccuracy ? { ...src.headingAccuracy } : null,
     location: src.location ? { ...src.location } : null,
     locationError: src.locationError ? { ...src.locationError } : null,
+    watching: src.watching,
     error: src.error ? { ...src.error } : null,
   }
 }
@@ -163,6 +180,7 @@ export function stop() {
     }
     stopWeb = null
   }
+  stopWatching()
   autoLocating = false
   autoLocatedOnce = false // retry a soft GPS failure on the next visit
   state = { ...IDLE_STATE, location: state.location }
@@ -190,6 +208,7 @@ export function start() {
   maybeAutoLocate()
   beginStream()
   armWatchdog()
+  startWatching()
   emit()
 }
 
@@ -482,6 +501,112 @@ async function maybeAutoLocate() {
 }
 
 /**
+ * Begin continuous, foreground-only location tracking. The first fix comes
+ * from the OS only after the device moves past WATCH_MIN_DISTANCE_M /
+ * WATCH_MIN_TIME_MS (event-driven, no polling loop). Each fix coalesces tiny
+ * GPS jitter and re-resolves the Qibla bearing; storage writes are throttled.
+ */
+async function startWatching() {
+  if (watchId != null) return
+  // Seed the coalescing baseline from the current fix so the first update is
+  // measured against where we already are.
+  lastFixLat = state.location?.lat ?? null
+  lastFixLon = state.location?.lon ?? null
+  let res
+  try {
+    res = await watchCurrentPosition(
+      { minDistanceM: WATCH_MIN_DISTANCE_M, minTimeMs: WATCH_MIN_TIME_MS },
+      onWatchUpdate,
+      onWatchError
+    )
+  } catch {
+    res = { ok: false, code: 'error', message: messageFor('error') }
+  }
+  if (!res || !res.ok) {
+    state.watching = false
+    // Don't clobber an already-resolved location; only surface the error if
+    // we have nothing usable yet (the compass still works from the saved fix).
+    if (state.locationStatus !== 'ok') {
+      state.locationStatus = 'error'
+      state.locationError = { code: res.code, message: res.message || messageFor(res.code) }
+    }
+    emit()
+    return
+  }
+  watchId = res.watchId
+  state.watching = true
+  emit()
+}
+
+/** Release the continuous watch. Safe to call when nothing is watching. */
+function stopWatching() {
+  if (watchId != null) {
+    try {
+      clearWatch(watchId)
+    } catch {
+      /* ignore */
+    }
+    watchId = null
+  }
+  lastFixLat = null
+  lastFixLon = null
+  state.watching = false
+}
+
+async function onWatchUpdate(coords) {
+  const lat = coords?.lat
+  const lon = coords?.lon
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return
+
+  // Coalesce GPS jitter below the threshold so we don't recompute the bearing
+  // on every few-metre wobble. The OS already filters to ~200m, this is a
+  // second guard for the WebView fallback that lacks a distance filter.
+  if (lastFixLat != null && lastFixLon != null) {
+    if (metersBetween(lastFixLat, lastFixLon, lat, lon) < COALESCE_M) return
+  }
+  lastFixLat = lat
+  lastFixLon = lon
+
+  const loc = await locationFromCoords(lat, lon, 'gps', { exact: true })
+  state.location = loc
+  state.locationStatus = 'ok'
+  state.locationError = null
+  state.watching = true
+  await applyLocation(loc)
+
+  const now = Date.now()
+  if (now - lastPersistTs > PERSIST_MS) {
+    lastPersistTs = now
+    saveLocation(loc)
+  }
+  emit()
+}
+
+function onWatchError(err) {
+  // A mid-stream fatal error (e.g. GPS disabled while traveling): the native
+  // watch has ended. Keep the last good fix so the compass still works; just
+  // flag the error and let the manual button retry.
+  watchId = null
+  state.watching = false
+  state.locationStatus = 'error'
+  state.locationError = {
+    code: err?.code || 'error',
+    message: err?.message || messageFor(err?.code || 'error'),
+  }
+  emit()
+}
+
+/** Great-circle distance in metres between two coordinates (equirectangular). */
+function metersBetween(lat1, lon1, lat2, lon2) {
+  const R = 6371000
+  const r1 = (lat1 * Math.PI) / 180
+  const r2 = (lat2 * Math.PI) / 180
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lon2 - lon1) * Math.PI) / 180 * Math.cos(r1)
+  return Math.sqrt(dLat * dLat + dLon * dLon) * R
+}
+
+/**
  * Detect the live position via GPS (with permission handling) and persist it.
  * Resolves `true` on success, `false` and a `{ code, message }` error on
  * rejection — the caller may react to permission-denied variants itself.
@@ -502,6 +627,8 @@ export async function reDetectLocation() {
   state.location = loc
   state.locationStatus = 'ok'
   state.locationError = null
+  lastFixLat = loc.lat
+  lastFixLon = loc.lon
   await applyLocation(loc)
   emit()
   return true

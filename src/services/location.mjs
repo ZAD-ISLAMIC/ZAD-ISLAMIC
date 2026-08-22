@@ -62,6 +62,16 @@ function hasLocationPlugin() {
   )
 }
 
+function hasWatchPlugin() {
+  return (
+    isCordova() &&
+    typeof window !== 'undefined' &&
+    window.cordova?.plugins?.PrayerLocation &&
+    typeof window.cordova.plugins.PrayerLocation.watchPosition === 'function' &&
+    typeof window.cordova.plugins.PrayerLocation.clearWatch === 'function'
+  )
+}
+
 function normalizeCoords({ latitude, longitude, accuracy, provider, altitude }) {
   if (
     !Number.isFinite(latitude) ||
@@ -154,6 +164,120 @@ export async function detectCurrentPosition() {
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 120000 }
     )
   })
+}
+
+/* ------------------------------------------------------------------ *
+ * Continuous tracking (event-driven via native watchPosition)
+ * ------------------------------------------------------------------ */
+
+// WebView fallback bookkeeping: maps our watchId → the numeric id returned
+// by navigator.geolocation.watchPosition so clearWatch can release it.
+const webWatches = new Map()
+let webWatchSeq = 1
+
+/**
+ * Start continuous location tracking. Resolves `{ ok: true, watchId }` once
+ * the watch is live; `onUpdate({ lat, lon, accuracy, provider, altitude })`
+ * fires for every OS-delivered fix (already distance/time filtered). On a
+ * fatal error, resolves `{ ok: false, code, message }` (or calls
+ * `onError` for mid-stream failures).
+ *
+ * This is never a polling loop: the native side uses
+ * LocationManager.requestLocationUpdates, so the OS decides when to deliver
+ * a reading based on movement.
+ */
+export function watchCurrentPosition(
+  { minDistanceM = 200, minTimeMs = 10000 } = {},
+  onUpdate,
+  onError
+) {
+  if (hasWatchPlugin()) {
+    return new Promise((resolve) => {
+      let settled = false
+      const done = (v) => {
+        if (settled) return
+        settled = true
+        resolve(v)
+      }
+      try {
+        window.cordova.plugins.PrayerLocation.watchPosition(
+          { minDistanceM, minTimeMs },
+          (r) => {
+            if (!r) return
+            if (r.ok && r.watchId != null) {
+              const n = r.coords ? normalizeCoords(r.coords) : null
+              if (n) onUpdate && onUpdate(n)
+              if (!settled) done({ ok: true, watchId: r.watchId })
+              return
+            }
+            if (!r.ok && r.code) {
+              if (!settled) done({ ok: false, code: r.code, message: messageFor(r.code) })
+              else onError && onError({ code: r.code, message: messageFor(r.code) })
+            }
+          },
+          (e) => {
+            const code = e?.code || 'error'
+            if (!settled) done({ ok: false, code, message: messageFor(code) })
+            else onError && onError({ code, message: messageFor(code) })
+          }
+        )
+      } catch (err) {
+        done({ ok: false, code: 'error', message: messageFor('error') })
+      }
+    })
+  }
+
+  // WebView fallback
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    return Promise.resolve({ ok: false, code: 'unavailable', message: messageFor('unavailable') })
+  }
+  const id = webWatchSeq++
+  const nativeId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const coords = normalizeCoords({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy,
+        provider: 'webview',
+        altitude: pos.coords.altitude,
+      })
+      if (coords) onUpdate && onUpdate(coords)
+    },
+    (err) => {
+      const map = {
+        1: { code: 'permission-denied', message: messageFor('permission-denied') },
+        2: { code: 'unavailable', message: messageFor('unavailable') },
+        3: { code: 'timeout', message: messageFor('timeout') },
+      }
+      const fallback = { code: 'error', message: messageFor('error') }
+      onError && onError(map[err.code] || fallback)
+    },
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: minTimeMs }
+  )
+  webWatches.set(id, nativeId)
+  return Promise.resolve({ ok: true, watchId: id })
+}
+
+/** Stop a watch started by watchCurrentPosition and free its listener. */
+export function clearWatch(watchId) {
+  if (watchId == null) return
+  if (hasWatchPlugin()) {
+    try {
+      window.cordova.plugins.PrayerLocation.clearWatch({ watchId }, () => {}, () => {})
+    } catch {
+      /* ignore */
+    }
+    return
+  }
+  const nativeId = webWatches.get(watchId)
+  if (nativeId != null) {
+    try {
+      navigator.geolocation.clearWatch(nativeId)
+    } catch {
+      /* ignore */
+    }
+    webWatches.delete(watchId)
+  }
 }
 
 export function messageFor(code) {

@@ -9,15 +9,31 @@ import assert from 'node:assert/strict'
 
 const nativeCb = { current: null }
 const webCb = { current: null }
+let prayerCb = null // latest watchPosition callback (cordova path)
 
 const mem = new Map()
 const shimWindow = {
-  cordova: { platformId: 'android', plugins: { QiblaSensor: {} } },
+  cordova: { platformId: 'android', plugins: { QiblaSensor: {}, PrayerLocation: {} } },
 }
 shimWindow.cordova.plugins.QiblaSensor = {
   isSupported(cb) { cb({ supported: true, source: 'rotation-vector' }) },
   start(_opts, cb) { nativeCb.current = cb },
   stop(cb) { nativeCb.current = null; cb?.() },
+}
+shimWindow.cordova.plugins.PrayerLocation = {
+  // One-shot fix: reported as unavailable in this harness (no real GPS).
+  getCurrentPosition(_opts, onOk) {
+    onOk({ ok: false, code: 'unavailable' })
+  },
+  // Continuous tracking: ack with a watchId, then we drive updates via feedWatch.
+  watchPosition(_opts, cb) {
+    prayerCb = cb
+    cb({ ok: true, watchId: 7 })
+  },
+  clearWatch(_opts, onOk) {
+    prayerCb = null
+    onOk && onOk(true)
+  },
 }
 shimWindow.localStorage = {
   getItem: (k) => (mem.has(k) ? mem.get(k) : null),
@@ -140,4 +156,38 @@ test('auto-locate without saved location surfaces a GPS error, not silent ok', a
   assert.equal(s.locationStatus, 'error')
   assert.ok(s.locationError, 'locationError should be set on GPS failure')
   assert.ok(!s.locationFromFallback || s.location, 'fallback location stays usable')
+})
+
+function feedWatch(lat, lon, accuracy = 20) {
+  prayerCb?.({ ok: true, watchId: 7, coords: { latitude: lat, longitude: lon, accuracy, provider: 'gps', altitude: null } })
+}
+const tick = () => new Promise((r) => setTimeout(r, 0))
+
+test('continuous watch updates the location, coalesces jitter, and stops cleanly', async () => {
+  seedGpsKaaba()
+  qibla.stop()
+  qibla.start()
+  await tick() // let startWatching resolve the watch ack
+
+  const s0 = qibla.getSnapshot()
+  assert.equal(s0.watching, true, 'watch should be live while the screen is visible')
+  assert.equal(s0.location.lat, 21.4225)
+
+  // Move ~220m north → above the 25m coalesce threshold → location updates.
+  feedWatch(21.4247, 39.8262)
+  await tick()
+  const s1 = qibla.getSnapshot()
+  assert.notEqual(s1.location.lat, 21.4225, 'location should follow a real move')
+  assert.equal(s1.watching, true)
+
+  // Tiny jitter (~5m) → below threshold → ignored, no churn.
+  feedWatch(21.42475, 39.8262)
+  await tick()
+  const s2 = qibla.getSnapshot()
+  assert.equal(s2.location.lat, s1.location.lat, 'jitter below threshold must be coalesced')
+
+  // stop() must release the watch and clear the watching flag.
+  qibla.stop()
+  assert.equal(qibla.getSnapshot().watching, false)
+  assert.equal(prayerCb, null, 'clearWatch should have released the native listener')
 })

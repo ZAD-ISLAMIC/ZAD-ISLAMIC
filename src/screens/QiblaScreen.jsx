@@ -68,6 +68,7 @@ export default function QiblaScreen() {
         location={q.location}
         locationStatus={q.locationStatus}
         locationError={q.locationError}
+        watching={q.watching}
       />
     </section>
   )

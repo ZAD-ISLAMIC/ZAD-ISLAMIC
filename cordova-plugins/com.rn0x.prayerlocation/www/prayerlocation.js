@@ -46,3 +46,20 @@ exports.isEnabled = function (onOk, onErr) {
 exports.openSettings = function (onOk, onErr) {
   call('openSettings', [], onOk, onErr)
 }
+
+/**
+ * Begin continuous tracking. The OS pushes a fix only when the device moves
+ * past `minDistanceM` / `minTimeMs`, so this is event-driven — no polling loop.
+ *
+ * The first callback is `{ ok: true, watchId }` (an ack); subsequent updates
+ * are `{ ok: true, watchId, weak, coords }`. A failure is
+ * `{ ok: false, watchId, code }`. Pass the `watchId` to clearWatch to stop.
+ */
+exports.watchPosition = function (opts, onOk, onErr) {
+  call('watchPosition', [opts || {}], onOk, onErr)
+}
+
+/** Stop a previously started watch and release the native listener. */
+exports.clearWatch = function (opts, onOk, onErr) {
+  call('clearWatch', [opts || {}], onOk, onErr)
+}

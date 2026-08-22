@@ -28,7 +28,7 @@ const OPENABLE_CODES = ['permission-denied', 'permission-permanent', 'gps-off']
  * The Qibla always requires its own GPS fix — no manual city picker, no
  * default/fallback location.
  */
-export function QiblaLocationCard({ location, locationStatus, locationError }) {
+export function QiblaLocationCard({ location, locationStatus, locationError, watching }) {
   const name = location?.cityAr || location?.countryAr || location?.label || 'غير محدد'
   const coords = formatCoords(location)
   const busy = locationStatus === 'locating'
@@ -47,6 +47,12 @@ export function QiblaLocationCard({ location, locationStatus, locationError }) {
         <div className="qibla-loc__meta">
           <strong className="qibla-loc__name">{name}</strong>
           {coords && <small className="qibla-loc__coords" dir="ltr">{coords}</small>}
+          {watching && (
+            <small className="qibla-loc__watching" role="status">
+              <span className="qibla-loc__pulse" aria-hidden="true" />
+              يتتبّع موقعك أثناء التنقّل
+            </small>
+          )}
         </div>
       </div>
 
