@@ -12,7 +12,8 @@ import { openExternal, exitApp } from '../../services/device.mjs'
 import { PLAY_STORE_URL } from '../../constants/app.mjs'
 import '../../styles/settings.css'
 
-const TOP_ROUTES = ['/', '/home', '/quran', '/tafseer', '/adhkar', '/hisn', '/fatwas', '/prayer', '/tasbih', '/radio', '/reciters', '/quiz', '/settings', '/history', '/khutbah']
+const HOME_ROUTES = ['/', '/home']
+const TOP_ROUTES = ['/quran', '/tafseer', '/adhkar', '/hisn', '/fatwas', '/prayer', '/tasbih', '/radio', '/reciters', '/quiz', '/settings', '/history', '/khutbah']
 
 export function AppShell() {
   const location = useLocation()
@@ -45,17 +46,22 @@ export function AppShell() {
   // background adhan is never doubled.
   useEffect(() => onSilentAdhan((p) => setAdhan(p)), [])
 
-  // Android back button: go back a step inside the app, and when already at a
-  // top-level screen ask for confirmation before exiting.
+  // Android back button:
+  // - on the home screen → ask for confirmation before exiting
+  // - on another top-level tab → go back to the home screen
+  // - on any sub-screen → go back one step through the navigation history
   useEffect(() => {
     const onBack = (event) => {
       if (event) event.preventDefault()
-      const isTop = TOP_ROUTES.includes(location.pathname)
-      if (!isTop) {
-        navigate(-1)
+      if (HOME_ROUTES.includes(location.pathname)) {
+        setShowExit(true)
         return
       }
-      setShowExit(true)
+      if (TOP_ROUTES.includes(location.pathname)) {
+        navigate('/home')
+        return
+      }
+      navigate(-1)
     }
     document.addEventListener('backbutton', onBack, false)
     return () => document.removeEventListener('backbutton', onBack, false)
