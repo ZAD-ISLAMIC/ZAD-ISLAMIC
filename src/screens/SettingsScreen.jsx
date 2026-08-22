@@ -12,6 +12,7 @@ import { loadConfig, updateConfig } from '../services/prayerConfig.mjs'
 import { refreshWatch } from '../services/prayerWatch.mjs'
 import { getCurrentLocation } from '../services/location.mjs'
 import { getSettings as getTasbihSettings, saveSettings as saveTasbihSettings } from '../services/tasbih.mjs'
+import { isSoundEnabled, setSoundEnabled, isVibrationEnabled, setVibrationEnabled } from '../services/feedback.mjs'
 import { METHOD_BY_ID } from '../services/prayerTimes.mjs'
 import { getTotalStorageBytes, formatBytes } from '../services/settingsStorage.mjs'
 import {
@@ -51,6 +52,8 @@ export default function SettingsScreen() {
   const location = useMemo(() => getCurrentLocation(), [])
   const [tasbih, setTasbih] = useState(() => getTasbihSettings())
   const [playerRate, setPlayerRate] = useState(() => storage.get('player.rate', 1))
+  const [adhkarSound, setAdhkarSound] = useState(() => isSoundEnabled())
+  const [adhkarVibration, setAdhkarVibration] = useState(() => isVibrationEnabled())
 
   const locationText =
     (location && (location.cityAr || location.countryAr))
@@ -158,6 +161,26 @@ export default function SettingsScreen() {
           description="اهتزاز خفيف عند كل تسبيحة"
           checked={tasbih.vibration}
           onChange={(v) => setTasbih(saveTasbihSettings({ vibration: v }))}
+        />
+        <SettingsSwitch
+          icon={<Icon name="volume" size={20} />}
+          label="صوت الأذكار"
+          description="نغمة عند كل ذكر في الأذكار وحصن المسلم"
+          checked={adhkarSound}
+          onChange={(v) => {
+            setSoundEnabled(v)
+            setAdhkarSound(v)
+          }}
+        />
+        <SettingsSwitch
+          icon={<Icon name="bolt" size={20} />}
+          label="اهتزاز الأذكار"
+          description="اهتزاز خفيف عند كل ذكر في الأذكار وحصن المسلم"
+          checked={adhkarVibration}
+          onChange={(v) => {
+            setVibrationEnabled(v)
+            setAdhkarVibration(v)
+          }}
         />
       </SettingsGroup>
 

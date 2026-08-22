@@ -2,8 +2,15 @@ import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { accentFor, getCategoryById } from '../../services/hisnmuslim.mjs'
 import { copyText } from '../../services/device.mjs'
 import { playSound, vibrate } from '../../services/sound.mjs'
+import {
+  isSoundEnabled,
+  setSoundEnabled,
+  isVibrationEnabled,
+  setVibrationEnabled,
+} from '../../services/feedback.mjs'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import { Icon } from '../ui/Icon.jsx'
+import { FeedbackToggle } from '../adhkar/FeedbackToggle.jsx'
 import { HisnDoorActions } from './HisnAudioActions.jsx'
 import { HisnItemCard } from './HisnItemCard.jsx'
 
@@ -14,6 +21,8 @@ export function HisnCategoryList({ categoryId }) {
   const [toast, setToast] = useState('')
   const [toastError, setToastError] = useState(false)
   const toastTimer = useRef(null)
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled())
+  const [vibrationOn, setVibrationOn] = useState(() => isVibrationEnabled())
 
   const showToast = useCallback((message, isError = false) => {
     if (toastTimer.current) clearTimeout(toastTimer.current)
@@ -42,11 +51,11 @@ export function HisnCategoryList({ categoryId }) {
     const next = (counts[item.id] || 0) + 1
     setCounts((prev) => ({ ...prev, [item.id]: next }))
     if (next >= total) {
-      playSound('done')
-      vibrate([40, 50, 90])
+      if (soundOn) playSound('done')
+      if (vibrationOn) vibrate([40, 50, 90])
     } else {
-      playSound('tick')
-      vibrate(12)
+      if (soundOn) playSound('tick')
+      if (vibrationOn) vibrate(12)
     }
   }
 
@@ -56,16 +65,16 @@ export function HisnCategoryList({ categoryId }) {
       delete next[item.id]
       return next
     })
-    playSound('tick')
-    vibrate(12)
+    if (soundOn) playSound('tick')
+    if (vibrationOn) vibrate(12)
   }
 
   const undoFor = (item) => {
     const current = counts[item.id] || 0
     if (current <= 0) return
     setCounts((prev) => ({ ...prev, [item.id]: Math.max((prev[item.id] || 0) - 1, 0) }))
-    playSound('tick')
-    vibrate(12)
+    if (soundOn) playSound('tick')
+    if (vibrationOn) vibrate(12)
   }
 
   const copy = async (event, item) => {
@@ -78,6 +87,12 @@ export function HisnCategoryList({ categoryId }) {
     <div className="hisn-list">
       <div className="hisn-list__topbar">
         <span className="hisn-list__count">{arabicDigits(category.array.length)} ذكر</span>
+        <FeedbackToggle
+          soundOn={soundOn}
+          vibrationOn={vibrationOn}
+          onToggleSound={(v) => setSoundOn(v)}
+          onToggleVibration={(v) => setVibrationOn(v)}
+        />
       </div>
 
       {toast && (

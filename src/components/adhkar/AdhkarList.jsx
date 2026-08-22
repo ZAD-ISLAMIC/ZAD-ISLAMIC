@@ -7,8 +7,15 @@ import {
 } from '../../services/adhkar.mjs'
 import { copyText } from '../../services/device.mjs'
 import { playSound, vibrate } from '../../services/sound.mjs'
+import {
+  isSoundEnabled,
+  setSoundEnabled,
+  isVibrationEnabled,
+  setVibrationEnabled,
+} from '../../services/feedback.mjs'
 import { Icon } from '../ui/Icon.jsx'
 import { AdhkarCounter } from './AdhkarCounter.jsx'
+import { FeedbackToggle } from './FeedbackToggle.jsx'
 
 let currentAudio = null
 
@@ -59,6 +66,8 @@ export function AdhkarList({ category, onComplete }) {
   const [expandedId, setExpandedId] = useState(null)
   const [toast, setToast] = useState('')
   const toastTimer = useRef(null)
+  const [soundOn, setSoundOn] = useState(() => isSoundEnabled())
+  const [vibrationOn, setVibrationOn] = useState(() => isVibrationEnabled())
 
   const showToast = useCallback((message) => {
     if (toastTimer.current) clearTimeout(toastTimer.current)
@@ -73,23 +82,26 @@ export function AdhkarList({ category, onComplete }) {
       const next = current + 1
       setCounts((prev) => ({ ...prev, [progressKey]: next }))
       if (next >= total) {
-        playSound('done')
-        vibrate([40, 50, 90])
+        if (soundOn) playSound('done')
+        if (vibrationOn) vibrate([40, 50, 90])
         recordCompletion(category.key, item.id)
         onComplete?.()
       } else {
-        playSound('tick')
-        vibrate(12)
+        if (soundOn) playSound('tick')
+        if (vibrationOn) vibrate(12)
       }
     },
-    [counts, category.key, onComplete]
+    [counts, category.key, onComplete, soundOn, vibrationOn]
   )
 
-  const resetFor = useCallback((progressKey) => {
-    setCounts((prev) => ({ ...prev, [progressKey]: 0 }))
-    playSound('tick')
-    vibrate(12)
-  }, [])
+  const resetFor = useCallback(
+    (progressKey) => {
+      setCounts((prev) => ({ ...prev, [progressKey]: 0 }))
+      if (soundOn) playSound('tick')
+      if (vibrationOn) vibrate(12)
+    },
+    [soundOn, vibrationOn]
+  )
 
   const copy = useCallback(
     async (event, item) => {
@@ -106,6 +118,12 @@ export function AdhkarList({ category, onComplete }) {
         <span className="adhkar-list__count">
           {formatCount(category.array.length)} ذكر
         </span>
+        <FeedbackToggle
+          soundOn={soundOn}
+          vibrationOn={vibrationOn}
+          onToggleSound={(v) => setSoundOn(v)}
+          onToggleVibration={(v) => setVibrationOn(v)}
+        />
       </div>
 
       {toast && <p className="adhkar-toast">{toast}</p>}
