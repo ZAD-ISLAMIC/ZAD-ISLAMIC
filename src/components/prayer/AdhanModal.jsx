@@ -3,8 +3,12 @@ import { playAzan } from '../../services/sound.mjs'
 import { stopNativeAdhan, setAdhanVolume, getAdhanVolume } from '../../services/prayerWatch.mjs'
 import { correctedNow } from '../../services/prayerConfig.mjs'
 
-/** Safety-net auto-close: matches native AUTO_STOP_MS (5 min) + 1 min buffer. */
-const ADHAN_WINDOW_MS = 6 * 60 * 1000
+/**
+ * Safety-net auto-close: for in-app audio the 'ended' event handles closing,
+ * but for silent mode (native audio) we need a timer. 3 minutes covers the
+ * longest common adhan file (~2:50) with a generous buffer.
+ */
+const ADHAN_WINDOW_MS = 3 * 60 * 1000
 
 /**
  * Doc:
@@ -59,7 +63,10 @@ export function AdhanModal({ prayer, onClose }) {
       audioRef.current = audio
       // Auto-close when the audio finishes — the adhan is done.
       audio.addEventListener('ended', () => {
-        if (alive) onClose()
+        if (!alive) return
+        try { audioRef.current?.pause?.() } catch { /* ignore */ }
+        stopNativeAdhan()
+        onClose()
       })
     })
     return () => {

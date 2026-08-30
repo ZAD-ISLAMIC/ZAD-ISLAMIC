@@ -12,7 +12,7 @@
  */
 
 import { computeTimes, hourToDate, formatDate } from './prayerTimes.mjs'
-import { loadConfig, updateConfig, getPrayerLabels, correctedNow } from './prayerConfig.mjs'
+import { loadConfig, updateConfig, getPrayerLabels, correctedNow, getClockOffsetMs } from './prayerConfig.mjs'
 import { getCurrentLocation } from './location.mjs'
 import { civilDateInTz, offsetHoursForDate } from './timezone.mjs'
 import { isCordova, onDeviceReady } from './device.mjs'
@@ -241,7 +241,10 @@ export async function syncNativeWatch(schedule) {
         name: e.name,
         isPrayer: e.isPrayer,
         atIso: e.atIso,
-        ts: e.at,
+        // Adjust for clock offset so the native AlarmManager fires at the
+        // correct *real* time.  Without this, a fast device clock causes
+        // the alarm to ring early from the user's corrected-time perspective.
+        ts: e.at - getClockOffsetMs(),
       })),
     }
     await requestNotificationPermission()
@@ -481,10 +484,14 @@ function checkTransitions() {
   // When the user changes clockOffsetMin, prayers that were already fired
   // in this session should re-fire at the new corrected time.  Reset their
   // entry in the fires map so the backup timer can pick them up again.
+  // We check `nowMs < e.at + WIDE_WINDOW` (without `>= e.at`) so that
+  // prayers whose native alarm already fired early (before the offset
+  // correction) are also reset — otherwise alreadyFired would block the
+  // backup timer from ringing at the corrected time.
   const currentOffset = snapshot.config?.clockOffsetMin ?? 0
   if (lastClockOffsetMin !== null && currentOffset !== lastClockOffsetMin) {
     for (const e of snapshot.events) {
-      if (e.isPrayer && nowMs >= e.at && nowMs < e.at + WIDE_WINDOW_MS) {
+      if (e.isPrayer && nowMs < e.at + WIDE_WINDOW_MS) {
         if (fires?.[day]?.[e.key]) {
           delete fires[day][e.key]
           storage.set(FIRED_KEY, fires)
