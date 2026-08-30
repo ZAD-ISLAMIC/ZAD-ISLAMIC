@@ -174,6 +174,34 @@ export function SettingsSheet({ onClose }) {
             <AdjustList config={config} update={update} />
           </Section>
 
+          <Section title="تصحيح التوقيت">
+            <p className="set-sheet__note">
+              إذا كانت الساعة على جهازك غير دقيقة، اضبط الفرق بالدقائق (+ أو −) لتصحيح جميع المواعيد.
+            </p>
+            <div className="set-sheet__adjust">
+              <div className="set-sheet__adjust-row">
+                <span>فرق التوقيت</span>
+                <div className="set-sheet__stepper">
+                  <button
+                    onClick={() => update((c) => ({ ...c, clockOffsetMin: Math.max(-60, (c.clockOffsetMin || 0) - 1) }))}
+                    type="button"
+                    aria-label="نقص دقيقة من تصحيح التوقيت"
+                  >
+                    −
+                  </button>
+                  <b>{arabicDigits(config.clockOffsetMin || 0)}</b>
+                  <button
+                    onClick={() => update((c) => ({ ...c, clockOffsetMin: Math.min(60, (c.clockOffsetMin || 0) + 1) }))}
+                    type="button"
+                    aria-label="إضافة دقيقة إلى تصحيح التوقيت"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Section>
+
           <Section title="صوت الأذان">
             <div className="set-sheet__list">
               {ADHAN_VOICES.map((v) => (

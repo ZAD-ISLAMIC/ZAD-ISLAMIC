@@ -5,19 +5,21 @@ import {
   getWatchSnapshot,
   formatPrayerDate,
 } from '../../services/prayerWatch.mjs'
-import { getPrayerLabels, loadConfig } from '../../services/prayerConfig.mjs'
+import { getPrayerLabels, loadConfig, correctedNow } from '../../services/prayerConfig.mjs'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import { Icon } from '../ui/Icon.jsx'
+import { SettingsSheet } from '../prayer/SettingsSheet.jsx'
 
 const CARD_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 
 export function PrayerCard() {
   const navigate = useNavigate()
   const [snapshot, setSnapshot] = useState(() => getWatchSnapshot())
-  const [now, setNow] = useState(() => Date.now())
+  const [now, setNow] = useState(() => correctedNow())
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000)
+    const t = setInterval(() => setNow(correctedNow()), 1000)
     return () => clearInterval(t)
   }, [])
 
@@ -35,39 +37,52 @@ export function PrayerCard() {
   const countdown = `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`
 
   return (
-    <button className="home-prayer" onClick={() => navigate('/prayer')} type="button">
-      <div className="home-prayer__top">
-        <span className="home-prayer__label">
-          <Icon name="landmark" size={14} />
-          مواقيت الصلاة
-        </span>
-        <span className="home-prayer__more">
-          التفاصيل
-          <Icon name="arrow-left" size={12} />
-        </span>
-      </div>
-
-      <div className="home-prayer__next">
-        <div className="home-prayer__next-info">
-          <span className="home-prayer__next-label">الصلاة القادمة</span>
-          <h3 className="home-prayer__next-name">{next ? next.name : '—'}</h3>
+    <>
+      <button className="home-prayer" onClick={() => navigate('/prayer')} type="button">
+        <div className="home-prayer__top">
+          <span className="home-prayer__label">
+            <Icon name="landmark" size={14} />
+            مواقيت الصلاة
+          </span>
+          <span className="home-prayer__actions">
+            <button
+              className="home-prayer__settings-btn"
+              onClick={(e) => { e.stopPropagation(); setShowSettings(true) }}
+              type="button"
+              aria-label="إعدادات المواقيت"
+            >
+              <Icon name="gear" size={14} />
+            </button>
+            <span className="home-prayer__more">
+              التفاصيل
+              <Icon name="arrow-left" size={12} />
+            </span>
+          </span>
         </div>
-        <time className="home-prayer__count" dir="ltr">
-          {arabicDigits(countdown)}
-        </time>
-      </div>
 
-      <div className="home-prayer__times">
-        {CARD_PRAYERS.map((key) => {
-          const e = events.find((x) => x.key === key && x.atIso.slice(0, 10) === dayKey)
-          return (
-            <div className="home-prayer__tile" key={key}>
-              <span>{labels[key]}</span>
-              <b>{e ? formatPrayerDate(e.atIso, config.timeFormat12) : '—'}</b>
-            </div>
-          )
-        })}
-      </div>
-    </button>
+        <div className="home-prayer__next">
+          <div className="home-prayer__next-info">
+            <span className="home-prayer__next-label">الصلاة القادمة</span>
+            <h3 className="home-prayer__next-name">{next ? next.name : '—'}</h3>
+          </div>
+          <time className="home-prayer__count" dir="ltr">
+            {arabicDigits(countdown)}
+          </time>
+        </div>
+
+        <div className="home-prayer__times">
+          {CARD_PRAYERS.map((key) => {
+            const e = events.find((x) => x.key === key && x.atIso.slice(0, 10) === dayKey)
+            return (
+              <div className="home-prayer__tile" key={key}>
+                <span>{labels[key]}</span>
+                <b>{e ? formatPrayerDate(e.atIso, config.timeFormat12) : '—'}</b>
+              </div>
+            )
+          })}
+        </div>
+      </button>
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
+    </>
   )
 }

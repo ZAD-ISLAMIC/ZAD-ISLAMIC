@@ -11,6 +11,7 @@ import { storage } from '../services/storage.mjs'
 import { loadConfig, updateConfig } from '../services/prayerConfig.mjs'
 import { refreshWatch } from '../services/prayerWatch.mjs'
 import { getCurrentLocation } from '../services/location.mjs'
+import { arabicDigits } from '../utils/arabic.mjs'
 import { getSettings as getTasbihSettings, saveSettings as saveTasbihSettings } from '../services/tasbih.mjs'
 import { isSoundEnabled, setSoundEnabled, isVibrationEnabled, setVibrationEnabled } from '../services/feedback.mjs'
 import { METHOD_BY_ID } from '../services/prayerTimes.mjs'
@@ -75,6 +76,14 @@ export default function SettingsScreen() {
     await refreshWatch({ config: next })
   }
 
+  const changeClockOffset = async (delta) => {
+    const current = config.clockOffsetMin || 0
+    const next = Math.max(-60, Math.min(60, current + delta))
+    const updated = updateConfig({ clockOffsetMin: next })
+    setConfig(updated)
+    await refreshWatch({ config: updated })
+  }
+
   const changePlayerRate = (rate) => {
     setPlayerRate(rate)
     player.setRate(rate)
@@ -123,6 +132,22 @@ export default function SettingsScreen() {
           value={methodLabel}
           onClick={() => navigate('/settings/prayer')}
         />
+        <div className="settings-row">
+          <span className="settings-row__icon" aria-hidden="true">
+            <Icon name="clock" size={20} />
+          </span>
+          <span className="settings-row__text">
+            <span className="settings-row__label">تصحيح التوقيت</span>
+            <span className="settings-row__desc">إذا كانت الساعة على جهازك غير دقيقة</span>
+          </span>
+          <span className="settings-row__trailing">
+            <div className="settings-stepper" role="group" aria-label="تصحيح التوقيت">
+              <button className="settings-stepper__btn" aria-label="نقص دقيقة" onClick={() => changeClockOffset(-1)} type="button">−</button>
+              <span className="settings-stepper__value">{arabicDigits(config.clockOffsetMin || 0)}</span>
+              <button className="settings-stepper__btn" aria-label="إضافة دقيقة" onClick={() => changeClockOffset(1)} type="button">+</button>
+            </div>
+          </span>
+        </div>
         <SettingsSwitch
           icon={<Icon name="volume" size={20} />}
           label="الأذان والتنبيهات"

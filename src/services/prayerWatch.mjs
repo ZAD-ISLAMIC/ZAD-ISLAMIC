@@ -12,7 +12,7 @@
  */
 
 import { computeTimes, hourToDate, formatDate } from './prayerTimes.mjs'
-import { loadConfig, updateConfig, getPrayerLabels } from './prayerConfig.mjs'
+import { loadConfig, updateConfig, getPrayerLabels, correctedNow } from './prayerConfig.mjs'
 import { getCurrentLocation } from './location.mjs'
 import { civilDateInTz, offsetHoursForDate } from './timezone.mjs'
 import { isCordova, onDeviceReady } from './device.mjs'
@@ -281,7 +281,7 @@ let nativeArmed = false
 // start, resume, or a wake-up from the background freeze detector). Any
 // prayer whose adhan window was already open at that instant is presumed
 // announced (or missed) elsewhere and must NEVER ring on entry.
-let activeAt = Date.now()
+let activeAt = correctedNow()
 // `prevTickAt` is the timestamp of the previous watch tick within the current
 // foreground session (0 = right after activation). A prayer may only ring if
 // it *became due during this live watching interval* — i.e. first observed
@@ -301,7 +301,7 @@ let lastTickAt = 0
 
 /** Establish/refresh the foreground boundary: nothing already due may ring. */
 function markActive() {
-  activeAt = Date.now()
+  activeAt = correctedNow()
   prevTickAt = 0 // next tick only backfills — never rings
 }
 
@@ -374,14 +374,15 @@ export function onAdhan(cb) {
 export async function refreshWatch(opts = {}) {
   const location = opts.location || getCurrentLocation()
   const config = opts.config || loadConfig()
-  const schedule = buildSchedule(location, config)
-  const day = dayKeyOf(new Date())
+  const now = new Date(correctedNow())
+  const schedule = buildSchedule(location, config, now)
+  const day = dayKeyOf(now)
   snapshot = {
     ...schedule,
     location,
     config,
-    nowMs: Date.now(),
-    hijri: formatHijri(new Date()),
+    nowMs: correctedNow(),
+    hijri: formatHijri(now),
     dayKey: day,
   }
   emit()
@@ -428,7 +429,7 @@ function fireAdhan(prayer, fires, day) {
 
 function checkTransitions() {
   if (!snapshot) return
-  const now = new Date()
+  const now = new Date(correctedNow())
   const nowMs = now.getTime()
 
   // re-roll the snapshot when we're more than ~12 min stale (also covers the
@@ -583,7 +584,7 @@ function handleNativePush(payload) {
  */
 export function announceNativeAdhan({ key, name, ts } = {}) {
   if (!key) return
-  const at = Number(ts) || Date.now()
+  const at = Number(ts) || correctedNow()
   const day = dayKeyOf(new Date(at))
   const dedupe = day + ':' + key
   if (silentShownKey === dedupe) return
@@ -834,7 +835,7 @@ export function setHijriShift(days) {
 }
 
 export function todayHijri(shiftDays = getHijriShift()) {
-  const d = new Date(Date.now() + (shiftDays || 0) * 86400000)
+  const d = new Date(correctedNow() + (shiftDays || 0) * 86400000)
   return formatHijri(d)
 }
 

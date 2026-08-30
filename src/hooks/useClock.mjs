@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { correctedNow, onConfigChange } from '../services/prayerConfig.mjs'
 
 function format12(date) {
   const h = date.getHours()
@@ -11,27 +12,33 @@ function format12(date) {
  * ساعة حالية بنظام 12 ساعة (أرقام لاتينية، ص/م بالعربية).
  * تتحدَّث عند بداية كل دقيقة عبر setTimeout مضبوط لحدّ الدقيقة التالية
  * فلا انحراف ولا عمل زمني زائد بين التحديثات.
+ * تراعى إزاحة التوقيت المخصصة في الإعدادات، وتتغيّر فوراً عند التعديل.
  */
 export function useClock() {
-  const [now, setNow] = useState(() => new Date())
+  const [tick, setTick] = useState(correctedNow())
 
   useEffect(() => {
-    let timer = 0
+    // تحديث فوري عند تغيير الإعدادات (تصحيح التوقيت)
+    const unsub = onConfigChange(() => setTick(correctedNow()))
 
+    let timer = 0
     const schedule = () => {
-      const next = new Date()
+      const next = new Date(correctedNow())
       next.setSeconds(0, 0)
       next.setMilliseconds(0)
       next.setMinutes(next.getMinutes() + 1)
       timer = window.setTimeout(() => {
-        setNow(new Date())
+        setTick(correctedNow())
         schedule()
-      }, next.getTime() - Date.now())
+      }, next.getTime() - correctedNow())
     }
 
     schedule()
-    return () => window.clearTimeout(timer)
+    return () => {
+      unsub()
+      window.clearTimeout(timer)
+    }
   }, [])
 
-  return format12(now)
+  return format12(new Date(tick))
 }

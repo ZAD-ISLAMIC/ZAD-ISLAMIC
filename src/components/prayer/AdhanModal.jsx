@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { playAzan } from '../../services/sound.mjs'
 import { stopNativeAdhan, setAdhanVolume, getAdhanVolume } from '../../services/prayerWatch.mjs'
+import { correctedNow } from '../../services/prayerConfig.mjs'
 
 /** The in-app adhan stays live (showing the + count-up) for 30 minutes. */
 const ADHAN_WINDOW_MS = 30 * 60 * 1000
@@ -19,7 +20,7 @@ const ADHAN_WINDOW_MS = 30 * 60 * 1000
 export function AdhanModal({ prayer, onClose }) {
   const audioRef = useRef(null)
   const [minimized, setMinimized] = useState(false)
-  const [tick, setTick] = useState(() => Date.now())
+  const [tick, setTick] = useState(() => correctedNow())
   const [volume, setVolume] = useState(90)
 
   // The slider starts at the stored adhan loudness (native) and picks up the
@@ -71,14 +72,14 @@ export function AdhanModal({ prayer, onClose }) {
   // Live clock (also while minimized).
   useEffect(() => {
     if (!prayer) return undefined
-    const t = setInterval(() => setTick(Date.now()), 1000)
+    const t = setInterval(() => setTick(correctedNow()), 1000)
     return () => clearInterval(t)
   }, [prayer?.at])
 
   // Auto-close when the adhan window (30 min) elapses.
   useEffect(() => {
     if (!prayer) return undefined
-    const elapsed = Date.now() - prayer.at
+    const elapsed = correctedNow() - prayer.at
     const remaining = Math.max(0, ADHAN_WINDOW_MS - elapsed)
     if (remaining === 0) {
       onClose()

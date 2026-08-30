@@ -1,11 +1,12 @@
 import React from 'react'
 import { todayHijri, getWatchSnapshot } from '../../services/prayerWatch.mjs'
+import { correctedNow } from '../../services/prayerConfig.mjs'
 import { arabicDigits } from '../../utils/arabic.mjs'
 
 const WEEKDAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']
 const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 
-function gregorianArabic(ts = Date.now()) {
+function gregorianArabic(ts = correctedNow()) {
   const d = new Date(ts)
   const weekday = WEEKDAYS[d.getDay()]
   const day = arabicDigits(d.getDate())

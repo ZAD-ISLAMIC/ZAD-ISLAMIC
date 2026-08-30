@@ -448,6 +448,31 @@ h3 {
   color: var(--primary);
 }
 
+.home-prayer__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-prayer__settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.home-prayer__settings-btn:active {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
 .home-prayer__next {
   display: flex;
   align-items: center;
