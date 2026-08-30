@@ -34,7 +34,9 @@ const DEFAULT_CONFIG = {
   adhanVolume: 1, // adhan loudness 0..1 (of the alarm stream)
   respectSoundMode: false, // true => silent/vibrate device ring only vibrate+notification
   updateMissing: false,
-  clockOffsetMin: 0, // تصحيح التوقيت بالدقائق (-60 إلى +60)
+  // مصدر الوقت: تلقائي (وقت الجهاز) أو يدوي (تاريخ/وقت يحدده المستخدم ويستمر في التقدم)
+  timeSource: { mode: 'auto', manualIso: null, manualSetAt: null }, // mode: 'auto' | 'manual'
+  clockOffsetMin: 0, // مهمل — للتوافق مع الإصدارات القديمة (استخدم timeSource بدلاً منه)
 }
 
 /**
@@ -90,18 +92,43 @@ export function getPrayerLabels() {
 export { CUSTOM_METHOD }
 
 /**
- * إزاحة التوقيت الحالية بالمللي ثانية من الإعدادات.
- * تُستخدم لتصحيح الساعة عندما يكون وقت الجهاز غير دقيق.
+ * الوقت الحالي حسب مصدر الوقت المحدد.
+ * - auto: وقت الجهاز مباشرة (Date.now())
+ * - manual: وقت يدوي حدده المستخدم (manualIso) ويستمر في التقدم منذ لحظة الحفظ
  */
-export function getClockOffsetMs() {
-  return (loadConfig().clockOffsetMin || 0) * 60 * 1000
+export function getNowMs() {
+  const cfg = loadConfig()
+  const ts = cfg.timeSource
+  if (ts && ts.mode === 'manual' && ts.manualIso) {
+    const base = Date.parse(ts.manualIso)
+    const setAt = Number(ts.manualSetAt)
+    if (Number.isFinite(base)) {
+      if (Number.isFinite(setAt)) {
+        return base + (Date.now() - setAt)
+      }
+      return base
+    }
+  }
+  return Date.now()
 }
 
-/**
- * الوقت الحالي مصححاً بالإزاحة المخصصة من الإعدادات.
- * يجب استخدامها في كل مكان يحتاج إلى معرفة الوقت الحالي
- * (المواعيد، العدادات، الساعة المعروضة).
- */
+/** مهمل — للتوافق فقط، يُرجع 0 دائماً (استخدم getNowMs). */
+export function getClockOffsetMs() {
+  return 0
+}
+
+/** مهمل — استخدم getNowMs بدلاً منه. */
 export function correctedNow() {
-  return Date.now() + getClockOffsetMs()
+  return getNowMs()
+}
+
+/** تعيين مصدر الوقت. mode: 'auto' | 'manual', manualIso: ISO string أو null */
+export function setTimeSource(mode, manualIso = null) {
+  if (mode === 'manual' && manualIso) {
+    const base = Date.parse(manualIso)
+    if (!Number.isFinite(base)) throw new Error('manualIso غير صالح')
+    const next = { mode: 'manual', manualIso: new Date(base).toISOString(), manualSetAt: Date.now() }
+    return updateConfig({ timeSource: next })
+  }
+  return updateConfig({ timeSource: { mode: 'auto', manualIso: null, manualSetAt: null } })
 }

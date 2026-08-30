@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { correctedNow, onConfigChange } from '../services/prayerConfig.mjs'
+import { getNowMs, onConfigChange } from '../services/prayerConfig.mjs'
 
 function format12(date) {
   const h = date.getHours()
@@ -15,22 +15,22 @@ function format12(date) {
  * تراعى إزاحة التوقيت المخصصة في الإعدادات، وتتغيّر فوراً عند التعديل.
  */
 export function useClock() {
-  const [tick, setTick] = useState(correctedNow())
+  const [tick, setTick] = useState(getNowMs())
 
   useEffect(() => {
-    // تحديث فوري عند تغيير الإعدادات (تصحيح التوقيت)
-    const unsub = onConfigChange(() => setTick(correctedNow()))
+    // تحديث فوري عند تغيير الإعدادات (مصدر الوقت)
+    const unsub = onConfigChange(() => setTick(getNowMs()))
 
     let timer = 0
     const schedule = () => {
-      const next = new Date(correctedNow())
+      const next = new Date(getNowMs())
       next.setSeconds(0, 0)
       next.setMilliseconds(0)
       next.setMinutes(next.getMinutes() + 1)
       timer = window.setTimeout(() => {
-        setTick(correctedNow())
+        setTick(getNowMs())
         schedule()
-      }, next.getTime() - correctedNow())
+      }, next.getTime() - getNowMs())
     }
 
     schedule()

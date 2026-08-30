@@ -1,30 +1,37 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { playAzan } from '../../services/sound.mjs'
 import { stopNativeAdhan, setAdhanVolume, getAdhanVolume } from '../../services/prayerWatch.mjs'
-import { correctedNow } from '../../services/prayerConfig.mjs'
+import { getNowMs } from '../../services/prayerConfig.mjs'
 
 /**
- * Safety-net auto-close: for in-app audio the 'ended' event handles closing,
- * but for silent mode (native audio) we need a timer. 3 minutes covers the
- * longest common adhan file (~2:50) with a generous buffer.
+ * Safety-net auto-close timer. Matches the native AUTO_STOP_MS (5 min) so
+ * the pill never outlives the native audio layer. For in-app audio the
+ * 'ended' event closes sooner; for silent mode this is the fallback.
  */
-const ADHAN_WINDOW_MS = 3 * 60 * 1000
+const ADHAN_WINDOW_MS = 5 * 60 * 1000
+
+/**
+ * Polling interval for native playback state. Used in silent mode to detect
+ * when the native MediaPlayer finishes so the pill closes promptly.
+ */
+const POLL_INTERVAL_MS = 2000
 
 /**
  * Doc:
  *  - Live window (app open at the time of the adhan — `silent` false):
  *    plays the adhan automatically, shows the "+ since" clock, and offers
- *    minimize / close.  Auto-closes when the audio finishes (or after
- *    ADHAN_WINDOW_MS as a safety net).
+ *    minimize / close.  Auto-closes when the HTML5 Audio 'ended' event
+ *    fires (or after ADHAN_WINDOW_MS as a safety net).
  *  - Silent window (app re-opened inside an adhan window after the native
  *    ring — `silent: true`): never auto-plays; shows only minimize / close
- *    so the background adhan is never doubled. Auto-closes after the native
- *    audio finishes (tracked via a short polling interval).
+ *    so the background adhan is never doubled. Auto-closes when the native
+ *    MediaPlayer finishes (detected via getAdhanVolume() polling every 2s)
+ *    or after ADHAN_WINDOW_MS as a safety net.
  */
 export function AdhanModal({ prayer, onClose }) {
   const audioRef = useRef(null)
   const [minimized, setMinimized] = useState(false)
-  const [tick, setTick] = useState(() => correctedNow())
+  const [tick, setTick] = useState(() => getNowMs())
   const [volume, setVolume] = useState(90)
 
   // The slider starts at the stored adhan loudness (native) and picks up the
@@ -83,15 +90,42 @@ export function AdhanModal({ prayer, onClose }) {
   // Live clock (also while minimized).
   useEffect(() => {
     if (!prayer) return undefined
-    const t = setInterval(() => setTick(correctedNow()), 1000)
+    const t = setInterval(() => setTick(getNowMs()), 1000)
     return () => clearInterval(t)
   }, [prayer?.at])
 
-  // Safety-net auto-close: even if 'ended' never fires (e.g. silent mode
-  // with no local audio), close after ADHAN_WINDOW_MS from the prayer time.
+  // Silent mode: poll native playback state to detect when audio finishes.
+  // This closes the pill promptly instead of waiting for the fixed timer.
+  useEffect(() => {
+    if (!prayer || !silent) return undefined
+    let alive = true
+    const check = async () => {
+      if (!alive) return
+      try {
+        const state = await getAdhanVolume()
+        if (!alive) return
+        // If native reports not playing, the adhan audio has finished.
+        if (state && state.playing === false) {
+          onClose()
+        }
+      } catch {
+        // Ignore errors — the safety-net timer will handle cleanup.
+      }
+    }
+    // Check immediately, then poll periodically.
+    check()
+    const t = setInterval(check, POLL_INTERVAL_MS)
+    return () => {
+      alive = false
+      clearInterval(t)
+    }
+  }, [prayer?.key, silent])
+
+  // Safety-net auto-close: even if 'ended' never fires or polling fails,
+  // close after ADHAN_WINDOW_MS from the prayer time.
   useEffect(() => {
     if (!prayer) return undefined
-    const elapsed = correctedNow() - prayer.at
+    const elapsed = getNowMs() - prayer.at
     const remaining = Math.max(0, ADHAN_WINDOW_MS - elapsed)
     if (remaining === 0) {
       onClose()
@@ -149,7 +183,7 @@ export function AdhanModal({ prayer, onClose }) {
 
   return (
     <div className="adhan-modal" role="dialog" aria-modal="true" aria-label={`حان وقت صلاة ${prayer.name}`}>
-      <div className="adhan-modal__backdrop" onClick={close} />
+      <div className="adhan-modal__backdrop" onClick={() => setMinimized(true)} />
       <div className="adhan-modal__card">
         <div className="adhan-modal__glow" aria-hidden="true" />
         <span className="adhan-modal__icon" aria-hidden="true">🕌</span>

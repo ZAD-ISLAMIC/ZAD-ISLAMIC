@@ -379,6 +379,12 @@ public class PrayerWatch extends CordovaPlugin {
         float vol = (float) Math.min(1.0, Math.max(0.0, adhanVolume));
         if (Float.isNaN(vol)) vol = 1f;
 
+        // Capture old events BEFORE overwriting prefs so we can cancel their alarms.
+        // The requestCode is derived from ts (ts % MAX), so a clockOffset change
+        // mutates every ts by ±N minutes and would otherwise orphan the old
+        // PendingIntents — leaving duplicate alarms for every prayer.
+        java.util.List<PrayerAlarmScheduler.Event> oldEvents = PrayerAlarmScheduler.events(c);
+
         SharedPreferences.Editor ed = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit();
         ed.putBoolean(KEY_ENABLED, enabled);
         ed.putBoolean(KEY_ADHAN_BG, adhanEnabled);
@@ -393,6 +399,8 @@ public class PrayerWatch extends CordovaPlugin {
 
         try {
             if (!enabled) {
+                // Cancel both old and new (new == old after apply) to be safe.
+                PrayerAlarmScheduler.cancelAlarmsFor(c, oldEvents);
                 PrayerAlarmScheduler.cancelAlarms(c);
                 AdhanPlayback.stop(c, true);
                 PrayerAlarmScheduler.cancelAdhanTicks(c);
@@ -401,6 +409,8 @@ public class PrayerWatch extends CordovaPlugin {
                 return;
             }
             startWorker(c);
+            // Cancel old ts-based alarms that are now stale.
+            PrayerAlarmScheduler.cancelAlarmsFor(c, oldEvents);
             PrayerAlarmScheduler.scheduleAlarms(c);
             ctx.success(new JSONObject().put("ok", true).put("running", true));
         } catch (Exception ex) {

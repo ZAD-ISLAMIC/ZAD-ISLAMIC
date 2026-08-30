@@ -108,7 +108,7 @@ public final class PrayerAlarmScheduler {
             if (e.ts <= now || e.ts > horizon) continue;
             Intent i = adhanIntent(c, e.id, e.label, e.ts);
             PendingIntent pi = PendingIntent.getBroadcast(
-                    c, requestCode(e.ts), i, flags());
+                    c, stableRequestCode(e), i, flags());
             try {
                 if (exact) {
                     am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, e.ts, pi);
@@ -126,16 +126,27 @@ public final class PrayerAlarmScheduler {
     }
 
     public static synchronized void cancelAlarms(Context c) {
+        cancelAlarmsFor(c, events(c));
+        cancelAdhanTicks(c);
+    }
+
+    /** Cancel the exact PendingIntents for a supplied event list (used to
+     *  orphan-clean the *old* schedule after a clockOffset/method change). */
+    public static synchronized void cancelAlarmsFor(Context c, java.util.List<Event> list) {
+        if (list == null || list.isEmpty()) return;
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
-        for (Event e : events(c)) {
+        for (Event e : list) {
             if (!e.isPrayer) continue;
             Intent i = adhanIntent(c, e.id, e.label, e.ts);
-            PendingIntent pi = PendingIntent.getBroadcast(
+            // Stable code (new) + legacy ts-based code (old) for migration.
+            PendingIntent piStable = PendingIntent.getBroadcast(
+                    c, stableRequestCode(e), i, flags());
+            am.cancel(piStable);
+            PendingIntent piLegacy = PendingIntent.getBroadcast(
                     c, requestCode(e.ts), i, flags());
-            am.cancel(pi);
+            am.cancel(piLegacy);
         }
-        cancelAdhanTicks(c);
     }
 
     /**
@@ -203,6 +214,16 @@ public final class PrayerAlarmScheduler {
 
     static int requestCode(long ts) {
         return (int) (ts % Integer.MAX_VALUE);
+    }
+
+    /** Stable code that survives small clock-offset shifts (±60min never
+     *  changes the UTC day, so the same prayer on the same day keeps the
+     *  same PendingIntent and an offset update correctly overwrites it). */
+    static int stableRequestCode(Event e) {
+        long day = e.ts / 86400000L;
+        int h = e.id == null ? 0 : e.id.hashCode();
+        // Mix day into the hash; keep positive for PendingIntent.
+        return (h * 31 + (int) (day ^ (day >>> 32))) & 0x7fffffff;
     }
 
     static int tickRequestCode(long ts) {

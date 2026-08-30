@@ -5,7 +5,7 @@ import {
   getWatchSnapshot,
   formatPrayerDate,
 } from '../../services/prayerWatch.mjs'
-import { getPrayerLabels, loadConfig, correctedNow } from '../../services/prayerConfig.mjs'
+import { getPrayerLabels, loadConfig, getNowMs } from '../../services/prayerConfig.mjs'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import { Icon } from '../ui/Icon.jsx'
 import { SettingsSheet } from '../prayer/SettingsSheet.jsx'
@@ -15,11 +15,11 @@ const CARD_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 export function PrayerCard() {
   const navigate = useNavigate()
   const [snapshot, setSnapshot] = useState(() => getWatchSnapshot())
-  const [now, setNow] = useState(() => correctedNow())
+  const [now, setNow] = useState(() => getNowMs())
   const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
-    const t = setInterval(() => setNow(correctedNow()), 1000)
+    const t = setInterval(() => setNow(getNowMs()), 1000)
     return () => clearInterval(t)
   }, [])
 
@@ -44,15 +44,14 @@ export function PrayerCard() {
             <Icon name="landmark" size={14} />
             مواقيت الصلاة
           </span>
-          <span className="home-prayer__actions">
-            <button
+          <span className="home-prayer__actions" onClick={(e) => e.stopPropagation()}>
+            <span
               className="home-prayer__settings-btn"
-              onClick={(e) => { e.stopPropagation(); setShowSettings(true) }}
-              type="button"
+              onClick={() => setShowSettings(true)}
               aria-label="إعدادات المواقيت"
             >
               <Icon name="gear" size={14} />
-            </button>
+            </span>
             <span className="home-prayer__more">
               التفاصيل
               <Icon name="arrow-left" size={12} />

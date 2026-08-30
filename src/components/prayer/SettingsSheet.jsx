@@ -174,32 +174,122 @@ export function SettingsSheet({ onClose }) {
             <AdjustList config={config} update={update} />
           </Section>
 
-          <Section title="تصحيح التوقيت">
+          <Section title="مصدر الوقت">
             <p className="set-sheet__note">
-              إذا كانت الساعة على جهازك غير دقيقة، اضبط الفرق بالدقائق (+ أو −) لتصحيح جميع المواعيد.
+              اختر مصدر الوقت: تلقائي (وقت الجهاز) أو يدوي (تحدد التاريخ والوقت كاملاً ويستمر في التقدم).
             </p>
-            <div className="set-sheet__adjust">
-              <div className="set-sheet__adjust-row">
-                <span>فرق التوقيت</span>
-                <div className="set-sheet__stepper">
-                  <button
-                    onClick={() => update((c) => ({ ...c, clockOffsetMin: Math.max(-60, (c.clockOffsetMin || 0) - 1) }))}
-                    type="button"
-                    aria-label="نقص دقيقة من تصحيح التوقيت"
-                  >
-                    −
-                  </button>
-                  <b>{arabicDigits(config.clockOffsetMin || 0)}</b>
-                  <button
-                    onClick={() => update((c) => ({ ...c, clockOffsetMin: Math.min(60, (c.clockOffsetMin || 0) + 1) }))}
-                    type="button"
-                    aria-label="إضافة دقيقة إلى تصحيح التوقيت"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+            <div className="set-sheet__list">
+              <button
+                className={`set-sheet__row${(config.timeSource?.mode || 'auto') === 'auto' ? ' set-sheet__row--active' : ''}`}
+                onClick={() => update((c) => ({ ...c, timeSource: { mode: 'auto', manualIso: null, manualSetAt: null } }))}
+                type="button"
+              >
+                <span>تلقائي — وقت الجهاز</span>
+                {(config.timeSource?.mode || 'auto') === 'auto' && <Icon name="check" size={16} />}
+              </button>
+              <button
+                className={`set-sheet__row${config.timeSource?.mode === 'manual' ? ' set-sheet__row--active' : ''}`}
+                onClick={() => {
+                  const nowIso = new Date().toISOString()
+                  update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: nowIso, manualSetAt: Date.now() } }))
+                }}
+                type="button"
+              >
+                <span>يدوي — تحديد كامل</span>
+                {config.timeSource?.mode === 'manual' && <Icon name="check" size={16} />}
+              </button>
             </div>
+            {config.timeSource?.mode === 'manual' && (() => {
+              const iso = config.timeSource?.manualIso
+              const base = iso ? new Date(iso) : new Date()
+              const pad = (n) => String(n).padStart(2,'0')
+              const dateVal = `${base.getFullYear()}-${pad(base.getMonth()+1)}-${pad(base.getDate())}`
+              const timeVal = `${pad(base.getHours())}:${pad(base.getMinutes())}`
+              const onDateChange = (e) => {
+                const nd = e.target.value
+                if (!nd) return
+                const newIso = new Date(`${nd}T${timeVal}:00`).toISOString()
+                update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: newIso, manualSetAt: Date.now() } }))
+              }
+              const onTimeChange = (e) => {
+                const nt = e.target.value
+                if (!nt) return
+                const newIso = new Date(`${dateVal}T${nt}:00`).toISOString()
+                update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: newIso, manualSetAt: Date.now() } }))
+              }
+              return (
+                <div className="set-sheet__time-card">
+                  <div className="set-sheet__time-card__head">
+                    <span className="set-sheet__time-card__icon"><Icon name="calendar" size={16} /></span>
+                    <div>
+                      <b>التاريخ والوقت اليدوي</b>
+                      <small>قسّم الإدخال ليسهل التعديل — يستمر في التقدم</small>
+                    </div>
+                  </div>
+                  <div className="set-sheet__time-card__grid">
+                    <label>
+                      <span><Icon name="calendar" size={12} /> التاريخ</span>
+                      <div className="custom-date-picker small">
+                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>اليوم</small>
+                          <select value={base.getDate()} onChange={(e) => {
+                            const d = new Date(base); d.setDate(Number(e.target.value));
+                            update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: d.toISOString(), manualSetAt: Date.now() } }))
+                          }} className="custom-select small" aria-label="اليوم">
+                            {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={d}>{arabicDigits(d)}</option>)}
+                          </select>
+                        </div>
+                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>الشهر</small>
+                          <select value={base.getMonth()+1} onChange={(e) => {
+                            const d = new Date(base); d.setMonth(Number(e.target.value)-1);
+                            update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: d.toISOString(), manualSetAt: Date.now() } }))
+                          }} className="custom-select small" aria-label="الشهر">
+                            {['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
+                          </select>
+                        </div>
+                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>السنة</small>
+                          <select value={base.getFullYear()} onChange={(e) => {
+                            const d = new Date(base); d.setFullYear(Number(e.target.value));
+                            update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: d.toISOString(), manualSetAt: Date.now() } }))
+                          }} className="custom-select small" aria-label="السنة">
+                            {(() => { const cy = new Date().getFullYear(); const start = cy - 60; const end = cy + 40; return Array.from({length: end - start + 1}, (_, i) => start + i).map(y => <option key={y} value={y}>{arabicDigits(y)}</option>) })()}
+                          </select>
+                        </div>
+                      </div>
+                    </label>
+                    <label>
+                      <span><Icon name="clock" size={12} /> الوقت <small style={{fontWeight:400, color:'var(--text-muted)'}}>(24 ساعة)</small></span>
+                      <div className="custom-time-picker small">
+                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>دقيقة</small>
+                          <select value={pad(base.getMinutes())} onChange={(e) => {
+                            const d = new Date(base); d.setMinutes(Number(e.target.value));
+                            update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: d.toISOString(), manualSetAt: Date.now() } }))
+                          }} className="custom-select small" aria-label="دقيقة">
+                            {Array.from({length: 60}, (_, i) => pad(i)).map(m => <option key={m} value={m}>{arabicDigits(m)}</option>)}
+                          </select>
+                        </div>
+                        <span style={{paddingTop:'14px'}}>:</span>
+                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>ساعة</small>
+                          <select value={pad(base.getHours())} onChange={(e) => {
+                            const d = new Date(base); d.setHours(Number(e.target.value));
+                            update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: d.toISOString(), manualSetAt: Date.now() } }))
+                          }} className="custom-select small" aria-label="ساعة (24)">
+                            {Array.from({length: 24}, (_, i) => pad(i)).map(h => <option key={h} value={h}>{arabicDigits(h)}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                  <p className="set-sheet__time-card__hint">
+                    الوقت الفعّال الآن: <b dir="ltr">{new Date(base.getTime() + (Date.now() - (config.timeSource?.manualSetAt || Date.now()))).toLocaleString('ar-EG')}</b>
+                  </p>
+                </div>
+              )
+            })()}
           </Section>
 
           <Section title="صوت الأذان">

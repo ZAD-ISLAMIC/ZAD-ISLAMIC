@@ -7,7 +7,7 @@ import {
   formatPrayerDate,
   todayHijri,
 } from '../services/prayerWatch.mjs'
-import { loadConfig, correctedNow } from '../services/prayerConfig.mjs'
+import { loadConfig, getNowMs } from '../services/prayerConfig.mjs'
 import { getPrayerLabels } from '../services/prayerConfig.mjs'
 import { arabicDigits } from '../utils/arabic.mjs'
 import { Icon } from '../components/ui/Icon.jsx'
@@ -19,7 +19,7 @@ const LABELS = getPrayerLabels()
 export default function PrayerScreen() {
   const navigate = useNavigate()
   const [snapshot, setSnapshot] = useState(() => getWatchSnapshot())
-  const [now, setNow] = useState(() => correctedNow())
+  const [now, setNow] = useState(() => getNowMs())
   const [showLocation, setShowLocation] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
@@ -32,7 +32,7 @@ export default function PrayerScreen() {
 
   // live clock for the countdown
   useEffect(() => {
-    const t = setInterval(() => setNow(correctedNow()), 1000)
+    const t = setInterval(() => setNow(getNowMs()), 1000)
     return () => clearInterval(t)
   }, [])
 

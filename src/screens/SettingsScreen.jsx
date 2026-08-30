@@ -8,7 +8,7 @@ import { Icon } from '../components/ui/Icon.jsx'
 import { useTheme } from '../hooks/useTheme.mjs'
 import * as player from '../services/player.mjs'
 import { storage } from '../services/storage.mjs'
-import { loadConfig, updateConfig } from '../services/prayerConfig.mjs'
+import { loadConfig, updateConfig, getNowMs, setTimeSource } from '../services/prayerConfig.mjs'
 import { refreshWatch } from '../services/prayerWatch.mjs'
 import { getCurrentLocation } from '../services/location.mjs'
 import { arabicDigits } from '../utils/arabic.mjs'
@@ -76,10 +76,14 @@ export default function SettingsScreen() {
     await refreshWatch({ config: next })
   }
 
-  const changeClockOffset = async (delta) => {
-    const current = config.clockOffsetMin || 0
-    const next = Math.max(-60, Math.min(60, current + delta))
-    const updated = updateConfig({ clockOffsetMin: next })
+  const changeTimeMode = async (mode) => {
+    const updated = setTimeSource(mode, mode === 'manual' ? new Date().toISOString() : null)
+    setConfig(updated)
+    await refreshWatch({ config: updated })
+  }
+
+  const changeManualTime = async (iso) => {
+    const updated = setTimeSource('manual', iso)
     setConfig(updated)
     await refreshWatch({ config: updated })
   }
@@ -132,22 +136,106 @@ export default function SettingsScreen() {
           value={methodLabel}
           onClick={() => navigate('/settings/prayer')}
         />
-        <div className="settings-row">
-          <span className="settings-row__icon" aria-hidden="true">
-            <Icon name="clock" size={20} />
-          </span>
-          <span className="settings-row__text">
-            <span className="settings-row__label">تصحيح التوقيت</span>
-            <span className="settings-row__desc">إذا كانت الساعة على جهازك غير دقيقة</span>
-          </span>
-          <span className="settings-row__trailing">
-            <div className="settings-stepper" role="group" aria-label="تصحيح التوقيت">
-              <button className="settings-stepper__btn" aria-label="نقص دقيقة" onClick={() => changeClockOffset(-1)} type="button">−</button>
-              <span className="settings-stepper__value">{arabicDigits(config.clockOffsetMin || 0)}</span>
-              <button className="settings-stepper__btn" aria-label="إضافة دقيقة" onClick={() => changeClockOffset(1)} type="button">+</button>
+        <SettingsSelect
+          icon={<Icon name="clock" size={20} />}
+          label="مصدر الوقت"
+          description={config.timeSource?.mode === 'manual' ? 'يدوي — التطبيق يستخدم الوقت الذي حددته' : 'تلقائي — وقت الجهاز'}
+          options={[
+            { value: 'auto', label: 'تلقائي' },
+            { value: 'manual', label: 'يدوي' },
+          ]}
+          value={config.timeSource?.mode || 'auto'}
+          onChange={changeTimeMode}
+        />
+        {config.timeSource?.mode === 'manual' && (() => {
+          const iso = config.timeSource?.manualIso
+          const base = iso ? new Date(iso) : new Date()
+          const pad = (n) => String(n).padStart(2,'0')
+          const dateVal = `${base.getFullYear()}-${pad(base.getMonth()+1)}-${pad(base.getDate())}`
+          const timeVal = `${pad(base.getHours())}:${pad(base.getMinutes())}`
+          const onDateChange = (e) => {
+            const newDate = e.target.value
+            if (!newDate) return
+            const t = timeVal
+            changeManualTime(new Date(`${newDate}T${t}:00`).toISOString())
+          }
+          const onTimeChange = (e) => {
+            const newTime = e.target.value
+            if (!newTime) return
+            const d = dateVal
+            changeManualTime(new Date(`${d}T${newTime}:00`).toISOString())
+          }
+          return (
+            <div className="settings-time-card">
+              <div className="settings-time-card__header">
+                <span className="settings-time-card__icon"><Icon name="calendar" size={18} /></span>
+                <div className="settings-time-card__title">
+                  <b>الوقت اليدوي</b>
+                  <small>حدد التاريخ والوقت — يستمر في التقدم تلقائياً</small>
+                </div>
+                <span className="settings-time-card__badge">{arabicDigits(new Date(getNowMs()).toLocaleDateString('ar-EG'))}</span>
+              </div>
+              <div className="settings-time-card__grid">
+                <label className="settings-time-card__field">
+                  <span><Icon name="calendar" size={14} /> التاريخ</span>
+                  <div className="custom-date-picker">
+                    <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                      <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>اليوم</small>
+                      <select value={base.getDate()} onChange={(e) => {
+                        const d = new Date(base); d.setDate(Number(e.target.value)); changeManualTime(d.toISOString())
+                      }} className="custom-select" aria-label="اليوم">
+                        {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={d}>{arabicDigits(d)}</option>)}
+                      </select>
+                    </div>
+                    <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                      <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>الشهر</small>
+                      <select value={base.getMonth()+1} onChange={(e) => {
+                        const d = new Date(base); d.setMonth(Number(e.target.value)-1); changeManualTime(d.toISOString())
+                      }} className="custom-select" aria-label="الشهر">
+                        {['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                      <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>السنة</small>
+                      <select value={base.getFullYear()} onChange={(e) => {
+                        const d = new Date(base); d.setFullYear(Number(e.target.value)); changeManualTime(d.toISOString())
+                      }} className="custom-select" aria-label="السنة">
+                        {(() => { const cy = new Date().getFullYear(); const start = cy - 60; const end = cy + 40; return Array.from({length: end - start + 1}, (_, i) => start + i).map(y => <option key={y} value={y}>{arabicDigits(y)}</option>) })()}
+                      </select>
+                    </div>
+                  </div>
+                </label>
+                <label className="settings-time-card__field">
+                  <span><Icon name="clock" size={14} /> الوقت <small style={{fontWeight:400, color:'var(--text-muted)'}}>(24 ساعة)</small></span>
+                  <div className="custom-time-picker">
+                    <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                      <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>دقيقة</small>
+                      <select value={pad(base.getMinutes())} onChange={(e) => {
+                        const d = new Date(base); d.setMinutes(Number(e.target.value)); changeManualTime(d.toISOString())
+                      }} className="custom-select" aria-label="دقيقة">
+                        {Array.from({length: 60}, (_, i) => pad(i)).map(m => <option key={m} value={m}>{arabicDigits(m)}</option>)}
+                      </select>
+                    </div>
+                    <span style={{paddingTop:'14px'}}>:</span>
+                    <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
+                      <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>ساعة</small>
+                      <select value={pad(base.getHours())} onChange={(e) => {
+                        const d = new Date(base); d.setHours(Number(e.target.value)); changeManualTime(d.toISOString())
+                      }} className="custom-select" aria-label="ساعة (24)">
+                        {Array.from({length: 24}, (_, i) => pad(i)).map(h => <option key={h} value={h}>{arabicDigits(h)}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </label>
+              </div>
+              <p className="settings-time-card__hint">
+                الوقت الفعّال: <b dir="ltr">{new Date(getNowMs()).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</b>
+                <br />
+                وقت الجهاز: <span dir="ltr">{new Date().toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              </p>
             </div>
-          </span>
-        </div>
+          )
+        })()}
         <SettingsSwitch
           icon={<Icon name="volume" size={20} />}
           label="الأذان والتنبيهات"

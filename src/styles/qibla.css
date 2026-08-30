@@ -579,8 +579,71 @@
 }
 
 /* ------------------------------------------------------------------ *
- * تقليل الحركة
- * ------------------------------------------------------------------ */
+* تحسين زر shortcut اتجاه القبلة في صفحة المواقيت — مميز وبارز
+* ------------------------------------------------------------------ */
+.prayer__settings.qibla-shortcut {
+  background: linear-gradient(135deg, #d4af37 0%, #b8860b 100%);
+  color: #1a1a1a;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.3), 0 1px 3px rgba(0,0,0,0.1);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  margin-top: 14px;
+  justify-content: space-between;
+}
+
+.prayer__settings.qibla-shortcut::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  opacity: 0.8;
+}
+
+.prayer__settings.qibla-shortcut::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 100% at 80% 0%, rgba(255,255,255,0.15), transparent 50%);
+  pointer-events: none;
+}
+
+.prayer__settings.qibla-shortcut:hover {
+  background: linear-gradient(135deg, #e8c447 0%, #d4a825 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4), 0 2px 8px rgba(0,0,0,0.12);
+  border-color: rgba(212, 175, 55, 0.6);
+}
+
+.prayer__settings.qibla-shortcut:active {
+  background: linear-gradient(135deg, #b8860b 0%, #8b6a15 100%);
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+.prayer__settings.qibla-shortcut:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+
+.prayer__settings.qibla-shortcut span {
+  position: relative;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------------ *
+* تقليل الحركة
+* ------------------------------------------------------------------ */
 
 @media (prefers-reduced-motion: reduce) {
   .qibla-dial__spinner {

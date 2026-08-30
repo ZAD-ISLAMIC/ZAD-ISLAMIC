@@ -9,12 +9,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetFileDescriptor;
 import android.content.res.AssetManager;
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.PowerManager;
+import android.telephony.TelephonyManager;
+
+import androidx.core.content.ContextCompat;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.Action;
@@ -175,6 +180,17 @@ public final class AdhanPlayback {
             return;
         }
 
+        // If a phone call is active (user is on a call or dialing), the adhan
+        // must not play audio — it would drown the conversation. Keep the
+        // silent notification + vibration so the user still sees the prayer.
+        if (isInCall(c)) {
+            try {
+                if (wl != null) wl.release();
+            } catch (Exception ignored) {
+            }
+            return;
+        }
+
         // Audible even on a silent/vibrate device: take alarm-stream audio
         // focus (routes the hardware volume keys to the adhan) and raise the
         // alarm stream to the stored adhan loudness. The previous stream level
@@ -253,8 +269,48 @@ public final class AdhanPlayback {
      *     phone's current sound mode.
      * ------------------------------------------------------------------ */
 
+    /** True if a phone call is active — adhan must be silent. */
+    public static boolean isInCall(Context c) {
+        if (c == null) return false;
+        // Fast, permission-free check: audio mode is IN_CALL / IN_COMMUNICATION.
+        try {
+            AudioManager am = (AudioManager) c.getSystemService(Context.AUDIO_SERVICE);
+            if (am != null) {
+                int mode = am.getMode();
+                if (mode == AudioManager.MODE_IN_CALL || mode == AudioManager.MODE_IN_COMMUNICATION) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) { }
+        // Telephony check (requires READ_PHONE_STATE; guard it).
+        try {
+            if (ContextCompat.checkSelfPermission(c, Manifest.permission.READ_PHONE_STATE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                TelephonyManager tm = (TelephonyManager) c.getSystemService(Context.TELEPHONY_SERVICE);
+                if (tm != null) {
+                    int state = tm.getCallState();
+                    if (state == TelephonyManager.CALL_STATE_OFFHOOK
+                            || state == TelephonyManager.CALL_STATE_RINGING) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception ignored) { }
+        return false;
+    }
+
     private static final AudioManager.OnAudioFocusChangeListener FOCUS_CB = change -> {
-        // Intentional: the adhan keeps playing regardless of focus outcomes.
+        if (change == AudioManager.AUDIOFOCUS_LOSS
+                || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+                || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            // Any audio-focus loss during a call or media interruption:
+            // stop the adhan immediately but keep the silent notification
+            // so the user sees "حان وقت الصلاة" without voice.
+            stop(null, false);
+        } else if (change == AudioManager.AUDIOFOCUS_GAIN) {
+            // Focus recovered — the adhan is already stopped, just restore.
+            restoreAlarm(sCtx);
+        }
     };
 
     private static void requestFocus(Context c) {

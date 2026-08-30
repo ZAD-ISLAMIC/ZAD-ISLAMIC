@@ -12,7 +12,7 @@
  */
 
 import { computeTimes, hourToDate, formatDate } from './prayerTimes.mjs'
-import { loadConfig, updateConfig, getPrayerLabels, correctedNow, getClockOffsetMs } from './prayerConfig.mjs'
+import { loadConfig, updateConfig, getPrayerLabels, getNowMs } from './prayerConfig.mjs'
 import { getCurrentLocation } from './location.mjs'
 import { civilDateInTz, offsetHoursForDate } from './timezone.mjs'
 import { isCordova, onDeviceReady } from './device.mjs'
@@ -241,10 +241,7 @@ export async function syncNativeWatch(schedule) {
         name: e.name,
         isPrayer: e.isPrayer,
         atIso: e.atIso,
-        // Adjust for clock offset so the native AlarmManager fires at the
-        // correct *real* time.  Without this, a fast device clock causes
-        // the alarm to ring early from the user's corrected-time perspective.
-        ts: e.at - getClockOffsetMs(),
+        ts: e.at,
       })),
     }
     await requestNotificationPermission()
@@ -289,7 +286,7 @@ let nativeArmed = false
 // start, resume, or a wake-up from the background freeze detector). Any
 // prayer whose adhan window was already open at that instant is presumed
 // announced (or missed) elsewhere and must NEVER ring on entry.
-let activeAt = correctedNow()
+let activeAt = getNowMs()
 // `prevTickAt` is the timestamp of the previous watch tick within the current
 // foreground session (0 = right after activation). A prayer may only ring if
 // it *became due during this live watching interval* — i.e. first observed
@@ -314,14 +311,9 @@ let nativePushPrayerKey = null
 // Prevents the backup timer from firing a second time for the same prayer.
 // Reset when the prayer window moves to a new prayer.
 let backupFiredKey = null
-// Tracks the last known clockOffsetMin so we can detect offset changes.
-// When the user changes the offset, fired prayers that are now within the
-// corrected window are reset so the adhan fires at the new corrected time.
-let lastClockOffsetMin = null
-
 /** Establish/refresh the foreground boundary: nothing already due may ring. */
 function markActive() {
-  activeAt = correctedNow()
+  activeAt = getNowMs()
   prevTickAt = 0 // next tick only backfills — never rings
   // DO NOT reset nativePushReceived here: if native already announced the
   // adhan before the app was backgrounded, we must not fire again on resume.
@@ -397,14 +389,14 @@ export function onAdhan(cb) {
 export async function refreshWatch(opts = {}) {
   const location = opts.location || getCurrentLocation()
   const config = opts.config || loadConfig()
-  const now = new Date(correctedNow())
+  const now = new Date(getNowMs())
   const schedule = buildSchedule(location, config, now)
   const day = dayKeyOf(now)
   snapshot = {
     ...schedule,
     location,
     config,
-    nowMs: correctedNow(),
+    nowMs: getNowMs(),
     hijri: formatHijri(now),
     dayKey: day,
   }
@@ -452,7 +444,7 @@ function fireAdhan(prayer, fires, day) {
 
 function checkTransitions() {
   if (!snapshot) return
-  const now = new Date(correctedNow())
+  const now = new Date(getNowMs())
   const nowMs = now.getTime()
 
   // re-roll the snapshot when we're more than ~12 min stale (also covers the
@@ -475,35 +467,8 @@ function checkTransitions() {
   const day = dayKeyOf(now)
   const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
 
-  // WIDE_WINDOW: wider than ADHAN_WINDOW_MS so the backup timer can catch
-  // prayers that were shifted into the past by a clock-offset adjustment.
-  // Without this, a ±5-minute offset push would land the prayer outside the
-  // tight 5-minute window and nothing — native or in-app — would ring it.
+  // Backup window for Doze-delayed native alarms.
   const WIDE_WINDOW_MS = 15 * 60 * 1000
-
-  // When the user changes clockOffsetMin, prayers that were already fired
-  // in this session should re-fire at the new corrected time.  Reset their
-  // entry in the fires map so the backup timer can pick them up again.
-  // We check `nowMs < e.at + WIDE_WINDOW` (without `>= e.at`) so that
-  // prayers whose native alarm already fired early (before the offset
-  // correction) are also reset — otherwise alreadyFired would block the
-  // backup timer from ringing at the corrected time.
-  const currentOffset = snapshot.config?.clockOffsetMin ?? 0
-  if (lastClockOffsetMin !== null && currentOffset !== lastClockOffsetMin) {
-    for (const e of snapshot.events) {
-      if (e.isPrayer && nowMs < e.at + WIDE_WINDOW_MS) {
-        if (fires?.[day]?.[e.key]) {
-          delete fires[day][e.key]
-          storage.set(FIRED_KEY, fires)
-        }
-      }
-    }
-    // Also reset native-push trackers so the backup timer can fire again.
-    nativePushReceived = false
-    nativePushPrayerKey = null
-    backupFiredKey = null
-  }
-  lastClockOffsetMin = currentOffset
 
   const prevTick = prevTickAt
   prevTickAt = nowMs
@@ -522,7 +487,13 @@ function checkTransitions() {
         }
 
         // Mark as consumed so a repeat open never re-triggers.
-        markFired(fires, day, e)
+        // Do NOT mark as fired here if backup will fire below — the backup
+        // timer needs to be able to fire this prayer if nativePushReceived is false.
+        const shouldMarkConsumed = !(!nativePushReceived || nativePushPrayerKey !== e.key)
+
+        if (shouldMarkConsumed) {
+          markFired(fires, day, e)
+        }
 
         // BACKUP TIMER: if the native push never arrived and we are past the
         // grace delay, fire the adhan locally so the user hears it even when
@@ -666,7 +637,7 @@ function handleNativePush(payload) {
  */
 export function announceNativeAdhan({ key, name, ts } = {}) {
   if (!key) return
-  const at = Number(ts) || correctedNow()
+  const at = Number(ts) || getNowMs()
   const day = dayKeyOf(new Date(at))
   const dedupe = day + ':' + key
   if (silentShownKey === dedupe) return
@@ -931,7 +902,7 @@ export function setHijriShift(days) {
 }
 
 export function todayHijri(shiftDays = getHijriShift()) {
-  const d = new Date(correctedNow() + (shiftDays || 0) * 86400000)
+  const d = new Date(getNowMs() + (shiftDays || 0) * 86400000)
   return formatHijri(d)
 }
 
