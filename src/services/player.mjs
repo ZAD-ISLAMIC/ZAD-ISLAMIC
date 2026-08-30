@@ -2,6 +2,7 @@ import { audioUrl } from './reciters.mjs'
 import { getLocalUrl, localUrlFor } from './reciterStorage.mjs'
 import { HISN_NS } from './hisnmuslim.mjs'
 import { FATWA_NS } from './fatwas.mjs'
+import { QURAN_CARDS_NS } from './quranCards.mjs'
 import { storage } from './storage.mjs'
 
 const LAST_KEY = 'player.last'
@@ -228,6 +229,7 @@ async function loadTrack(queue, index, { autoplay }) {
     const isRadio = track.kind === 'radio'
     const isHisn = track.kind === 'hisn'
     const isFatwa = track.kind === 'fatwa'
+    const isQuranCard = track.kind === 'quranCard'
     const offline = typeof navigator !== 'undefined' && !navigator.onLine
     let url
     if (isRadio) {
@@ -241,6 +243,11 @@ async function loadTrack(queue, index, { autoplay }) {
       const local = await localUrlFor(FATWA_NS, track.fileName)
       if (local) url = local
       else if (offline) throw new Error('offline-fatwa')
+      else url = track.url
+    } else if (isQuranCard) {
+      const local = await localUrlFor(QURAN_CARDS_NS, track.fileName)
+      if (local) url = local
+      else if (offline) throw new Error('offline-quran-card')
       else url = track.url
     } else {
       const local = await getLocalUrl(track.reciterId, track.surahNumber)
@@ -370,6 +377,7 @@ function syncMediaSession(enabled = true) {
     const isRadio = state.track.kind === 'radio'
     const isHisn = state.track.kind === 'hisn'
     const isFatwa = state.track.kind === 'fatwa'
+    const isQuranCard = state.track.kind === 'quranCard'
     ms.metadata = new MediaMetadata({
       title: isRadio
         ? state.track.name || 'إذاعة'
@@ -377,21 +385,27 @@ function syncMediaSession(enabled = true) {
           ? state.track.name || 'حصن المسلم'
           : isFatwa
             ? state.track.name || 'فتوى'
-            : state.track.surahName || 'سورة',
+            : isQuranCard
+              ? state.track.name || 'بطاقة قرآن'
+              : state.track.surahName || 'سورة',
       artist: isRadio
         ? state.track.category || 'التقوى'
         : isHisn
           ? 'حصن المسلم'
           : isFatwa
             ? 'ابن باز'
-            : state.track.reciterName || 'التقوى',
+            : isQuranCard
+              ? 'بطاقات القرآن'
+              : state.track.reciterName || 'التقوى',
       album: isRadio
         ? 'التقوى — الراديو'
         : isHisn
           ? 'التقوى — حصن المسلم'
           : isFatwa
             ? 'التقوى — الفتاوى'
-            : 'التقوى — المصحف',
+            : isQuranCard
+              ? 'التقوى — بطاقات القرآن'
+              : 'التقوى — المصحف',
     })
     ms.setActionHandler('play', () => toggle())
     ms.setActionHandler('pause', () => toggle())

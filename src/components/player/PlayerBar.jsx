@@ -3,6 +3,7 @@ import { arabicDigits } from '../../utils/arabic.mjs'
 import { hasSurah, hasFile } from '../../services/reciterStorage.mjs'
 import { HISN_NS } from '../../services/hisnmuslim.mjs'
 import { FATWA_NS } from '../../services/fatwas.mjs'
+import { QURAN_CARDS_NS } from '../../services/quranCards.mjs'
 import { usePlayer } from '../../hooks/usePlayer.mjs'
 import { Icon } from '../ui/Icon.jsx'
 
@@ -33,13 +34,16 @@ export function PlayerBar() {
   const isLive = track.kind === 'radio'
   const isHisn = track.kind === 'hisn'
   const isFatwa = track.kind === 'fatwa'
+  const isQuranCard = track.kind === 'quranCard'
   const stored = isLive
     ? false
     : isHisn
       ? hasFile(HISN_NS, track.fileName)
       : isFatwa
         ? hasFile(FATWA_NS, track.fileName)
-        : hasSurah(track.reciterId, track.surahNumber)
+        : isQuranCard
+          ? hasFile(QURAN_CARDS_NS, track.fileName)
+          : hasSurah(track.reciterId, track.surahNumber)
   const percent =
     player.duration > 0
       ? Math.min(100, (player.time / player.duration) * 100)
@@ -68,6 +72,8 @@ export function PlayerBar() {
             <Icon name="shield" size={22} />
           ) : isFatwa ? (
             <Icon name="feather" size={22} />
+          ) : isQuranCard ? (
+            <Icon name="bookmark" size={22} />
           ) : (
             arabicDigits(track.surahNumber)
           )}
@@ -79,8 +85,10 @@ export function PlayerBar() {
               ? track.sub || 'حصن المسلم'
               : isFatwa
                 ? `${track.sub || 'فتاوى ابن باز'} • ابن باز`
-                : track.category || track.reciterName}
-            {!isLive && !isHisn && !isFatwa && track.rewaya ? ` • ${track.rewaya}` : ''}
+                : isQuranCard
+                  ? 'بطاقات القرآن'
+                  : track.category || track.reciterName}
+            {!isLive && !isHisn && !isFatwa && !isQuranCard && track.rewaya ? ` • ${track.rewaya}` : ''}
           </span>
         </span>
         {isLive ? (
@@ -156,8 +164,8 @@ export function PlayerBar() {
 
             <div className="player-full__art">
               <span className="player-full__badge">
-                <Icon name={isLive ? 'radio' : isHisn ? 'shield' : isFatwa ? 'feather' : 'note'} size={34} />
-                {!isLive && !isHisn && !isFatwa && (
+                <Icon name={isLive ? 'radio' : isHisn ? 'shield' : isFatwa ? 'feather' : isQuranCard ? 'bookmark' : 'note'} size={34} />
+                {!isLive && !isHisn && !isFatwa && !isQuranCard && (
                   <span className="player-full__badge-num">
                     {arabicDigits(track.surahNumber)}
                   </span>
@@ -174,8 +182,10 @@ export function PlayerBar() {
                     ? track.sub || 'حصن المسلم'
                     : isFatwa
                       ? `${track.sub || 'فتاوى ابن باز'} • ابن باز`
-                      : track.reciterName}
-                {!isLive && !isHisn && !isFatwa && track.rewaya ? ` • ${track.rewaya}` : ''}
+                      : isQuranCard
+                        ? 'بطاقات القرآن'
+                        : track.reciterName}
+                {!isLive && !isHisn && !isFatwa && !isQuranCard && track.rewaya ? ` • ${track.rewaya}` : ''}
               </p>
               {isLive && (
                 <p className="player-full__live-badge">

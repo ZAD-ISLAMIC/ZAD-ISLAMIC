@@ -52,6 +52,7 @@
     "com.rn0x.systemui": "file:cordova-plugins/system-ui",
     "cordova": "^13.0.0",
     "cordova-android": "15.1.0",
+    "cordova-plugin-advanced-http": "^3.3.1",
     "cordova-plugin-compat": "^1.2.0",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-file": "^4.3.3",
@@ -79,7 +80,10 @@
       "cordova-plugin-inappbrowser": {},
       "cordova-plugin-file-opener2": {},
       "cordova-plugin-x-socialsharing": {},
-      "com.altaqwaa.moonshinestt": {}
+      "com.altaqwaa.moonshinestt": {},
+      "cordova-plugin-advanced-http": {
+        "ANDROIDBLACKLISTSECURESOCKETPROTOCOLS": "SSLv3,TLSv1"
+      }
     }
   }
 }

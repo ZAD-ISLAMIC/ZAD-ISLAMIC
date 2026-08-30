@@ -53,6 +53,14 @@ export const DOWNLOAD_SECTIONS = [
     kind: 'files',
     ns: 'khutbah',
   },
+  {
+    id: 'qurancards',
+    label: 'البطاقات القرآنية',
+    icon: 'bookmark',
+    countLabel: 'ملف',
+    kind: 'files',
+    ns: 'quran-cards',
+  },
 ]
 
 function keyList(prefix) {

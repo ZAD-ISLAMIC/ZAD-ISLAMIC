@@ -64,4 +64,12 @@ export const APP_SOURCES = [
     url: 'https://dorar.net/m3lama',
     github: 'https://github.com/rn0x/IslamicQuizAPI',
   },
+  {
+    id: 'qurancards',
+    name: 'البطاقات القرآنية',
+    description: 'بطاقات تفاعلية لكل سورة مع صوت و PDF',
+    icon: 'bookmark',
+    url: 'https://albitaqat.com/',
+    github: 'https://github.com/rn0x/albitaqat_quran',
+  },
 ]

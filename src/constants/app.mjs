@@ -19,6 +19,7 @@ export const NAV_ITEMS = [
   { path: '/tasbih', label: 'المسبحة', short: 'المسبحة', icon: 'beads', accent: '#34d399' },
   { path: '/radio', label: 'الراديو', short: 'الراديو', icon: 'radio', accent: '#f472b6' },
   { path: '/reciters', label: 'القرّاء', short: 'القرّاء', icon: 'mic', accent: '#38bdf8' },
+  { path: '/quran-cards', label: 'بطاقات القرآن', short: 'البطاقات', icon: 'bookmark', accent: '#d4af37' },
   { path: '/settings', label: 'الإعدادات', short: 'الإعدادات', icon: 'sliders', accent: '#64748b' },
 ]
 
@@ -43,6 +44,7 @@ export const SCREENS_META = {
   tasbih: { title: 'المسبحة الإلكترونية', description: 'تسبيح بعدّاد تفاعلي' },
   radio: { title: 'راديو التقوى', description: 'بث مباشر وقنوات قرآنية' },
   reciters: { title: 'القرّاء', description: 'تصفح القراء والاستماع لتلاواتهم' },
+  'quran-cards': { title: 'بطاقات القرآن', description: '114 بطاقة شاملة لكل سورة — معلومات، استماع، تحميل' },
   quiz: { title: 'الأسئلة الإسلامية', description: 'أسئلة تفاعلية بأبواب مقفلة ونجوم وإنجازات' },
   settings: { title: 'الإعدادات', description: 'تفضيلات التطبيق والحساب' },
 }
