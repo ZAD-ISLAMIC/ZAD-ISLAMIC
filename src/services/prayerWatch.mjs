@@ -22,9 +22,10 @@ import { formatHijri, formatHijriShort } from '../utils/hijri.mjs'
 export const PRAYERS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha']
 export const ADHAN_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 export const FIRE_WINDOW_MS = 6 * 60 * 1000 // a prayer stays "current" for 6 min
-// Adhan only plays in a tight window around the exact prayer time, so a late
-// app-open (or an old corrupt fired-map) never re-triggers the call to prayer.
-const ADHAN_WINDOW_MS = 2 * 60 * 1000
+// In-app detection window: widened from 2→5 min so the watcher has more
+// chances to catch a late native alarm (some OEMs delay setExactAndAllowWhileIdle
+// by several minutes under Doze).
+const ADHAN_WINDOW_MS = 5 * 60 * 1000
 const WATCH_INTERVAL_MS = 30 * 1000
 // After the app becomes active/visible, nothing rings during this grace
 // period: opening the app — even exactly when a prayer is due — must never
@@ -32,6 +33,10 @@ const WATCH_INTERVAL_MS = 30 * 1000
 // while the app is closed. A prayer only rings if the app was already up and
 // watching for at least this long before its time arrived.
 const ACTIVATION_GRACE_MS = 3 * WATCH_INTERVAL_MS
+// If the native alarm is delayed beyond this many seconds past the exact
+// prayer time AND the in-app watcher hasn't seen any push from native,
+// the watcher assumes native failed and fires the adhan locally.
+const NATIVE_BACKUP_DELAY_MS = 60 * 1000
 
 const FIRED_KEY = 'prayer:fired'
 const HIJRI_KEY = 'prayer:hijri-shift'
@@ -298,11 +303,20 @@ let prevTickAt = 0
 // and every prayer still inside its window was missed while hidden → dedupe.
 const RESUME_GAP_MS = 3 * WATCH_INTERVAL_MS + 5_000
 let lastTickAt = 0
+// Track the last prayer time the native layer pushed (via announceNativeAdhan
+// or checkSilentAdhan). If no push arrives within NATIVE_BACKUP_DELAY_MS of
+// the exact prayer time while nativeArmed, the watcher fires locally.
+let nativePushReceived = false
+let nativePushPrayerKey = null
 
 /** Establish/refresh the foreground boundary: nothing already due may ring. */
 function markActive() {
   activeAt = correctedNow()
   prevTickAt = 0 // next tick only backfills — never rings
+  // Reset native-push tracker: a fresh foreground session means any prior
+  // push is stale; we'll detect a new one if it arrives.
+  nativePushReceived = false
+  nativePushPrayerKey = null
 }
 
 function emit() {
@@ -457,12 +471,18 @@ function checkTransitions() {
 
   for (const e of snapshot.events) {
     if (nativeArmed) {
-      // The native alarm is the single firer (it rings exactly at e.at and
-      // pushes the event back so the in-app window opens without replaying).
-      // The watcher only consumes in-window events here so a repeat open
-      // inside the same window can never re-trigger the call to prayer.
       if (e.isPrayer && nowMs >= e.at && nowMs < e.at + ADHAN_WINDOW_MS) {
         markFired(fires, day, e)
+        // BACKUP TIMER: if the native push never arrived and we are past the
+        // grace delay, fire the adhan locally so the user hears it even when
+        // the native alarm was delayed by Doze / OEM quirks.
+        if (!nativePushReceived || nativePushPrayerKey !== e.key) {
+          const delay = nowMs - e.at
+          if (delay >= NATIVE_BACKUP_DELAY_MS && prevTick > 0 && !hidden) {
+            fireAdhan(e, fires, day)
+            break
+          }
+        }
       }
       continue
     }
@@ -512,6 +532,9 @@ function onVisibility() {
   // a resume is a fresh foreground boundary: prayers that came due while the
   // app was backgrounded must not ring on return
   markActive()
+  // Re-subscribe the push channel — Cordova may have invalidated the old
+  // callback context while the app was backgrounded.
+  subscribeNotificationOpen()
   refreshWatch().then(() => checkSilentAdhan()).catch(() => {})
   consumeNotificationScreen()
 }
@@ -591,6 +614,10 @@ export function announceNativeAdhan({ key, name, ts } = {}) {
   const fires = firedMap()
   markFired(fires, day, { key, atIso: new Date(at).toISOString() })
   silentShownKey = dedupe
+  // Record that native successfully pushed — prevents the backup timer
+  // from firing a duplicate in-app adhan.
+  nativePushReceived = true
+  nativePushPrayerKey = key
   emitSilent({
     key,
     name: name || key,
@@ -776,6 +803,9 @@ export async function checkSilentAdhan() {
   const dedupe = dayKeyOf(new Date(win.ts)) + ':' + win.key
   if (silentShownKey === dedupe) return
   silentShownKey = dedupe
+  // Record that native fired — prevents the backup timer from duplicating.
+  nativePushReceived = true
+  nativePushPrayerKey = win.key
   // find a matching label via the schedule snapshot
   const ev = (snapshot?.events || []).find((e) => e.key === win.key)
   emitSilent({
@@ -792,6 +822,8 @@ export async function checkSilentAdhan() {
 export function clearSilentAdhan() {
   silentShownKey = null
   lastSilentEvent = null
+  nativePushReceived = false
+  nativePushPrayerKey = null
 }
 
 /** Navigate a HashRouter app to a route like "/prayer". */

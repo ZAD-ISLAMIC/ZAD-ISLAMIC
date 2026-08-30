@@ -28,8 +28,11 @@ public final class PrayerAlarmScheduler {
     static final String EXTRA_TS = "ts";
     static final String EXTRA_REMAINING = "remaining";
 
-    /** A prayer stays in its "adhan window" (notification + count-up) 30 min. */
-    static final long ADHAN_WINDOW_MS = 30 * 60 * 1000L;
+    /** A prayer stays in its "adhan window" (notification + count-up) for
+     *  the adhan duration — matches AUTO_STOP_MS. The old 30-minute window
+     *  caused the notification to linger and tick repeatedly long after the
+     *  audio finished. */
+    static final long ADHAN_WINDOW_MS = 5 * 60 * 1000L;
     /** How long the ringing itself may last before auto-stop. */
     static final long AUTO_STOP_MS = 5 * 60 * 1000L;
 

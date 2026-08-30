@@ -27,8 +27,19 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
             if (intent == null) return;
             String action = intent.getAction();
             if (AdhanPlayback.ACTION_STOP.equals(action)) {
-                AdhanPlayback.stop(c, intent.getBooleanExtra("dismissed", true));
-                PrayerAlarmScheduler.cancelAdhanTicks(c);
+                boolean dismissed = intent.getBooleanExtra("dismissed", true);
+                if (dismissed) {
+                    // Swipe-dismiss: remove the notification ONLY — the adhan
+                    // keeps playing so the user can close it from the in-app
+                    // modal. The tick chain will skip re-posting because the
+                    // notificationDismissed flag is now set.
+                    AdhanPlayback.dismissNotificationOnly(c);
+                    PrayerAlarmScheduler.cancelAdhanTicks(c);
+                } else {
+                    // Explicit stop from in-app modal: stop everything.
+                    AdhanPlayback.stop(c, true);
+                    PrayerAlarmScheduler.cancelAdhanTicks(c);
+                }
                 return;
             }
             if (ACTION_ADHAN.equals(action)) {
@@ -83,14 +94,13 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
         if (ts == 0) return;
 
         long now = System.currentTimeMillis();
-        // Stay with the +count while inside the 30-minute window.
+        // Stay with the +count while inside the window.
         if (now - ts < PrayerAlarmScheduler.ADHAN_WINDOW_MS && remaining > 0) {
+            // refresh() skips automatically if the notification was dismissed.
             AdhanPlayback.refresh(c, id, label, ts);
             PrayerAlarmScheduler.scheduleTick(c, id, label, ts, remaining - 1);
         } else {
-            // The 30-minute window is over — clean up: dismiss the stale
-            // "منذ الأذان" notification instead of leaving it dead on screen
-            // until the next prayer overwrites it.
+            // The window is over — clean up: stop everything.
             AdhanPlayback.stop(c, true);
         }
     }

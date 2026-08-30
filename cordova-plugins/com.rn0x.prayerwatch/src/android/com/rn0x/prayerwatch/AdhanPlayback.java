@@ -34,6 +34,10 @@ public final class AdhanPlayback {
     private static Context sCtx;
     private static AudioFocusRequest audioFocusRequest;
     private static int originalAlarmVolume = -1;
+    // Set when the user swipes the notification away. Prevents the tick chain
+    // from re-posting it and keeps the sound playing until the in-app modal
+    // (or AUTO_STOP) explicitly stops it.
+    private static volatile boolean notificationDismissed;
     private static final android.os.Handler MAIN = new android.os.Handler(android.os.Looper.getMainLooper());
     private static final Runnable AUTO_STOP = () -> stop(null, false);
 
@@ -119,6 +123,7 @@ public final class AdhanPlayback {
     }
 
     public static void start(final Context c, final String id, final String label, final long ts, final boolean force) {
+        notificationDismissed = false;
         synchronized (LOCK) {
             if (player != null && !force) {
                 stopLocked(c, false);
@@ -455,9 +460,28 @@ public final class AdhanPlayback {
         }
     }
 
-    /** Refreshed on each resolved minute tick. */
+    /** Refreshed on each resolved minute tick. Skips if notification was dismissed. */
     static void refresh(Context c, String id, String label, long ts) {
+        if (notificationDismissed) return;
         notify(c, id, label, ts, System.currentTimeMillis());
+    }
+
+    /**
+     * Dismiss the notification WITHOUT stopping the audio. Called from the
+     * swipe-delete intent so the adhan keeps playing while the user closes
+     * it from the in-app modal.
+     */
+    public static void dismissNotificationOnly(Context c) {
+        notificationDismissed = true;
+        Context ctx = c != null ? c : sCtx;
+        if (ctx == null) return;
+        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) {
+            try {
+                nm.cancel(NOTIF_ID);
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     static int dpiFlags() {

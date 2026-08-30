@@ -3,19 +3,19 @@ import { playAzan } from '../../services/sound.mjs'
 import { stopNativeAdhan, setAdhanVolume, getAdhanVolume } from '../../services/prayerWatch.mjs'
 import { correctedNow } from '../../services/prayerConfig.mjs'
 
-/** The in-app adhan stays live (showing the + count-up) for 30 minutes. */
-const ADHAN_WINDOW_MS = 30 * 60 * 1000
+/** Safety-net auto-close: matches native AUTO_STOP_MS (5 min) + 1 min buffer. */
+const ADHAN_WINDOW_MS = 6 * 60 * 1000
 
 /**
  * Doc:
  *  - Live window (app open at the time of the adhan — `silent` false):
  *    plays the adhan automatically, shows the "+ since" clock, and offers
- *    minimize / close.
+ *    minimize / close.  Auto-closes when the audio finishes (or after
+ *    ADHAN_WINDOW_MS as a safety net).
  *  - Silent window (app re-opened inside an adhan window after the native
  *    ring — `silent: true`): never auto-plays; shows only minimize / close
- *    so the background adhan is never doubled.
- * Both minimize into a non-blocking floating pill and auto-close after the
- * 30-minute adhan window.
+ *    so the background adhan is never doubled. Auto-closes after the native
+ *    audio finishes (tracked via a short polling interval).
  */
 export function AdhanModal({ prayer, onClose }) {
   const audioRef = useRef(null)
@@ -57,6 +57,10 @@ export function AdhanModal({ prayer, onClose }) {
         return
       }
       audioRef.current = audio
+      // Auto-close when the audio finishes — the adhan is done.
+      audio.addEventListener('ended', () => {
+        if (alive) onClose()
+      })
     })
     return () => {
       alive = false
@@ -76,7 +80,8 @@ export function AdhanModal({ prayer, onClose }) {
     return () => clearInterval(t)
   }, [prayer?.at])
 
-  // Auto-close when the adhan window (30 min) elapses.
+  // Safety-net auto-close: even if 'ended' never fires (e.g. silent mode
+  // with no local audio), close after ADHAN_WINDOW_MS from the prayer time.
   useEffect(() => {
     if (!prayer) return undefined
     const elapsed = correctedNow() - prayer.at
@@ -100,6 +105,8 @@ export function AdhanModal({ prayer, onClose }) {
     } catch {
       /* ignore */
     }
+    // Stop the native adhan too if it's still playing (the in-app modal was
+    // the explicit close action — the user wants silence NOW).
     stopNativeAdhan()
     onClose()
   }
