@@ -172,7 +172,8 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafsee
                 aria-label="فتح البطاقات القرآنية"
                 onClick={() => onCards(surahIndex + 1)}
               >
-                <Icon name="bookmark" size={16} />
+                <Icon name="bookmark" size={14} />
+                <span>البطاقات</span>
               </button>
             )}
             {onTafseer && (

@@ -30,6 +30,19 @@ export function QuranCardDetail({ number, onNavigate, onReader }) {
               <Icon name="star" size={12} />
               {card.revelation_type}
             </span>
+            {onReader && (
+              <span className="qcards-det__meta-sep" />
+            )}
+            {onReader && (
+              <button
+                className="qcards-det__reader-link"
+                onClick={() => onReader(number - 1)}
+                type="button"
+              >
+                <Icon name="book" size={11} />
+                <span>المصحف</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -41,17 +54,6 @@ export function QuranCardDetail({ number, onNavigate, onReader }) {
           <QuranCardSection key={i} section={section} index={i} />
         ))}
       </div>
-
-      {onReader && (
-        <button
-          className="qcards-det__reader-btn"
-          onClick={() => onReader(number - 1)}
-          type="button"
-        >
-          <Icon name="book" size={16} />
-          <span>اقرأ في المصحف</span>
-        </button>
-      )}
 
       <div className="qcards-det__nav">
         <button

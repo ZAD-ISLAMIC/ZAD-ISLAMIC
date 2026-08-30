@@ -9606,33 +9606,38 @@ h3 {
 
 /* زر البطاقات داخل قارئ المصحف */
 .quran-reader__btn--cards {
+  width: auto;
+  padding: 0 10px;
+  border-radius: 8px;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
   color: var(--gold);
   border-color: rgba(212, 175, 55, 0.45);
   background: rgba(212, 175, 55, 0.1);
 }
 
-/* زر المصحف داخل تفاصيل البطاقة */
-.qcards-det__reader-btn {
-  display: flex;
+/* رابط المصحف في هيدر البطاقة */
+.qcards-det__reader-link {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin: 8px 14px 0;
-  padding: 10px;
-  border-radius: 10px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--gold);
-  font-size: 13px;
-  font-weight: 500;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(212, 175, 55, 0.1);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  color: #d4af37;
+  font-size: 11px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: transform 0.12s ease, border-color 0.2s ease;
+  transition: background 0.2s ease, transform 0.12s ease;
+  line-height: 1;
 }
 
-.qcards-det__reader-btn:active {
-  transform: scale(0.97);
-  border-color: rgba(212, 175, 55, 0.4);
+.qcards-det__reader-link:active {
+  transform: scale(0.95);
+  background: rgba(212, 175, 55, 0.2);
 }
 
 /* ===== الخطب (ملتقى الخطباء) ===== */
