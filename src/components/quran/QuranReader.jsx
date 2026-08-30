@@ -16,6 +16,7 @@ const FONT_SIZE_KEY = 'quran.fontSize'
 const FONT_MIN = 18
 const FONT_MAX = 40
 const FONT_STEP = 2
+const DOUBLE_TAP_DELAY = 350
 
 function getScrollRoot() {
   return document.querySelector('.shell__main')
@@ -32,6 +33,8 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafsee
   const verseEls = useRef(new Map())
   const saveTimer = useRef(null)
   const scrollRaf = useRef(null)
+  const lastTapRef = useRef(0)
+  const doubleTapVerseRef = useRef(null)
   // While the programmatic anchor-scroll settles, ignore scroll tracking so
   // the centred verse keeps its highlight instead of being corrected to the
   // one above (the 45% tracking line is not the 50% centre line).
@@ -60,6 +63,32 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafsee
       persist(verse)
     },
     [persist]
+  )
+
+  const handleVerseTap = useCallback(
+    (verseNumber, el) => {
+      const now = Date.now()
+      const elapsed = now - lastTapRef.current
+      lastTapRef.current = now
+
+      if (elapsed < DOUBLE_TAP_DELAY && doubleTapVerseRef.current === verseNumber) {
+        // Double tap detected → open tafseer
+        doubleTapVerseRef.current = null
+        if (onTafseer) onTafseer(verseNumber)
+        return
+      }
+
+      // First tap → select verse and schedule single-tap action
+      doubleTapVerseRef.current = verseNumber
+      updateCurrent(verseNumber)
+
+      // Visual feedback for double-tap attempt
+      if (el) {
+        el.classList.add('quran-ayah--tap-pending')
+        setTimeout(() => el.classList.remove('quran-ayah--tap-pending'), DOUBLE_TAP_DELAY + 50)
+      }
+    },
+    [updateCurrent, onTafseer]
   )
 
   const trackCurrent = useCallback(() => {
@@ -255,7 +284,7 @@ export function QuranReader({ surahIndex, initialVerse, onPrev, onNext, onTafsee
             }}
             className={`quran-ayah${current === verse.number ? ' quran-ayah--current' : ''}`}
             data-verse={verse.number}
-            onClick={() => updateCurrent(verse.number)}
+            onClick={(e) => handleVerseTap(verse.number, e.currentTarget)}
           >
             {verse.text}
             <span className="quran-ayah__marker">

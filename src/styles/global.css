@@ -1219,6 +1219,14 @@ h3 {
     0 2px 10px rgba(0, 0, 0, 0.18);
 }
 
+.quran-ayah--tap-pending {
+  animation: quran-tap-pulse 0.3s ease;
+}
+
+@keyframes quran-tap-pulse {
+  50% { transform: scale(1.015); opacity: 0.85; }
+}
+
 .quran-ayah__marker {
   position: relative;
   display: inline-block;
