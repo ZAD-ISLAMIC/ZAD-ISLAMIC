@@ -311,6 +311,10 @@ let nativePushPrayerKey = null
 // Prevents the backup timer from firing a second time for the same prayer.
 // Reset when the prayer window moves to a new prayer.
 let backupFiredKey = null
+// Tracks the last known clockOffsetMin so we can detect offset changes.
+// When the user changes the offset, fired prayers that are now within the
+// corrected window are reset so the adhan fires at the new corrected time.
+let lastClockOffsetMin = null
 
 /** Establish/refresh the foreground boundary: nothing already due may ring. */
 function markActive() {
@@ -468,14 +472,34 @@ function checkTransitions() {
   const day = dayKeyOf(now)
   const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
 
-  const prevTick = prevTickAt
-  prevTickAt = nowMs
-
   // WIDE_WINDOW: wider than ADHAN_WINDOW_MS so the backup timer can catch
   // prayers that were shifted into the past by a clock-offset adjustment.
   // Without this, a ±5-minute offset push would land the prayer outside the
   // tight 5-minute window and nothing — native or in-app — would ring it.
   const WIDE_WINDOW_MS = 15 * 60 * 1000
+
+  // When the user changes clockOffsetMin, prayers that were already fired
+  // in this session should re-fire at the new corrected time.  Reset their
+  // entry in the fires map so the backup timer can pick them up again.
+  const currentOffset = snapshot.config?.clockOffsetMin ?? 0
+  if (lastClockOffsetMin !== null && currentOffset !== lastClockOffsetMin) {
+    for (const e of snapshot.events) {
+      if (e.isPrayer && nowMs >= e.at && nowMs < e.at + WIDE_WINDOW_MS) {
+        if (fires?.[day]?.[e.key]) {
+          delete fires[day][e.key]
+          storage.set(FIRED_KEY, fires)
+        }
+      }
+    }
+    // Also reset native-push trackers so the backup timer can fire again.
+    nativePushReceived = false
+    nativePushPrayerKey = null
+    backupFiredKey = null
+  }
+  lastClockOffsetMin = currentOffset
+
+  const prevTick = prevTickAt
+  prevTickAt = nowMs
 
   for (const e of snapshot.events) {
     if (nativeArmed) {
