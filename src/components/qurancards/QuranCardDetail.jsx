@@ -4,7 +4,7 @@ import { QuranCardMedia } from './QuranCardMedia.jsx'
 import { arabicDigits } from '../../utils/arabic.mjs'
 import { Icon } from '../ui/Icon.jsx'
 
-export function QuranCardDetail({ number, onNavigate }) {
+export function QuranCardDetail({ number, onNavigate, onReader }) {
   const card = getCardByNumber(number)
   if (!card) return null
 
@@ -41,6 +41,17 @@ export function QuranCardDetail({ number, onNavigate }) {
           <QuranCardSection key={i} section={section} index={i} />
         ))}
       </div>
+
+      {onReader && (
+        <button
+          className="qcards-det__reader-btn"
+          onClick={() => onReader(number - 1)}
+          type="button"
+        >
+          <Icon name="book" size={16} />
+          <span>اقرأ في المصحف</span>
+        </button>
+      )}
 
       <div className="qcards-det__nav">
         <button

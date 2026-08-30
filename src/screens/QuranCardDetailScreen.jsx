@@ -41,7 +41,11 @@ export default function QuranCardDetailScreen() {
 
   return (
     <section className="qcards-det-screen">
-      <QuranCardDetail number={num} onNavigate={(n) => navigate(`/quran-cards/${n}`)} />
+      <QuranCardDetail
+        number={num}
+        onNavigate={(n) => navigate(`/quran-cards/${n}`)}
+        onReader={(surahIndex) => navigate(`/quran/${surahIndex}`)}
+      />
     </section>
   )
 }
