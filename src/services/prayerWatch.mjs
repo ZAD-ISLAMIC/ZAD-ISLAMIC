@@ -12,7 +12,7 @@
  */
 
 import { computeTimes, hourToDate, formatDate } from './prayerTimes.mjs'
-import { loadConfig, updateConfig, getPrayerLabels, correctedNow } from './prayerConfig.mjs'
+import { loadConfig, updateConfig, getPrayerLabels, getClockOffsetMs } from './prayerConfig.mjs'
 import { getCurrentLocation } from './location.mjs'
 import { civilDateInTz, offsetHoursForDate } from './timezone.mjs'
 import { isCordova, onDeviceReady } from './device.mjs'
@@ -74,6 +74,11 @@ export function buildSchedule(location, config, now = new Date()) {
   const labels = getPrayerLabels()
   const asrFactor = config.asrMadhab === 'hanafi' ? 2 : 1
 
+  // Apply the user-set clock offset to every event so the displayed times,
+  // native alarms and in-app watcher all agree.  A positive offset delays
+  // the adhan (prayer time + N min); a negative offset advances it.
+  const clockOffsetMs = (config.clockOffsetMin || 0) * 60 * 1000
+
   const events = []
   let today = null
   for (let i = 0; i < 8; i++) {
@@ -93,12 +98,13 @@ export function buildSchedule(location, config, now = new Date()) {
       const adjMin = config.adjustments?.[key] || 0
       const date = hourToDate(civil, offsetH, hours[key] + adjMin / 60)
       if (!date) continue
+      const adjustedAt = date.getTime() + clockOffsetMs
       events.push({
         key,
         name: labels[key],
         isPrayer: ADHAN_PRAYERS.includes(key),
-        at: date.getTime(),
-        atIso: date.toISOString(),
+        at: adjustedAt,
+        atIso: new Date(adjustedAt).toISOString(),
       })
     }
   }
@@ -286,7 +292,7 @@ let nativeArmed = false
 // start, resume, or a wake-up from the background freeze detector). Any
 // prayer whose adhan window was already open at that instant is presumed
 // announced (or missed) elsewhere and must NEVER ring on entry.
-let activeAt = correctedNow()
+let activeAt = Date.now()
 // `prevTickAt` is the timestamp of the previous watch tick within the current
 // foreground session (0 = right after activation). A prayer may only ring if
 // it *became due during this live watching interval* — i.e. first observed
@@ -314,7 +320,7 @@ let backupFiredKey = null
 
 /** Establish/refresh the foreground boundary: nothing already due may ring. */
 function markActive() {
-  activeAt = correctedNow()
+  activeAt = Date.now()
   prevTickAt = 0 // next tick only backfills — never rings
   // DO NOT reset nativePushReceived here: if native already announced the
   // adhan before the app was backgrounded, we must not fire again on resume.
@@ -390,14 +396,14 @@ export function onAdhan(cb) {
 export async function refreshWatch(opts = {}) {
   const location = opts.location || getCurrentLocation()
   const config = opts.config || loadConfig()
-  const now = new Date(correctedNow())
+  const now = new Date()
   const schedule = buildSchedule(location, config, now)
   const day = dayKeyOf(now)
   snapshot = {
     ...schedule,
     location,
     config,
-    nowMs: correctedNow(),
+    nowMs: Date.now(),
     hijri: formatHijri(now),
     dayKey: day,
   }
@@ -445,7 +451,7 @@ function fireAdhan(prayer, fires, day) {
 
 function checkTransitions() {
   if (!snapshot) return
-  const now = new Date(correctedNow())
+  const now = new Date()
   const nowMs = now.getTime()
 
   // re-roll the snapshot when we're more than ~12 min stale (also covers the
@@ -635,7 +641,7 @@ function handleNativePush(payload) {
  */
 export function announceNativeAdhan({ key, name, ts } = {}) {
   if (!key) return
-  const at = Number(ts) || correctedNow()
+  const at = Number(ts) || Date.now()
   const day = dayKeyOf(new Date(at))
   const dedupe = day + ':' + key
   if (silentShownKey === dedupe) return
@@ -900,7 +906,7 @@ export function setHijriShift(days) {
 }
 
 export function todayHijri(shiftDays = getHijriShift()) {
-  const d = new Date(correctedNow() + (shiftDays || 0) * 86400000)
+  const d = new Date(Date.now() + (shiftDays || 0) * 86400000)
   return formatHijri(d)
 }
 
