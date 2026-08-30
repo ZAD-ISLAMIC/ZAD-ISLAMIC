@@ -308,15 +308,17 @@ let lastTickAt = 0
 // the exact prayer time while nativeArmed, the watcher fires locally.
 let nativePushReceived = false
 let nativePushPrayerKey = null
+// Prevents the backup timer from firing a second time for the same prayer.
+// Reset when the prayer window moves to a new prayer.
+let backupFiredKey = null
 
 /** Establish/refresh the foreground boundary: nothing already due may ring. */
 function markActive() {
   activeAt = correctedNow()
   prevTickAt = 0 // next tick only backfills — never rings
-  // Reset native-push tracker: a fresh foreground session means any prior
-  // push is stale; we'll detect a new one if it arrives.
-  nativePushReceived = false
-  nativePushPrayerKey = null
+  // DO NOT reset nativePushReceived here: if native already announced the
+  // adhan before the app was backgrounded, we must not fire again on resume.
+  // nativePushReceived is only reset when the window moves to a new prayer.
 }
 
 function emit() {
@@ -469,16 +471,42 @@ function checkTransitions() {
   const prevTick = prevTickAt
   prevTickAt = nowMs
 
+  // WIDE_WINDOW: wider than ADHAN_WINDOW_MS so the backup timer can catch
+  // prayers that were shifted into the past by a clock-offset adjustment.
+  // Without this, a ±5-minute offset push would land the prayer outside the
+  // tight 5-minute window and nothing — native or in-app — would ring it.
+  const WIDE_WINDOW_MS = 15 * 60 * 1000
+
   for (const e of snapshot.events) {
     if (nativeArmed) {
-      if (e.isPrayer && nowMs >= e.at && nowMs < e.at + ADHAN_WINDOW_MS) {
+      if (e.isPrayer && nowMs >= e.at && nowMs < e.at + WIDE_WINDOW_MS) {
+        const dayPrayerKey = day + ':' + e.key
+        const alreadyFired = !!fires?.[day]?.[e.key]
+
+        // Reset trackers when the window moves to a new prayer.
+        if (backupFiredKey && backupFiredKey !== dayPrayerKey) {
+          backupFiredKey = null
+          nativePushReceived = false
+          nativePushPrayerKey = null
+        }
+
+        // Mark as consumed so a repeat open never re-triggers.
         markFired(fires, day, e)
+
         // BACKUP TIMER: if the native push never arrived and we are past the
         // grace delay, fire the adhan locally so the user hears it even when
-        // the native alarm was delayed by Doze / OEM quirks.
+        // the native alarm was delayed by Doze / OEM quirks or missed by a
+        // clock-offset adjustment.
         if (!nativePushReceived || nativePushPrayerKey !== e.key) {
-          const delay = nowMs - e.at
-          if (delay >= NATIVE_BACKUP_DELAY_MS && prevTick > 0 && !hidden) {
+          // alreadyFired is checked BEFORE markFired above — once a prayer
+          // is marked (by native push, backup timer, or manual close), it
+          // never re-fires in the same day.
+          if (!hidden && !alreadyFired) {
+            // Stop any native sound that might be playing (even if the push
+            // failed, the native MediaPlayer could still be ringing). This
+            // prevents two sounds playing simultaneously.
+            stopNativeAdhan()
+            backupFiredKey = dayPrayerKey
             fireAdhan(e, fires, day)
             break
           }
@@ -618,6 +646,10 @@ export function announceNativeAdhan({ key, name, ts } = {}) {
   // from firing a duplicate in-app adhan.
   nativePushReceived = true
   nativePushPrayerKey = key
+  // If the backup timer already fired a LIVE adhan for this prayer, don't
+  // emit a second SILENT event — the modal is already showing and the
+  // sound is already playing.
+  if (backupFiredKey === dedupe) return
   emitSilent({
     key,
     name: name || key,
@@ -824,6 +856,7 @@ export function clearSilentAdhan() {
   lastSilentEvent = null
   nativePushReceived = false
   nativePushPrayerKey = null
+  backupFiredKey = null
 }
 
 /** Navigate a HashRouter app to a route like "/prayer". */
