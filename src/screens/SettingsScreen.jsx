@@ -94,10 +94,17 @@ export default function SettingsScreen() {
     return iso ? new Date(iso) : new Date()
   })
   const [manualSaved, setManualSaved] = useState(false)
+  const [liveNowMs, setLiveNowMs] = useState(() => getNowMs())
   useEffect(() => {
     const iso = config.timeSource?.manualIso
     if (iso) setEditManualBase(new Date(iso))
   }, [config.timeSource?.manualIso])
+  // Live tick so the picker reflects the advancing manual time (3:02 → 3:03)
+  useEffect(() => {
+    if (config.timeSource?.mode !== 'manual') return
+    const t = setInterval(() => setLiveNowMs(getNowMs()), 1000)
+    return () => clearInterval(t)
+  }, [config.timeSource?.mode, config.timeSource?.manualIso, config.timeSource?.manualSetAt])
   const saveManualTime = async () => {
     if (!editManualBase) return
     await changeManualTime(editManualBase.toISOString())
@@ -170,8 +177,10 @@ export default function SettingsScreen() {
           onChange={changeTimeMode}
         />
         {config.timeSource?.mode === 'manual' && (() => {
-          const base = editManualBase || new Date()
           const pad = (n) => String(n).padStart(2,'0')
+          // Display live time when not editing, draft when user changed
+          const displayBase = hasManualChange ? (editManualBase || new Date(liveNowMs)) : new Date(liveNowMs)
+          const base = displayBase
           return (
             <div className="settings-time-card">
               <div className="settings-time-card__header">
@@ -180,7 +189,7 @@ export default function SettingsScreen() {
                   <b>الوقت اليدوي</b>
                   <small>حدد التاريخ والوقت — ثم اضغط حفظ</small>
                 </div>
-                <span className="settings-time-card__badge">{arabicDigits(new Date(getNowMs()).toLocaleDateString('ar-EG'))}</span>
+                <span className="settings-time-card__badge">{arabicDigits(new Date(liveNowMs).toLocaleDateString('ar-EG'))}</span>
               </div>
               <div className="settings-time-card__grid">
                 <label className="settings-time-card__field">
@@ -236,12 +245,12 @@ export default function SettingsScreen() {
                 </label>
               </div>
               <div style={{display:'flex', justifyContent:'flex-end', marginTop:'10px'}}>
-                <button onClick={saveManualTime} disabled={!hasManualChange} type="button" style={{fontSize:'11px', padding:'5px 12px', borderRadius:'999px', border:'1px solid var(--border, #e5e7eb)', background: hasManualChange ? 'var(--primary, #111827)' : '#f3f4f6', color: hasManualChange ? '#fff' : '#9ca3af', cursor: hasManualChange ? 'pointer' : 'not-allowed', opacity: hasManualChange ? 1 : 0.7}}>
+                <button onClick={saveManualTime} disabled={!hasManualChange} type="button" style={{fontSize:'10px', padding:'3px 10px', borderRadius:'999px', border:'1px solid var(--border)', background: hasManualChange ? 'var(--primary)' : 'var(--surface)', color: hasManualChange ? 'var(--on-primary)' : 'var(--text-muted)', cursor: hasManualChange ? 'pointer' : 'not-allowed', opacity: hasManualChange ? 1 : 0.7, fontWeight:700}}>
                   {manualSaved ? '✓ تم الحفظ' : 'حفظ'}
                 </button>
               </div>
               <p className="settings-time-card__hint">
-                الوقت الفعّال: <b dir="ltr">{new Date(getNowMs()).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</b>
+                الوقت الفعّال: <b dir="ltr">{new Date(liveNowMs).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</b>
                 <br />
                 وقت الجهاز: <span dir="ltr">{new Date().toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </p>

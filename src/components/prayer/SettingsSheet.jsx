@@ -36,10 +36,16 @@ export function SettingsSheet({ onClose }) {
     return iso ? new Date(iso) : new Date()
   })
   const [manualSavedSheet, setManualSavedSheet] = useState(false)
+  const [liveNowSheetMs, setLiveNowSheetMs] = useState(() => getNowMs())
   useEffect(() => {
     const iso = config.timeSource?.manualIso
     if (iso) setEditManualBaseSheet(new Date(iso))
   }, [config.timeSource?.manualIso])
+  useEffect(() => {
+    if (config.timeSource?.mode !== 'manual') return
+    const t = setInterval(() => setLiveNowSheetMs(getNowMs()), 1000)
+    return () => clearInterval(t)
+  }, [config.timeSource?.mode, config.timeSource?.manualIso, config.timeSource?.manualSetAt])
 
   useEffect(() => {
     getCustomAdhanBlob().then((blob) => setHasCustom(!!blob))
@@ -209,13 +215,14 @@ export function SettingsSheet({ onClose }) {
               </button>
             </div>
             {config.timeSource?.mode === 'manual' && (() => {
-              const base = editManualBaseSheet || new Date()
               const pad = (n) => String(n).padStart(2,'0')
               const hasChange = (() => {
                 const iso = config.timeSource?.manualIso
-                if (!iso) return true
-                return new Date(iso).getTime() !== base.getTime()
+                const cur = editManualBaseSheet
+                if (!iso || !cur) return false
+                return new Date(iso).getTime() !== cur.getTime()
               })()
+              const base = hasChange ? (editManualBaseSheet || new Date(liveNowSheetMs)) : new Date(liveNowSheetMs)
               return (
                 <div className="set-sheet__time-card">
                   <div className="set-sheet__time-card__head">
@@ -279,12 +286,12 @@ export function SettingsSheet({ onClose }) {
                     </label>
                   </div>
                   <div style={{display:'flex', justifyContent:'flex-end', marginTop:'8px'}}>
-                    <button onClick={async () => { await update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: base.toISOString(), manualSetAt: Date.now() } })); setManualSavedSheet(true); setTimeout(()=>setManualSavedSheet(false),2000)}} disabled={!hasChange} type="button" style={{fontSize:'11px', padding:'4px 10px', borderRadius:'999px', border:'1px solid var(--border, #e5e7eb)', background: hasChange ? 'var(--primary, #111827)' : '#f3f4f6', color: hasChange ? '#fff' : '#9ca3af', cursor: hasChange ? 'pointer' : 'not-allowed', opacity: hasChange ? 1 : 0.7}}>
+                    <button onClick={async () => { const src = hasChange ? base : new Date(liveNowSheetMs); await update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: src.toISOString(), manualSetAt: Date.now() } })); setManualSavedSheet(true); setTimeout(()=>setManualSavedSheet(false),2000)}} disabled={!hasChange} type="button" style={{fontSize:'10px', padding:'3px 10px', borderRadius:'999px', border:'1px solid var(--border)', background: hasChange ? 'var(--primary)' : 'var(--surface)', color: hasChange ? 'var(--on-primary)' : 'var(--text-muted)', cursor: hasChange ? 'pointer' : 'not-allowed', opacity: hasChange ? 1 : 0.7, fontWeight:700}}>
                       {manualSavedSheet ? '✓ تم الحفظ' : 'حفظ'}
                     </button>
                   </div>
                   <p className="set-sheet__time-card__hint">
-                    الوقت الفعّال الآن: <b dir="ltr">{new Date(getNowMs()).toLocaleString('ar-EG')}</b>
+                    الوقت الفعّال الآن: <b dir="ltr">{new Date(liveNowSheetMs).toLocaleString('ar-EG')}</b>
                   </p>
                 </div>
               )
