@@ -565,7 +565,6 @@ function checkTransitions() {
         // Reset trackers when the window moves to a new prayer.
         if (backupFiredKey && backupFiredKey !== dayPrayerKey) {
           backupFiredKey = null
-          nativePushReceived = false
           nativePushPrayerKey = null
         }
 
@@ -1026,7 +1025,6 @@ export async function checkSilentAdhan() {
 export function clearSilentAdhan() {
   silentShownKey = null
   lastSilentEvent = null
-  nativePushReceived = false
   nativePushPrayerKey = null
   backupFiredKey = null
 }
