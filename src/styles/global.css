@@ -63,6 +63,17 @@ body {
   -webkit-user-select: none;
 }
 
+input:focus,
+select:focus,
+textarea:focus,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--border) !important;
+}
+
 button {
   font-family: inherit;
   border: none;
@@ -926,7 +937,9 @@ h3 {
 }
 
 .quran-search:focus-within {
-  border-color: var(--primary);
+  outline: none !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
 }
 
 .quran-search__input {

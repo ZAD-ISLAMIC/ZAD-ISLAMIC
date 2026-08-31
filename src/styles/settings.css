@@ -818,8 +818,9 @@
 
 .settings-field input:focus,
 .settings-field select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+  outline: none !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
 }
 
 .settings-field input::placeholder {
@@ -1038,8 +1039,9 @@
 }
 
 .settings-time-card__field input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+  outline: none !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
 }
 
 .settings-time-card__hint {
@@ -1580,7 +1582,9 @@
 
 .custom-date-picker .custom-select:focus,
 .custom-time-picker .custom-select:focus {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent), 0 1px 3px rgba(0,0,0,0.08);
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--border) !important;
 }
 
 .custom-select {
@@ -1602,9 +1606,11 @@
   padding-left: 22px;
 }
 
-.custom-select:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+.custom-select:focus,
+.custom-select:focus-visible {
+  outline: none !important;
+  border-color: var(--border) !important;
+  box-shadow: none !important;
 }
 
 .custom-select.small {
