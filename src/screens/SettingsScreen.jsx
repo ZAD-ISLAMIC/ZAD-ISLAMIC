@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useSyncExternalStore } from 'react'
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SettingsGroup } from '../components/settings/SettingsGroup.jsx'
 import { SettingsSwitch } from '../components/settings/SettingsSwitch.jsx'
@@ -88,6 +88,28 @@ export default function SettingsScreen() {
     await refreshWatch({ config: updated })
   }
 
+  // Manual time editing — local draft until user presses Save (small button)
+  const [editManualBase, setEditManualBase] = useState(() => {
+    const iso = loadConfig().timeSource?.manualIso
+    return iso ? new Date(iso) : new Date()
+  })
+  const [manualSaved, setManualSaved] = useState(false)
+  useEffect(() => {
+    const iso = config.timeSource?.manualIso
+    if (iso) setEditManualBase(new Date(iso))
+  }, [config.timeSource?.manualIso])
+  const saveManualTime = async () => {
+    if (!editManualBase) return
+    await changeManualTime(editManualBase.toISOString())
+    setManualSaved(true)
+    setTimeout(() => setManualSaved(false), 2000)
+  }
+  const hasManualChange = (() => {
+    const iso = config.timeSource?.manualIso
+    if (!iso || !editManualBase) return false
+    return new Date(iso).getTime() !== editManualBase.getTime()
+  })()
+
   const changePlayerRate = (rate) => {
     setPlayerRate(rate)
     player.setRate(rate)
@@ -148,30 +170,15 @@ export default function SettingsScreen() {
           onChange={changeTimeMode}
         />
         {config.timeSource?.mode === 'manual' && (() => {
-          const iso = config.timeSource?.manualIso
-          const base = iso ? new Date(iso) : new Date()
+          const base = editManualBase || new Date()
           const pad = (n) => String(n).padStart(2,'0')
-          const dateVal = `${base.getFullYear()}-${pad(base.getMonth()+1)}-${pad(base.getDate())}`
-          const timeVal = `${pad(base.getHours())}:${pad(base.getMinutes())}`
-          const onDateChange = (e) => {
-            const newDate = e.target.value
-            if (!newDate) return
-            const t = timeVal
-            changeManualTime(new Date(`${newDate}T${t}:00`).toISOString())
-          }
-          const onTimeChange = (e) => {
-            const newTime = e.target.value
-            if (!newTime) return
-            const d = dateVal
-            changeManualTime(new Date(`${d}T${newTime}:00`).toISOString())
-          }
           return (
             <div className="settings-time-card">
               <div className="settings-time-card__header">
                 <span className="settings-time-card__icon"><Icon name="calendar" size={18} /></span>
                 <div className="settings-time-card__title">
                   <b>الوقت اليدوي</b>
-                  <small>حدد التاريخ والوقت — يستمر في التقدم تلقائياً</small>
+                  <small>حدد التاريخ والوقت — ثم اضغط حفظ</small>
                 </div>
                 <span className="settings-time-card__badge">{arabicDigits(new Date(getNowMs()).toLocaleDateString('ar-EG'))}</span>
               </div>
@@ -182,7 +189,7 @@ export default function SettingsScreen() {
                     <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
                       <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>اليوم</small>
                       <select value={base.getDate()} onChange={(e) => {
-                        const d = new Date(base); d.setDate(Number(e.target.value)); changeManualTime(d.toISOString())
+                        const d = new Date(base); d.setDate(Number(e.target.value)); setEditManualBase(d); setManualSaved(false)
                       }} className="custom-select" aria-label="اليوم">
                         {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={d}>{arabicDigits(d)}</option>)}
                       </select>
@@ -190,7 +197,7 @@ export default function SettingsScreen() {
                     <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
                       <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>الشهر</small>
                       <select value={base.getMonth()+1} onChange={(e) => {
-                        const d = new Date(base); d.setMonth(Number(e.target.value)-1); changeManualTime(d.toISOString())
+                        const d = new Date(base); d.setMonth(Number(e.target.value)-1); setEditManualBase(d); setManualSaved(false)
                       }} className="custom-select" aria-label="الشهر">
                         {['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
                       </select>
@@ -198,7 +205,7 @@ export default function SettingsScreen() {
                     <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
                       <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>السنة</small>
                       <select value={base.getFullYear()} onChange={(e) => {
-                        const d = new Date(base); d.setFullYear(Number(e.target.value)); changeManualTime(d.toISOString())
+                        const d = new Date(base); d.setFullYear(Number(e.target.value)); setEditManualBase(d); setManualSaved(false)
                       }} className="custom-select" aria-label="السنة">
                         {(() => { const cy = new Date().getFullYear(); const start = cy - 60; const end = cy + 40; return Array.from({length: end - start + 1}, (_, i) => start + i).map(y => <option key={y} value={y}>{arabicDigits(y)}</option>) })()}
                       </select>
@@ -211,7 +218,7 @@ export default function SettingsScreen() {
                     <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
                       <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>دقيقة</small>
                       <select value={pad(base.getMinutes())} onChange={(e) => {
-                        const d = new Date(base); d.setMinutes(Number(e.target.value)); changeManualTime(d.toISOString())
+                        const d = new Date(base); d.setMinutes(Number(e.target.value)); setEditManualBase(d); setManualSaved(false)
                       }} className="custom-select" aria-label="دقيقة">
                         {Array.from({length: 60}, (_, i) => pad(i)).map(m => <option key={m} value={m}>{arabicDigits(m)}</option>)}
                       </select>
@@ -220,13 +227,18 @@ export default function SettingsScreen() {
                     <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
                       <small style={{fontSize:'10px', color:'var(--text-muted)', textAlign:'center'}}>ساعة</small>
                       <select value={pad(base.getHours())} onChange={(e) => {
-                        const d = new Date(base); d.setHours(Number(e.target.value)); changeManualTime(d.toISOString())
+                        const d = new Date(base); d.setHours(Number(e.target.value)); setEditManualBase(d); setManualSaved(false)
                       }} className="custom-select" aria-label="ساعة (24)">
                         {Array.from({length: 24}, (_, i) => pad(i)).map(h => <option key={h} value={h}>{arabicDigits(h)}</option>)}
                       </select>
                     </div>
                   </div>
                 </label>
+              </div>
+              <div style={{display:'flex', justifyContent:'flex-end', marginTop:'10px'}}>
+                <button onClick={saveManualTime} disabled={!hasManualChange} type="button" style={{fontSize:'11px', padding:'5px 12px', borderRadius:'999px', border:'1px solid var(--border, #e5e7eb)', background: hasManualChange ? 'var(--primary, #111827)' : '#f3f4f6', color: hasManualChange ? '#fff' : '#9ca3af', cursor: hasManualChange ? 'pointer' : 'not-allowed', opacity: hasManualChange ? 1 : 0.7}}>
+                  {manualSaved ? '✓ تم الحفظ' : 'حفظ'}
+                </button>
               </div>
               <p className="settings-time-card__hint">
                 الوقت الفعّال: <b dir="ltr">{new Date(getNowMs()).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</b>
