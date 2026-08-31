@@ -12,7 +12,7 @@
  */
 
 import { computeTimes, hourToDate, formatDate } from './prayerTimes.mjs'
-import { loadConfig, updateConfig, getPrayerLabels, getNowMs } from './prayerConfig.mjs'
+import { loadConfig, updateConfig, getPrayerLabels, getNowMs, getTimeOffsetMs, isManualTime, onConfigChange } from './prayerConfig.mjs'
 import { getCurrentLocation } from './location.mjs'
 import { civilDateInTz, offsetHoursForDate } from './timezone.mjs'
 import { isCordova, onDeviceReady } from './device.mjs'
@@ -27,12 +27,20 @@ export const FIRE_WINDOW_MS = 6 * 60 * 1000 // a prayer stays "current" for 6 mi
 // by several minutes under Doze).
 const ADHAN_WINDOW_MS = 5 * 60 * 1000
 const WATCH_INTERVAL_MS = 30 * 1000
+const WATCH_INTERVAL_MANUAL_MS = 5 * 1000
 // After the app becomes active/visible, nothing rings during this grace
 // period: opening the app — even exactly when a prayer is due — must never
 // start the call to prayer by itself. The native notification announces it
 // while the app is closed. A prayer only rings if the app was already up and
 // watching for at least this long before its time arrived.
 const ACTIVATION_GRACE_MS = 3 * WATCH_INTERVAL_MS
+
+function getWatchIntervalMs() {
+  try { return isManualTime() ? WATCH_INTERVAL_MANUAL_MS : WATCH_INTERVAL_MS } catch { return WATCH_INTERVAL_MS }
+}
+function getActivationGraceMs() {
+  try { return isManualTime() ? 0 : ACTIVATION_GRACE_MS } catch { return ACTIVATION_GRACE_MS }
+}
 // If the native alarm is delayed beyond this many seconds past the exact
 // prayer time AND the in-app watcher hasn't seen any push from native,
 // the watcher assumes native failed and fires the adhan locally.
@@ -225,17 +233,26 @@ export async function syncNativeWatch(schedule) {
       nativeArmed = false
       return true
     }
+    const cfg = schedule.config || loadConfig()
+    const ts = cfg.timeSource || { mode: 'auto', manualIso: null, manualSetAt: null }
     const payload = {
       enabled: true,
       adhanEnabled: true,
-      respectSoundMode: schedule.config?.respectSoundMode === true,
-      adhanVolume: schedule.config?.adhanVolume ?? 1,
-      timeFormat12: schedule.config?.timeFormat12 !== false,
+      respectSoundMode: cfg.respectSoundMode === true,
+      adhanVolume: cfg.adhanVolume ?? 1,
+      timeFormat12: cfg.timeFormat12 !== false,
       city: schedule.location?.cityAr || schedule.location?.label || '',
-      hijri: formatHijriShort(new Date()),
+      hijri: formatHijriShort(new Date(getNowMs())),
       // native resolves the bundled asset by this file name; a custom/imported
       // voice falls back to the default inside the native layer.
       adhanSound: selectedAdhanFile(),
+      // Unified time source — the native layer MUST use PrayerTime.now() and
+      // schedule alarms at e.ts - offset so manual time works in background too.
+      timeMode: ts.mode || 'auto',
+      manualIso: ts.manualIso || '',
+      manualSetAt: ts.manualSetAt || 0,
+      timeSource: ts,
+      timeOffsetMs: getTimeOffsetMs(),
       events: schedule.events.map((e) => ({
         key: e.key,
         name: e.name,
@@ -303,6 +320,15 @@ let prevTickAt = 0
 // and every prayer still inside its window was missed while hidden → dedupe.
 const RESUME_GAP_MS = 3 * WATCH_INTERVAL_MS + 5_000
 let lastTickAt = 0
+let lastTimeOffset = getTimeOffsetMs()
+let lastTimeMode = isManualTime() ? 'manual' : 'auto'
+
+function getResumeGapMs() {
+  // In manual mode the app-time can jump by hours when the user changes the
+  // manual clock — that is not a background freeze, so don't treat it as wake.
+  // Use a huge gap so only real freezes trigger, not intentional time travel.
+  try { return isManualTime() ? 24 * 60 * 60 * 1000 : RESUME_GAP_MS } catch { return RESUME_GAP_MS }
+}
 // Track the last prayer time the native layer pushed (via announceNativeAdhan
 // or checkSilentAdhan). If no push arrives within NATIVE_BACKUP_DELAY_MS of
 // the exact prayer time while nativeArmed, the watcher fires locally.
@@ -392,6 +418,7 @@ export async function refreshWatch(opts = {}) {
   const now = new Date(getNowMs())
   const schedule = buildSchedule(location, config, now)
   const day = dayKeyOf(now)
+  const timeChanged = lastTimeOffset !== getTimeOffsetMs() || lastTimeMode !== (config.timeSource?.mode || 'auto')
   snapshot = {
     ...schedule,
     location,
@@ -402,7 +429,60 @@ export async function refreshWatch(opts = {}) {
   }
   emit()
   await syncNativeWatch({ ...schedule, config, location, hijri: snapshot.hijri, dayKey: day })
+  // If the app-time jumped (manual change), reset wake detection so the next
+  // tick isn't mistaken for a background freeze and allow immediate testing.
+  if (timeChanged) {
+    lastTimeOffset = getTimeOffsetMs()
+    lastTimeMode = config.timeSource?.mode || 'auto'
+    // Clear backup trackers so a manual jump can fire again for testing.
+    // Don't clear the whole FIRED_KEY — just allow the next prayer in manual
+    // mode to re-fire if it was already marked today for repeated testing.
+    if (isManualTime()) {
+      // In manual testing mode, clear the fired flag for prayers that are
+      // still upcoming in the next 15min so "جربت كم مرة" works.
+      const fires = firedMap()
+      const WIDE = 15 * 60 * 1000
+      const manualNow = getNowMs()
+      let changed = false
+      for (const e of schedule.events) {
+        if (!e.isPrayer) continue
+        if (e.at > manualNow && e.at < manualNow + WIDE && fires[day]?.[e.key]) {
+          delete fires[day][e.key]
+          changed = true
+        }
+      }
+      if (changed) storage.set(FIRED_KEY, fires)
+      backupFiredKey = null
+      nativePushReceived = false
+      nativePushPrayerKey = null
+    }
+    // Immediate check so manual 20:07→20:08 fires within seconds, not 30s.
+    setTimeout(() => { try { checkTransitions() } catch {} }, 500)
+  }
   return snapshot
+}
+
+/** Clear fired flag for a specific prayer/day so manual testing can re-fire. */
+export function clearFiredForTesting(prayerKey, dayKey) {
+  const fires = firedMap()
+  const day = dayKey || dayKeyOf(new Date(getNowMs()))
+  if (fires[day]?.[prayerKey]) {
+    delete fires[day][prayerKey]
+    storage.set(FIRED_KEY, fires)
+  }
+  if (backupFiredKey === day + ':' + prayerKey) backupFiredKey = null
+}
+
+export function clearAllFiredToday() {
+  const day = dayKeyOf(new Date(getNowMs()))
+  const fires = firedMap()
+  if (fires[day]) {
+    delete fires[day]
+    storage.set(FIRED_KEY, fires)
+  }
+  backupFiredKey = null
+  nativePushReceived = false
+  nativePushPrayerKey = null
 }
 
 /** Persist that a prayer's adhan has been consumed (rung or deliberately skipped). */
@@ -458,10 +538,15 @@ function checkTransitions() {
   // healthy WATCH_INTERVAL_MS cadence. Treat that as a fresh foreground
   // boundary — prayers that came due while hidden were missed and must be
   // deduped, never rung on return. Deterministic, unlike event ordering.
-  if (lastTickAt !== 0 && nowMs - lastTickAt > RESUME_GAP_MS) {
+  // In manual mode, intentional time jumps must not be mistaken for freeze.
+  const currentOffset = getTimeOffsetMs()
+  const gapMs = getResumeGapMs()
+  if (lastTickAt !== 0 && nowMs - lastTickAt > gapMs && currentOffset === lastTimeOffset) {
     markActive()
   }
   lastTickAt = nowMs
+  lastTimeOffset = currentOffset
+  lastTimeMode = isManualTime() ? 'manual' : 'auto'
 
   const fires = firedMap()
   const day = dayKeyOf(now)
@@ -516,7 +601,7 @@ function checkTransitions() {
       }
       continue
     }
-    if (shouldRingAdhan({ e, nowMs, prevTick, activeAt, graceMs: ACTIVATION_GRACE_MS, hidden, fires, day })) {
+    if (shouldRingAdhan({ e, nowMs, prevTick, activeAt, graceMs: getActivationGraceMs(), hidden, fires, day })) {
       fireAdhan(e, fires, day)
       break
     }
@@ -537,6 +622,16 @@ function checkTransitions() {
   lastDayKey = day
 }
 
+let watchConfigUnsub = null
+
+function restartWatchTimer() {
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+  timer = setInterval(checkTransitions, getWatchIntervalMs())
+}
+
 export function startWatchLoop() {
   if (timer) return
   refreshWatch().then(() => checkSilentAdhan()).catch(() => {})
@@ -549,7 +644,19 @@ export function startWatchLoop() {
     subscribeNotificationOpen()
     consumeNotificationScreen()
   })
-  timer = setInterval(checkTransitions, WATCH_INTERVAL_MS)
+  timer = setInterval(checkTransitions, getWatchIntervalMs())
+  // When the user switches between auto/manual, restart the timer with the
+  // correct interval (5s for manual testing, 30s otherwise) so manual
+  // 20:07→20:08 fires within seconds, not up to 30s.
+  if (watchConfigUnsub) watchConfigUnsub()
+  watchConfigUnsub = onConfigChange(() => {
+    const newMode = isManualTime() ? 'manual' : 'auto'
+    if (newMode !== lastTimeMode) {
+      restartWatchTimer()
+    }
+    // Ensure the snapshot rebuilds with the new app-time immediately.
+    refreshWatch().catch(() => {})
+  })
   if (typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('resume', onVisibility)
@@ -873,6 +980,10 @@ export function stopWatchLoop() {
   if (timer) {
     clearInterval(timer)
     timer = null
+  }
+  if (watchConfigUnsub) {
+    watchConfigUnsub()
+    watchConfigUnsub = null
   }
   if (openCancel) {
     openCancel()

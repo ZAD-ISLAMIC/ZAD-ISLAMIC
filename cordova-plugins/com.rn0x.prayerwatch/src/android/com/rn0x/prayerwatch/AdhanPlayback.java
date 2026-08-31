@@ -157,7 +157,7 @@ public final class AdhanPlayback {
             }
         }
 
-        long now = System.currentTimeMillis();
+        long now = PrayerTime.now(c);
         // The alert goes out immediately — even if the audio below fails, the
         // user still gets the notification, the vibration and the tick chain.
         vibrate(c);
@@ -243,7 +243,7 @@ public final class AdhanPlayback {
                 wakeLock = w;
                 sCtx = c;
                 playingId = id;
-                startedAt = System.currentTimeMillis();
+                startedAt = PrayerTime.now(c);
             }
         } catch (Exception ignored) {
             abandonFocus(c);
@@ -519,7 +519,7 @@ public final class AdhanPlayback {
     /** Refreshed on each resolved minute tick. Skips if notification was dismissed. */
     static void refresh(Context c, String id, String label, long ts) {
         if (notificationDismissed) return;
-        notify(c, id, label, ts, System.currentTimeMillis());
+        notify(c, id, label, ts, PrayerTime.now(c));
     }
 
     /**

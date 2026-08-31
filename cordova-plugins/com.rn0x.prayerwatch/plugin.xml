@@ -50,6 +50,7 @@
 
         <framework src="androidx.work:work-runtime:2.9.1" />
 
+        <source-file src="src/android/com/rn0x/prayerwatch/PrayerTime.java" target-dir="src/com/rn0x/prayerwatch" />
         <source-file src="src/android/com/rn0x/prayerwatch/PrayerWatch.java" target-dir="src/com/rn0x/prayerwatch" />
         <source-file src="src/android/com/rn0x/prayerwatch/PrayerAlarmScheduler.java" target-dir="src/com/rn0x/prayerwatch" />
         <source-file src="src/android/com/rn0x/prayerwatch/AdhanPlayback.java" target-dir="src/com/rn0x/prayerwatch" />

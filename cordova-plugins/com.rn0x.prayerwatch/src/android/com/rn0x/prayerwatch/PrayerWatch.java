@@ -253,7 +253,7 @@ public class PrayerWatch extends CordovaPlugin {
             boolean dismiss = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                     .getString(KEY_DISMISSED_WINDOW, "")
                     .equals(o.optString("key", ""));
-            if (ts == 0 || dismiss || System.currentTimeMillis() - ts >= PrayerAlarmScheduler.ADHAN_WINDOW_MS) {
+            if (ts == 0 || dismiss || PrayerTime.now(c) - ts >= PrayerAlarmScheduler.ADHAN_WINDOW_MS) {
                 PrayerAlarmScheduler.clearFired(c);
                 ctx.success(new JSONObject());
                 return;
@@ -326,13 +326,14 @@ public class PrayerWatch extends CordovaPlugin {
 
     private void testNow(CallbackContext ctx) {
         Context c = this.cordova.getContext();
-        long at = System.currentTimeMillis() + 20_000L;
-        String id = "test_" + System.currentTimeMillis();
+        long appAt = PrayerTime.now(c) + 20_000L;
+        long realAt = System.currentTimeMillis() + 20_000L;
+        String id = "test_" + appAt;
         Intent i = new Intent(c, PrayerAdhanReceiver.class)
                 .setAction(PrayerAlarmScheduler.ACTION_ADHAN)
                 .putExtra(PrayerAlarmScheduler.EXTRA_PRAYER_ID, id)
                 .putExtra(PrayerAlarmScheduler.EXTRA_LABEL, "تجربة الأذان")
-                .putExtra(PrayerAlarmScheduler.EXTRA_TS, at)
+                .putExtra(PrayerAlarmScheduler.EXTRA_TS, appAt)
                 .putExtra("force", true);
         PendingIntent pi = PendingIntent.getBroadcast(c, 777, i, dpiFlags());
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
@@ -342,9 +343,9 @@ public class PrayerWatch extends CordovaPlugin {
         }
         try {
             if (PrayerWatch.canScheduleExactAlarms(c)) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, realAt, pi);
             } else {
-                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pi);
+                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, realAt, pi);
             }
             ctx.success(true);
         } catch (Exception ex) {
@@ -371,6 +372,10 @@ public class PrayerWatch extends CordovaPlugin {
         boolean enabled = opts == null || opts.optBoolean("enabled", true);
         boolean adhanEnabled = opts == null || opts.optBoolean("adhanEnabled", true);
         String events = opts == null ? "[]" : opts.optString("events", "[]");
+        // Handle events as JSONArray if passed as array (Cordova may serialize as JSONArray)
+        if (opts != null && opts.has("events") && !(opts.opt("events") instanceof String)) {
+            try { events = opts.getJSONArray("events").toString(); } catch (Exception ignored) {}
+        }
         String city = opts == null ? "" : opts.optString("city", "");
         String hijri = opts == null ? "" : opts.optString("hijri", "");
         String adhanSound = opts == null ? "" : opts.optString("adhanSound", "");
@@ -378,6 +383,21 @@ public class PrayerWatch extends CordovaPlugin {
         double adhanVolume = opts == null ? 1.0 : opts.optDouble("adhanVolume", 1.0);
         float vol = (float) Math.min(1.0, Math.max(0.0, adhanVolume));
         if (Float.isNaN(vol)) vol = 1f;
+        String timeMode = opts == null ? "auto" : opts.optString("timeMode", "auto");
+        String manualIso = opts == null ? "" : opts.optString("manualIso", "");
+        long manualSetAt = opts == null ? 0L : opts.optLong("manualSetAt", 0L);
+        // Also support nested timeSource object for backward compat
+        if (opts != null && opts.has("timeSource")) {
+            try {
+                JSONObject ts = opts.getJSONObject("timeSource");
+                timeMode = ts.optString("mode", timeMode);
+                manualIso = ts.optString("manualIso", manualIso);
+                manualSetAt = ts.optLong("manualSetAt", manualSetAt);
+            } catch (Exception ignored) {}
+        }
+
+        // Persist unified time source for the entire native layer
+        PrayerTime.setTimeSource(c, timeMode, manualIso, manualSetAt);
 
         // Capture old events BEFORE overwriting prefs so we can cancel their alarms.
         // The requestCode is derived from ts (ts % MAX), so a clockOffset change
@@ -525,6 +545,9 @@ public class PrayerWatch extends CordovaPlugin {
             o.put("exactAlarms", canScheduleExactAlarms(c));
             o.put("batteryOptimized", isBatteryOptimized(c));
             o.put("scheduleArmed", PrayerAlarmScheduler.isAdhanEnabled(c));
+            o.put("timeMode", PrayerTime.isManual(c) ? "manual" : "auto");
+            o.put("timeOffsetMs", PrayerTime.offset(c));
+            o.put("appNow", PrayerTime.now(c));
             ctx.success(o);
         } catch (JSONException e) {
             ctx.error(e.getMessage());

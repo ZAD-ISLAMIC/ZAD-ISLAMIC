@@ -8,8 +8,8 @@ import { Icon } from '../components/ui/Icon.jsx'
 import { useTheme } from '../hooks/useTheme.mjs'
 import * as player from '../services/player.mjs'
 import { storage } from '../services/storage.mjs'
-import { loadConfig, updateConfig, getNowMs, setTimeSource } from '../services/prayerConfig.mjs'
-import { refreshWatch } from '../services/prayerWatch.mjs'
+import { loadConfig, updateConfig, getNowMs, setTimeSource, createManualIsoFromLocal } from '../services/prayerConfig.mjs'
+import { refreshWatch, clearAllFiredToday } from '../services/prayerWatch.mjs'
 import { getCurrentLocation } from '../services/location.mjs'
 import { arabicDigits } from '../utils/arabic.mjs'
 import { getSettings as getTasbihSettings, saveSettings as saveTasbihSettings } from '../services/tasbih.mjs'
@@ -229,10 +229,16 @@ export default function SettingsScreen() {
                 </label>
               </div>
               <p className="settings-time-card__hint">
-                الوقت الفعّال: <b dir="ltr">{new Date(getNowMs()).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</b>
+                الوقت الفعّال (كل التطبيق حتى الخلفية): <b dir="ltr">{new Date(getNowMs()).toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</b>
                 <br />
                 وقت الجهاز: <span dir="ltr">{new Date().toLocaleString('ar-EG', { dateStyle: 'medium', timeStyle: 'short' })}</span>
               </p>
+              <div style={{background:'#fffbeb', border:'1px solid #fcd34d', color:'#92400e', padding:'8px 10px', borderRadius:'10px', fontSize:'12px', marginTop:'8px'}}>
+                ⚠️ الوضع اليدوي يطبق على <b>كل التطبيق</b> — الواجهة والمنبهات في الخلفية. تذكر إعادته لتلقائي بعد الاختبار.
+              </div>
+              <button onClick={async () => { const { clearAllFiredToday } = await import('../services/prayerWatch.mjs'); clearAllFiredToday(); await refreshWatch(); setConfig(loadConfig()) }} type="button" style={{marginTop:'8px', width:'100%', padding:'8px', borderRadius:'10px', border:'1px solid #e5e7eb', background:'#fff', fontSize:'13px'}}>
+                إعادة تعيين سجل اليوم للاختبار
+              </button>
             </div>
           )
         })()}

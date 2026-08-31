@@ -95,6 +95,8 @@ export { CUSTOM_METHOD }
  * الوقت الحالي حسب مصدر الوقت المحدد.
  * - auto: وقت الجهاز مباشرة (Date.now())
  * - manual: وقت يدوي حدده المستخدم (manualIso) ويستمر في التقدم منذ لحظة الحفظ
+ * هذا هو المصدر الوحيد للوقت في التطبيق — كل الميزات (واجهة + خلفية + مستقبلية)
+ * يجب أن تستخدمه بدل Date.now() / System.currentTimeMillis().
  */
 export function getNowMs() {
   const cfg = loadConfig()
@@ -110,6 +112,32 @@ export function getNowMs() {
     }
   }
   return Date.now()
+}
+
+/** إزاحة الوقت اليدوي بالمللي ثانية (0 في التلقائي). */
+export function getTimeOffsetMs() {
+  const ts = loadConfig().timeSource
+  if (ts && ts.mode === 'manual' && ts.manualIso && ts.manualSetAt) {
+    const base = Date.parse(ts.manualIso)
+    const setAt = Number(ts.manualSetAt)
+    if (Number.isFinite(base) && Number.isFinite(setAt)) return base - setAt
+  }
+  return 0
+}
+
+export function getTimeSource() {
+  return loadConfig().timeSource || { mode: 'auto', manualIso: null, manualSetAt: null }
+}
+
+export function isManualTime() {
+  return loadConfig().timeSource?.mode === 'manual'
+}
+
+/** إنشاء ISO من مكونات محلية (y,m,d,h,min) بشكل صريح لتجنب التباس المنطقة الزمنية. */
+export function createManualIsoFromLocal(y, m, d, h, min) {
+  const dt = new Date(y, m - 1, d, h, min, 0, 0)
+  if (Number.isNaN(dt.getTime())) throw new Error('تاريخ غير صالح')
+  return dt.toISOString()
 }
 
 /** مهمل — للتوافق فقط، يُرجع 0 دائماً (استخدم getNowMs). */

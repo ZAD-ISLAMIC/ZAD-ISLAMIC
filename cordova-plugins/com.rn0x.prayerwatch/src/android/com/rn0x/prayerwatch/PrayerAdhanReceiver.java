@@ -59,7 +59,7 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
         if (!PrayerAlarmScheduler.isAdhanEnabled(c)) return;
         String id = intent.getStringExtra(EXTRA_PRAYER_ID);
         String label = intent.getStringExtra(EXTRA_LABEL);
-        long ts = intent.getLongExtra(EXTRA_TS, System.currentTimeMillis());
+        long ts = intent.getLongExtra(EXTRA_TS, PrayerTime.now(c));
         boolean force = intent.getBooleanExtra("force", false);
 
         // Record the fired window for the in-app pull either way.
@@ -93,7 +93,7 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
         int remaining = intent.getIntExtra(EXTRA_REMAINING, 0);
         if (ts == 0) return;
 
-        long now = System.currentTimeMillis();
+        long now = PrayerTime.now(c);
         // Stay with the +count while inside the window.
         if (now - ts < PrayerAlarmScheduler.ADHAN_WINDOW_MS && remaining > 0) {
             // refresh() skips automatically if the notification was dismissed.

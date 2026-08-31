@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { METHODS, CUSTOM_METHOD, ASR_LABELS, HIGHLAT_RULES } from '../../services/prayerTimes.mjs'
-import { loadConfig, updateConfig, getPrayerLabels } from '../../services/prayerConfig.mjs'
+import { loadConfig, updateConfig, getPrayerLabels, getNowMs } from '../../services/prayerConfig.mjs'
 import {
   PRAYERS,
   refreshWatch,
@@ -10,6 +10,7 @@ import {
   openSystemSetting,
   testAdhanNow,
   setAdhanVolume,
+  clearAllFiredToday,
 } from '../../services/prayerWatch.mjs'
 import { ADHAN_VOICES, CUSTOM_ADHAN, saveCustomAdhan, getCustomAdhanBlob, playAzan } from '../../services/sound.mjs'
 import { Icon } from '../ui/Icon.jsx'
@@ -285,8 +286,14 @@ export function SettingsSheet({ onClose }) {
                     </label>
                   </div>
                   <p className="set-sheet__time-card__hint">
-                    الوقت الفعّال الآن: <b dir="ltr">{new Date(base.getTime() + (Date.now() - (config.timeSource?.manualSetAt || Date.now()))).toLocaleString('ar-EG')}</b>
+                    الوقت الفعّال الآن (كل التطبيق حتى الخلفية): <b dir="ltr">{new Date(getNowMs()).toLocaleString('ar-EG')}</b>
                   </p>
+                  <p className="set-sheet__note" style={{marginTop:'6px', color:'#b45309', background:'#fffbeb', padding:'6px 8px', borderRadius:'8px'}}>
+                    تنبيه: الوضع اليدوي يطبق على كل التطبيق — الواجهة والمنبهات في الخلفية. تذكر إعادته لتلقائي بعد الاختبار.
+                  </p>
+                  <button className="set-sheet__test" onClick={() => { clearAllFiredToday(); refreshWatch().then(refreshStatus) }} type="button" style={{marginTop:'6px', width:'100%'}}>
+                    إعادة تعيين سجل اليوم للاختبار
+                  </button>
                 </div>
               )
             })()}

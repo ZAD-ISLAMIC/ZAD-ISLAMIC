@@ -30,7 +30,7 @@ public class PrayerDebugReceiver extends BroadcastReceiver {
         if (intent == null || !isDebuggable(c)) return;
         String action = intent.getAction();
         if (ACTION_DEBUG_TEST.equals(action)) {
-            long ts = System.currentTimeMillis();
+            long ts = PrayerTime.now(c);
             String id = "debug_" + ts;
             PrayerAlarmScheduler.recordFired(c, id, "أذان تجريبي", ts);
             AdhanPlayback.start(c, id, "أذان تجريبي", ts, true);

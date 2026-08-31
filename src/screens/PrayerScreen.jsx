@@ -7,7 +7,7 @@ import {
   formatPrayerDate,
   todayHijri,
 } from '../services/prayerWatch.mjs'
-import { loadConfig, getNowMs } from '../services/prayerConfig.mjs'
+import { loadConfig, getNowMs, isManualTime } from '../services/prayerConfig.mjs'
 import { getPrayerLabels } from '../services/prayerConfig.mjs'
 import { arabicDigits } from '../utils/arabic.mjs'
 import { Icon } from '../components/ui/Icon.jsx'
@@ -77,6 +77,11 @@ export default function PrayerScreen() {
         <div className="prayer__dates">
           <strong>{hijri}</strong>
           <span>{gregorianArabic(now)}</span>
+          {isManualTime() && (
+            <span style={{background:'#fffbeb', border:'1px solid #fcd34d', color:'#92400e', padding:'2px 8px', borderRadius:'999px', fontSize:'11px'}}>
+              ⏱ يدوي: {new Date(getNowMs()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'})}
+            </span>
+          )}
           <span className="prayer__date-location">
             <Icon name="landmark" size={13} /> {locationText}
           </span>
@@ -178,7 +183,7 @@ function currentFired(events, nowMs) {
 }
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10)
+  return new Date(getNowMs()).toISOString().slice(0, 10)
 }
 
 function gregorianArabic(ts) {

@@ -100,24 +100,26 @@ public final class PrayerAlarmScheduler {
         AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
         if (am == null) return;
         List<Event> events = events(c);
-        long now = System.currentTimeMillis();
-        long horizon = now + TWO_DAYS_MS;
+        long appNow = PrayerTime.now(c);
+        long horizon = appNow + TWO_DAYS_MS;
+        long offset = PrayerTime.offset(c);
         boolean exact = PrayerWatch.canScheduleExactAlarms(c);
         for (Event e : events) {
             if (!e.isPrayer) continue;
-            if (e.ts <= now || e.ts > horizon) continue;
+            if (e.ts <= appNow || e.ts > horizon) continue;
+            long alarmAtReal = e.ts - offset;
             Intent i = adhanIntent(c, e.id, e.label, e.ts);
             PendingIntent pi = PendingIntent.getBroadcast(
                     c, stableRequestCode(e), i, flags());
             try {
                 if (exact) {
-                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, e.ts, pi);
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmAtReal, pi);
                 } else {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, e.ts, pi);
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmAtReal, pi);
                 }
             } catch (SecurityException ignored) {
                 try {
-                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, e.ts, pi);
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmAtReal, pi);
                 } catch (Exception ignored2) {
                     /* give up on this one */
                 }
