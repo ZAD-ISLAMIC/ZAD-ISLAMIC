@@ -98,6 +98,11 @@ exports.getWindow = function (onOk, onErr) {
   call('getWindow', [], onOk, onErr)
 }
 
+/** Resolve the last fired adhan regardless of window ({ key, name, ts }) or {}. */
+exports.getLastFired = function (onOk, onErr) {
+  call('getLastFired', [], onOk, onErr)
+}
+
 /**
  * Read-only snapshot of the device audio state:
  * { ringerMode: 'normal'|'vibrate'|'silent', alarmVolume, alarmMax }

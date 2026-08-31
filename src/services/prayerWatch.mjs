@@ -45,6 +45,7 @@ function getActivationGraceMs() {
 // prayer time AND the in-app watcher hasn't seen any push from native,
 // the watcher assumes native failed and fires the adhan locally.
 const NATIVE_BACKUP_DELAY_MS = 60 * 1000
+const WIDE_WINDOW_MS = 15 * 60 * 1000
 
 const FIRED_KEY = 'prayer:fired'
 const HIJRI_KEY = 'prayer:hijri-shift'
@@ -552,9 +553,6 @@ function checkTransitions() {
   const day = dayKeyOf(now)
   const hidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
 
-  // Backup window for Doze-delayed native alarms.
-  const WIDE_WINDOW_MS = 15 * 60 * 1000
-
   const prevTick = prevTickAt
   prevTickAt = nowMs
 
@@ -580,11 +578,27 @@ function checkTransitions() {
           markFired(fires, day, e)
         }
 
+        // If the silent window is already showing for this prayer (native
+        // delivered and checkSilentAdhan set silentShownKey), the native
+        // succeeded — never fire a duplicate backup.
+        if (silentShownKey === dayPrayerKey) {
+          markFired(fires, day, e)
+          continue
+        }
+
         // BACKUP TIMER: if the native push never arrived and we are past the
         // grace delay, fire the adhan locally so the user hears it even when
         // the native alarm was delayed by Doze / OEM quirks or missed by a
         // clock-offset adjustment.
+        // Wait at least NATIVE_BACKUP_DELAY_MS after the exact time so the
+        // native layer has time to push (especially when the app was just
+        // resumed and checkSilentAdhan is still fetching the window).
         if (!nativePushReceived || nativePushPrayerKey !== e.key) {
+          if (nowMs - e.at < NATIVE_BACKUP_DELAY_MS) {
+            // Give native a chance — don't fire backup yet, but also don't
+            // mark as consumed so it can still fire after the delay.
+            continue
+          }
           // alreadyFired is checked BEFORE markFired above — once a prayer
           // is marked (by native push, backup timer, or manual close), it
           // never re-fires in the same day.
@@ -800,6 +814,22 @@ export function getCurrentAdhanWindow() {
   })
 }
 
+export function getNativeLastFired() {
+  const plugin = watchPlugin()
+  if (!plugin || typeof plugin.getLastFired !== 'function') return Promise.resolve({})
+  return new Promise((resolve) => {
+    try {
+      plugin.getLastFired(
+        (w) => resolve(w && typeof w === 'object' ? w : {}),
+        () => resolve({})
+      )
+    } catch (err) {
+      console.warn('[prayerwatch] getLastFired failed', err)
+      resolve({})
+    }
+  })
+}
+
 /** Schedule a demo adhan ~20s from now (plays even while the app is open). */
 export function testAdhanNow() {
   const plugin = watchPlugin()
@@ -935,28 +965,61 @@ function emitSilent(event) {
  */
 export async function checkSilentAdhan() {
   const win = await getCurrentAdhanWindow()
-  if (!win || !win.key || !win.ts) {
-    silentShownKey = null
+  if (win && win.key && win.ts) {
+    // Dedupe by location-day + prayer, so the same prayer on a different day is
+    // never suppressed by a stale marker from an earlier session.
+    const dedupe = dayKeyOf(new Date(win.ts)) + ':' + win.key
+    if (silentShownKey === dedupe) return
+    silentShownKey = dedupe
+    // Record that native fired — prevents the backup timer from duplicating.
+    nativePushReceived = true
+    nativePushPrayerKey = win.key
+    // Also mark JS firedMap so the backup never re-fires for this prayer
+    // even if the app was killed when native fired (native record is separate).
+    try {
+      const fires = firedMap()
+      markFired(fires, dayKeyOf(new Date(win.ts)), { key: win.key, atIso: new Date(win.ts).toISOString() })
+    } catch {}
+    // find a matching label via the schedule snapshot
+    const ev = (snapshot?.events || []).find((e) => e.key === win.key)
+    emitSilent({
+      key: win.key,
+      name: win.name || ev?.name || win.key,
+      isPrayer: true,
+      at: win.ts,
+      atIso: new Date(win.ts).toISOString(),
+      silent: true,
+    })
     return
   }
-  // Dedupe by location-day + prayer, so the same prayer on a different day is
-  // never suppressed by a stale marker from an earlier session.
-  const dedupe = dayKeyOf(new Date(win.ts)) + ':' + win.key
-  if (silentShownKey === dedupe) return
-  silentShownKey = dedupe
-  // Record that native fired — prevents the backup timer from duplicating.
-  nativePushReceived = true
-  nativePushPrayerKey = win.key
-  // find a matching label via the schedule snapshot
-  const ev = (snapshot?.events || []).find((e) => e.key === win.key)
-  emitSilent({
-    key: win.key,
-    name: win.name || ev?.name || win.key,
-    isPrayer: true,
-    at: win.ts,
-    atIso: new Date(win.ts).toISOString(),
-    silent: true,
-  })
+  // No window (either never fired or already past ADHAN_WINDOW_MS).
+  // Check lastFired for dedupe: if native fired within WIDE_WINDOW, mark JS
+  // firedMap so the backup timer doesn't fire a duplicate at 6-15 min.
+  try {
+    const last = await getNativeLastFired()
+    if (last && last.key && last.ts) {
+      const age = getNowMs() - Number(last.ts)
+      if (age >= 0 && age < WIDE_WINDOW_MS) {
+        const d = dayKeyOf(new Date(Number(last.ts)))
+        const dedupeLast = d + ':' + last.key
+        // Mark JS fired and set native flags so backup is suppressed
+        try {
+          const fires = firedMap()
+          if (!fires[d]?.[last.key]) markFired(fires, d, { key: last.key, atIso: new Date(Number(last.ts)).toISOString() })
+        } catch {}
+        nativePushReceived = true
+        nativePushPrayerKey = last.key
+        // Keep silentShownKey as dedupe so the earlier `silentShownKey === dayPrayerKey` check in checkTransitions also suppresses backup
+        if (!silentShownKey) silentShownKey = dedupeLast
+      } else {
+        silentShownKey = null
+      }
+    } else {
+      silentShownKey = null
+    }
+  } catch {
+    silentShownKey = null
+  }
 }
 
 /** Forget the dedupe marker when the user closes the window. */

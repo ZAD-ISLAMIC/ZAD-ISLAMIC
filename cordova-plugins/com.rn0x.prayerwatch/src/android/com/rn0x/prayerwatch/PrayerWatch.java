@@ -127,6 +127,9 @@ public class PrayerWatch extends CordovaPlugin {
             case "getWindow":
                 getWindow(ctx);
                 return true;
+            case "getLastFired":
+                getLastFired(ctx);
+                return true;
             case "getAudioState":
                 getAudioState(ctx);
                 return true;
@@ -254,11 +257,25 @@ public class PrayerWatch extends CordovaPlugin {
                     .getString(KEY_DISMISSED_WINDOW, "")
                     .equals(o.optString("key", ""));
             if (ts == 0 || dismiss || PrayerTime.now(c) - ts >= PrayerAlarmScheduler.ADHAN_WINDOW_MS) {
-                PrayerAlarmScheduler.clearFired(c);
+                // Keep the record for dedupe (don't clear) — just don't show UI after window
                 ctx.success(new JSONObject());
                 return;
             }
             ctx.success(o);
+        } catch (Exception e) {
+            ctx.success(new JSONObject());
+        }
+    }
+
+    private void getLastFired(CallbackContext ctx) {
+        Context c = this.cordova.getContext();
+        String fired = PrayerAlarmScheduler.peekFired(c);
+        if (fired == null || fired.isEmpty()) {
+            ctx.success(new JSONObject());
+            return;
+        }
+        try {
+            ctx.success(new JSONObject(fired));
         } catch (Exception e) {
             ctx.success(new JSONObject());
         }
