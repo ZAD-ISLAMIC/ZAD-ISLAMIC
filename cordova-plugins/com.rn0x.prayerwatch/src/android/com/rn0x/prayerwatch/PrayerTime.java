@@ -50,7 +50,7 @@ public final class PrayerTime {
         return "manual".equals(prefs(c).getString(KEY_TIME_MODE, "auto"));
     }
 
-    /** Persist the time source from JS. */
+    /** Persist the time source from JS — uses commit() so the next scheduleAlarms reads it instantly. */
     public static void setTimeSource(Context c, String mode, String manualIso, long manualSetAt) {
         SharedPreferences.Editor ed = prefs(c).edit();
         if ("manual".equals(mode) && manualIso != null && !manualIso.isEmpty() && manualSetAt != 0L) {
@@ -62,7 +62,7 @@ public final class PrayerTime {
             ed.remove(KEY_MANUAL_ISO);
             ed.remove(KEY_MANUAL_SET_AT);
         }
-        ed.apply();
+        ed.commit();
     }
 
     static long parseIso(String s) {

@@ -396,14 +396,12 @@ public class PrayerWatch extends CordovaPlugin {
             } catch (Exception ignored) {}
         }
 
-        // Persist unified time source for the entire native layer
-        PrayerTime.setTimeSource(c, timeMode, manualIso, manualSetAt);
-
         // Capture old events BEFORE overwriting prefs so we can cancel their alarms.
-        // The requestCode is derived from ts (ts % MAX), so a clockOffset change
-        // mutates every ts by ±N minutes and would otherwise orphan the old
-        // PendingIntents — leaving duplicate alarms for every prayer.
         java.util.List<PrayerAlarmScheduler.Event> oldEvents = PrayerAlarmScheduler.events(c);
+        long oldOffset = PrayerTime.offset(c);
+
+        // Persist unified time source for the entire native layer (commit = sync)
+        PrayerTime.setTimeSource(c, timeMode, manualIso, manualSetAt);
 
         SharedPreferences.Editor ed = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit();
         ed.putBoolean(KEY_ENABLED, enabled);
@@ -415,7 +413,7 @@ public class PrayerWatch extends CordovaPlugin {
         ed.putString(KEY_HIJRI, hijri);
         ed.putString(KEY_ADHAN_SOUND, adhanSound);
         ed.putFloat(KEY_ADHAN_VOLUME, vol);
-        ed.apply();
+        ed.commit();
 
         try {
             if (!enabled) {

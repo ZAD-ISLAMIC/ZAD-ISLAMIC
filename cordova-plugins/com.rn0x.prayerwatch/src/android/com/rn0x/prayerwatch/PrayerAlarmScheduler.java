@@ -101,13 +101,26 @@ public final class PrayerAlarmScheduler {
         if (am == null) return;
         List<Event> events = events(c);
         long appNow = PrayerTime.now(c);
+        long realNow = System.currentTimeMillis();
         long horizon = appNow + TWO_DAYS_MS;
         long offset = PrayerTime.offset(c);
         boolean exact = PrayerWatch.canScheduleExactAlarms(c);
+        boolean isManual = PrayerTime.isManual(c);
         for (Event e : events) {
             if (!e.isPrayer) continue;
-            if (e.ts <= appNow || e.ts > horizon) continue;
-            long alarmAtReal = e.ts - offset;
+            long alarmAtReal;
+            // In manual testing mode, if the prayer just passed (within window) and would
+            // otherwise be skipped, schedule it to fire in 2s so the user sees immediate
+            // feedback when they set time to just after a prayer.
+            boolean justPastWindow = e.ts > appNow - ADHAN_WINDOW_MS && e.ts <= appNow;
+            if (justPastWindow && isManual) {
+                alarmAtReal = realNow + 2000L;
+            } else {
+                if (e.ts <= appNow || e.ts > horizon) continue;
+                alarmAtReal = e.ts - offset;
+                // Guard: never schedule in the past real time (can happen if device clock jumps)
+                if (alarmAtReal <= realNow) alarmAtReal = realNow + 1000L;
+            }
             Intent i = adhanIntent(c, e.id, e.label, e.ts);
             PendingIntent pi = PendingIntent.getBroadcast(
                     c, stableRequestCode(e), i, flags());
