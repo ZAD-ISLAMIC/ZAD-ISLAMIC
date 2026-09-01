@@ -221,7 +221,7 @@ export function AdhanModal({ prayer, onClose }) {
         </div>
         <div className="adhan-modal__actions">
           <button className="adhan-modal__btn adhan-modal__btn--snooze" onClick={handleSnooze} type="button">
-            ؤجّل 10 دقائق
+            أَجّلْ 10 دقائق
           </button>
           <button className="adhan-modal__btn adhan-modal__btn--min" onClick={() => setMinimized(true)} type="button">
             تصغير

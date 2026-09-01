@@ -650,7 +650,18 @@ public final class AdhanPlayback {
                 smallIcon != 0 ? smallIcon : c.getApplicationInfo().icon,
                 "أَجِّلْ 10 دقائق", snoozePi)
                 .build();
-        b.addAction(snoozeAction);
+        b                .addAction(snoozeAction);
+
+        // If the user manages to swipe the notification (some OEMs allow this
+        // despite setOngoing), re-post it immediately so the adhan controls
+        // are always accessible until explicitly stopped or the window expires.
+        Intent repost = new Intent(c, PrayerAdhanReceiver.class).setAction(PrayerAlarmScheduler.ACTION_ADHAN_TICK);
+        repost.putExtra(PrayerAlarmScheduler.EXTRA_PRAYER_ID, id);
+        repost.putExtra(PrayerAlarmScheduler.EXTRA_LABEL, label);
+        repost.putExtra(PrayerAlarmScheduler.EXTRA_TS, ts);
+        repost.putExtra(PrayerAlarmScheduler.EXTRA_REMAINING, 30);
+        PendingIntent repostPi = PendingIntent.getBroadcast(c, 10, repost, notifDpiFlags());
+        b.setDeleteIntent(repostPi);
 
         try {
             nm.notify(NOTIF_TAG, NOTIF_ID, b.build());

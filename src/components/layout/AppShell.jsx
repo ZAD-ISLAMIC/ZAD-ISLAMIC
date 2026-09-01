@@ -6,7 +6,7 @@ import { PlayerBar } from '../player/PlayerBar.jsx'
 import { AdhanModal } from '../prayer/AdhanModal.jsx'
 import { Icon } from '../ui/Icon.jsx'
 import * as player from '../../services/player.mjs'
-import { onAdhan, onSilentAdhan } from '../../services/prayerWatch.mjs'
+import { onAdhan, onSilentAdhan, clearSilentAdhan } from '../../services/prayerWatch.mjs'
 import { vibrate } from '../../services/sound.mjs'
 import { openExternal, exitApp } from '../../services/device.mjs'
 import { PLAY_STORE_URL } from '../../constants/app.mjs'
@@ -81,6 +81,7 @@ export function AppShell() {
         <AdhanModal
           prayer={adhan}
           onClose={() => {
+            clearSilentAdhan()
             setAdhan(null)
             // silencing the running azan player happens on unmount
           }}

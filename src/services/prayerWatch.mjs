@@ -1011,7 +1011,6 @@ export async function checkSilentAdhan() {
     // never suppressed by a stale marker from an earlier session.
     const dedupe = dayKeyOf(new Date(win.ts)) + ':' + win.key
     if (silentShownKey === dedupe) return
-    if (dismissedAdhanKeys.has(dedupe)) return
     silentShownKey = dedupe
     // Record that native fired — prevents the backup timer from duplicating.
     nativePushReceived = true

@@ -114,12 +114,25 @@ public final class PrayerAlarmScheduler {
             // feedback when they set time to just after a prayer.
             boolean justPastWindow = e.ts > appNow - ADHAN_WINDOW_MS && e.ts <= appNow;
             if (justPastWindow && isManual) {
+                // Don't re-schedule if this prayer was already fired (prevents
+                // duplicate rings when refreshWatch / scheduleAlarms runs again).
+                String lastFired = peekFired(c);
+                if (lastFired != null && !lastFired.isEmpty()) {
+                    try {
+                        JSONObject firedObj = new JSONObject(lastFired);
+                        if (e.id != null && e.id.equals(firedObj.optString("key", ""))) {
+                            continue;
+                        }
+                    } catch (Exception ignored) {}
+                }
                 alarmAtReal = realNow + 2000L;
             } else {
                 if (e.ts <= appNow || e.ts > horizon) continue;
                 alarmAtReal = e.ts - offset;
-                // Guard: never schedule in the past real time (can happen if device clock jumps)
-                if (alarmAtReal <= realNow) alarmAtReal = realNow + 1000L;
+                // Guard: if the alarm time is in the past, this prayer may
+                // have already fired. Don't reschedule — it would create a
+                // duplicate ring 1 second later.
+                if (alarmAtReal <= realNow) continue;
             }
             Intent i = adhanIntent(c, e.id, e.label, e.ts);
             PendingIntent pi = PendingIntent.getBroadcast(
