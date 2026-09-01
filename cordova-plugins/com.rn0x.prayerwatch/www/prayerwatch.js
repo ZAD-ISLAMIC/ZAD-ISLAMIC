@@ -75,6 +75,14 @@ exports.stopAdhan = function (onOk, onErr) {
   call('stopAdhan', [], onOk, onErr)
 }
 
+/**
+ * Snooze the adhan for 10 minutes. Stops the current ring and schedules
+ * a new alarm 10 minutes from now.
+ */
+exports.snoozeAdhan = function (onOk, onErr) {
+  call('snoozeAdhan', [], onOk, onErr)
+}
+
 /** Resolve { granted:boolean } for exact alarm permission (Android 12+). */
 exports.exactAlarms = function (onOk, onErr) {
   call('exactAlarms', [], onOk, onErr)

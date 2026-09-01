@@ -1,5 +1,7 @@
 package com.rn0x.prayerwatch;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,10 +15,10 @@ import static com.rn0x.prayerwatch.PrayerAlarmScheduler.EXTRA_REMAINING;
 import static com.rn0x.prayerwatch.PrayerAlarmScheduler.EXTRA_TS;
 
 /**
- * Receives the exact prayer alarms plus the minute-refresh and stop actions.
- * Rings the adhan with {@link AdhanPlayback} (MediaPlayer + WakeLock — no
- * foreground service), posts/refreshes the standard notification, and answers
- * the "stop" action / swipe-dismiss.
+ * Receives the exact prayer alarms plus the minute-refresh, stop, and snooze
+ * actions. Rings the adhan with {@link AdhanPlayback} (MediaPlayer + WakeLock),
+ * posts/refreshes the standard notification, answers the "stop" action /
+ * swipe-dismiss, and handles the "snooze 10 minutes" action.
  */
 public class PrayerAdhanReceiver extends BroadcastReceiver {
 
@@ -36,10 +38,15 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
                     AdhanPlayback.dismissNotificationOnly(c);
                     PrayerAlarmScheduler.cancelAdhanTicks(c);
                 } else {
-                    // Explicit stop from in-app modal: stop everything.
+                    // Explicit stop from in-app modal or notification action:
+                    // stop everything.
                     AdhanPlayback.stop(c, true);
                     PrayerAlarmScheduler.cancelAdhanTicks(c);
                 }
+                return;
+            }
+            if (AdhanPlayback.ACTION_SNOOZE.equals(action)) {
+                handleSnooze(c, intent);
                 return;
             }
             if (ACTION_ADHAN.equals(action)) {
@@ -79,11 +86,46 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
         }
 
         // The native layer is the single audio source: it always rings and
-        // posts the simple notification, and pushes the event so the in-app
-        // window opens immediately (SILENT — the WebView never replays it).
-        // Foreground or background, one ring, one notification, one window.
+        // posts the notification, and pushes the event so the in-app window
+        // opens immediately (SILENT — the WebView never replays it).
         AdhanPlayback.start(c, id, label, ts, force);
         PrayerWatch.pushAdhanToJs(id, label, ts);
+    }
+
+    /**
+     * Handle snooze: stop current adhan, then schedule a new alarm 10 minutes
+     * from now with the same prayer info. The snoozed alarm will fire as a
+     * normal adhan with full audio + notification.
+     */
+    private void handleSnooze(Context c, Intent intent) {
+        String id = intent.getStringExtra(EXTRA_PRAYER_ID);
+        String label = intent.getStringExtra(EXTRA_LABEL);
+        long ts = intent.getLongExtra(EXTRA_TS, PrayerTime.now(c));
+
+        // Stop current adhan completely (audio + notification).
+        AdhanPlayback.stop(c, true);
+        PrayerAlarmScheduler.cancelAdhanTicks(c);
+
+        // Schedule a new alarm 10 minutes from now.
+        long snoozeAt = System.currentTimeMillis() + 10 * 60 * 1000L;
+        String snoozeId = (id == null ? "snooze" : id + "_snooze");
+        Intent i = PrayerAlarmScheduler.adhanIntent(c, snoozeId, label == null ? "الصلاة" : label, ts);
+        i.putExtra("force", true);
+        PendingIntent pi = PendingIntent.getBroadcast(
+                c, (int) ((snoozeAt + 2_000_000L) % Integer.MAX_VALUE),
+                i, PrayerAlarmScheduler.dpiFlags());
+
+        AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+        if (am != null) {
+            try {
+                if (PrayerWatch.canScheduleExactAlarms(c)) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, snoozeAt, pi);
+                } else {
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, snoozeAt, pi);
+                }
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     private void handleTick(Context c, Intent intent) {

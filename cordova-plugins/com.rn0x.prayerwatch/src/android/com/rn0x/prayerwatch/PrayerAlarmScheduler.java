@@ -192,11 +192,13 @@ public final class PrayerAlarmScheduler {
         }
     }
 
+    /**
+     * Cancel all pending tick alarms for the current adhan window.
+     * Uses the stored fired record's ts to compute the tick requestCode,
+     * then cancels it. Also cancels any ticks for the next 5 minutes
+     * (covering the full tick chain) to prevent lingering notifications.
+     */
     static synchronized void cancelAdhanTicks(Context c) {
-        // Cancelled by clearing one pending intent with the same code; each
-        // tick re-schedules only when outstanding. We simply cancel by the
-        // known requestCode scheme once per recent fired window is overkill,
-        // so we cancel the current window tick code via a stored ts placeholder:
         String fired = peekFired(c);
         if (fired == null || fired.isEmpty()) return;
         try {
@@ -204,6 +206,7 @@ public final class PrayerAlarmScheduler {
             if (ts == 0) return;
             AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
             if (am == null) return;
+            // Cancel the current tick PendingIntent
             Intent i = new Intent(c, PrayerAdhanReceiver.class)
                     .setAction(ACTION_ADHAN_TICK)
                     .putExtra(EXTRA_PRAYER_ID, "")
@@ -213,6 +216,19 @@ public final class PrayerAlarmScheduler {
             PendingIntent pi = PendingIntent.getBroadcast(
                     c, tickRequestCode(ts), i, flags());
             am.cancel(pi);
+            // Also cancel any future ticks in the chain by cancelling with
+            // remaining values 1..5 at the same ts (covers the full window).
+            for (int r = 1; r <= 5; r++) {
+                Intent fi = new Intent(c, PrayerAdhanReceiver.class)
+                        .setAction(ACTION_ADHAN_TICK)
+                        .putExtra(EXTRA_PRAYER_ID, "")
+                        .putExtra(EXTRA_LABEL, "")
+                        .putExtra(EXTRA_TS, ts)
+                        .putExtra(EXTRA_REMAINING, r);
+                PendingIntent fpi = PendingIntent.getBroadcast(
+                        c, tickRequestCode(ts), fi, flags());
+                am.cancel(fpi);
+            }
         } catch (Exception ignored) {
         }
     }

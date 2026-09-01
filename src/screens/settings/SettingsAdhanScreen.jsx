@@ -226,15 +226,43 @@ export default function SettingsAdhanScreen() {
           }
           onOpen={() => openSystemSetting('battery')}
         />
-        <p className="settings-note" style={{ margin: '12px 14px 14px' }}>
-          على أجهزة Xiaomi/MIUI افتح أيضًا: الإعدادات ← التطبيقات ← التطبيق ← «التحكم في البطارية» = لا قيود،
-          وفعّل «التشغيل التلقائي عند بدء التشغيل».
-        </p>
         {nativeOk === false && (
           <p className="settings-note" style={{ margin: '12px 14px 14px' }}>
             الإضافة غير متوفرة — الأذان يظهر داخل التطبيق فقط.
           </p>
         )}
+      </SettingsGroup>
+
+      {status?.oem && status.oem !== 'other' && (
+        <SettingsGroup title={`إرشادات特别 — ${oemLabels[status.oem] || status.oem}`}>
+          {(oemWarnings[status.oem] || []).map((step, i) => (
+            <div key={i} className="settings-row" style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text)' }}>
+              <span style={{ color: 'var(--primary)', fontWeight: 700, marginInlineEnd: 6 }}>{i + 1}.</span>
+              {step}
+            </div>
+          ))}
+        </SettingsGroup>
+      )}
+
+      <SettingsGroup title="حالة النظام">
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>الجهاز:</span>{' '}
+          <span style={{ fontWeight: 600 }}>{status?.manufacturer || '—'} {status?.model || ''}</span>
+        </div>
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>نظام Android:</span>{' '}
+          <span style={{ fontWeight: 600 }}>{status?.androidVersion ? `API ${status.androidVersion}` : '—'}</span>
+        </div>
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>نوع الشركة:</span>{' '}
+          <span style={{ fontWeight: 600 }}>{oemLabels[status?.oem] || '—'}</span>
+        </div>
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>الأذان في الخلفية:</span>{' '}
+          <span style={{ fontWeight: 600, color: status?.scheduleArmed ? 'var(--primary)' : 'var(--text-muted)' }}>
+            {status?.scheduleArmed ? 'مفعّل' : 'متوقف'}
+          </span>
+        </div>
       </SettingsGroup>
     </section>
   )
@@ -264,4 +292,42 @@ function PermissionRow({ title, ok, hint, onOpen }) {
       trailing={<span className="settings-perm__status">{chip}</span>}
     />
   )
+}
+
+const oemLabels = {
+  xiaomi: 'Xiaomi / Redmi / Poco',
+  samsung: 'Samsung / OneUI',
+  oppo: 'OPPO / Realme / OnePlus',
+  huawei: 'Huawei / Honor',
+  vivo: 'Vivo',
+  other: 'أخرى',
+}
+
+const oemWarnings = {
+  xiaomi: [
+    'الإعدادات ← التطبيقات ← التطبيق',
+    'البطارية ← 「لا قيود」',
+    'الإعدادات ← التطبيقات ← التأذين التلقائي ← فعّل لهذا التطبيق',
+    'الإعدادات ← البطارية ← تحسين البطارية ← أوقف تحسين لهذا التطبيق',
+  ],
+  samsung: [
+    'الإعدادات ← التطبيقات ← التطبيق',
+    'البطارية ← 「غير مقيّد」',
+    'الإعدادات ← البطارية ← خيارات أخرى ← 「إيقاف تحسين البطارية」',
+  ],
+  oppo: [
+    'الإعدادات ← التطبيقات ← إدارة التطبيقات',
+    'التشغيل التلقائي ← فعّل لهذا التطبيق',
+    'الإعدادات ← البطارية ← تعليق في الخلفية ← اسمح بهذا التطبيق',
+  ],
+  huawei: [
+    'الإعدادات ← البطارية ← بدء التشغيل التلقائي',
+    'اختر 「يدوياً」 وفعّل جميع الخيارات',
+    'الإعدادات ← البطارية ← حماية البطارية ← اسمح لهذا التطبيق',
+  ],
+  vivo: [
+    'الإعدادات ← البطارية ← إدارة الطاقة',
+    'التشغيل التلقائي ← فعّل لهذا التطبيق',
+    'الإعدادات ← التطبيقات ← التطبيق ← البطارية ← اسمح بالعمل في الخلفية',
+  ],
 }

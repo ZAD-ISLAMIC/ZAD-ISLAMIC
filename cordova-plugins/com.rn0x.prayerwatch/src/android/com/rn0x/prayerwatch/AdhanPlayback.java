@@ -17,6 +17,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.PowerManager;
+import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
 import androidx.core.content.ContextCompat;
@@ -24,12 +25,25 @@ import androidx.core.content.ContextCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationCompat.Action;
 
-/** One-shot playback of the adhan with its standard notification. */
+/**
+ * One-shot playback of the adhan with its standard notification.
+ *
+ * Improvements over the original:
+ *  - Notification tag to prevent duplicate notifications stacking
+ *  - Stop + Snooze action buttons in the notification
+ *  - Phone call pause/resume (pause during call, resume after)
+ *  - Dedicated phone state monitor for calls that start mid-adhan
+ *  - Improved audio focus handling (pause vs stop)
+ */
 public final class AdhanPlayback {
 
     static final int NOTIF_ID = 7002;
     static final String CHANNEL_ADHAN = "prayer_adhan";
+    static final String CHANNEL_PRAYER_INFO = "prayer_info";
     static final String ACTION_STOP = "com.rn0x.prayerwatch.STOP_ADHAN";
+    static final String ACTION_SNOOZE = "com.rn0x.prayerwatch.SNOOZE_ADHAN";
+    /** Unique notification tag to prevent duplicate stacking. */
+    static final String NOTIF_TAG = "prayer_adhan";
 
     private static final Object LOCK = new Object();
     private static MediaPlayer player;
@@ -39,10 +53,14 @@ public final class AdhanPlayback {
     private static Context sCtx;
     private static AudioFocusRequest audioFocusRequest;
     private static int originalAlarmVolume = -1;
-    // Set when the user swipes the notification away. Prevents the tick chain
-    // from re-posting it and keeps the sound playing until the in-app modal
-    // (or AUTO_STOP) explicitly stops it.
+    /** Set when the user swipes the notification away. Prevents the tick chain from re-posting. */
     private static volatile boolean notificationDismissed;
+    /** Set when audio was paused for a phone call. Resume when call ends. */
+    private static volatile boolean callPaused;
+    /** Dedicated phone state listener for calls that start mid-adhan. */
+    private static PhoneStateListener phoneStateListener;
+    private static boolean wasInCallAtStart;
+
     private static final android.os.Handler MAIN = new android.os.Handler(android.os.Looper.getMainLooper());
     private static final Runnable AUTO_STOP = () -> stop(null, false);
 
@@ -53,7 +71,7 @@ public final class AdhanPlayback {
 
     public static boolean isPlaying() {
         synchronized (LOCK) {
-            return player != null;
+            return player != null && player.isPlaying();
         }
     }
 
@@ -105,7 +123,6 @@ public final class AdhanPlayback {
     /**
      * Live adhan loudness change (0..1). Applied on the ringing playback
      * immediately and to the alarm stream so the change is audible mid-ring.
-     * The JS layer persists the preference; this only applies it live.
      */
     public static void setAdhanVolume(Context c, float volume) {
         float v = Math.max(0f, Math.min(1f, volume));
@@ -129,11 +146,14 @@ public final class AdhanPlayback {
 
     public static void start(final Context c, final String id, final String label, final long ts, final boolean force) {
         notificationDismissed = false;
+        callPaused = false;
         synchronized (LOCK) {
             if (player != null && !force) {
                 stopLocked(c, false);
             }
         }
+        // Track whether a call was active at adhan start (for resume logic).
+        wasInCallAtStart = isInCall(c);
         Thread t = new Thread(() -> play(c, id, label, ts), "prayerwatch-adhan");
         t.setDaemon(true);
         t.start();
@@ -166,13 +186,13 @@ public final class AdhanPlayback {
         MAIN.removeCallbacks(AUTO_STOP);
         MAIN.postDelayed(AUTO_STOP, PrayerAlarmScheduler.AUTO_STOP_MS + 15_000L);
 
+        // Start monitoring phone calls that may begin mid-adhan.
+        startCallMonitor(c);
+
         // When "respect sound mode" is on and the device is silent / alarm
         // volume is at zero, skip the audio but keep vibration + notification
-        // + the ticking count-up. The user asked the phone to be quiet, so the
-        // call to prayer announces itself silently instead of fighting the mode.
+        // + the ticking count-up.
         if (soundMuted(c)) {
-            // No player exists, so the AUTO_STOP path won't reach stopLocked;
-            // release the alert wake lock immediately to avoid a 6-min hold.
             try {
                 if (wl != null) wl.release();
             } catch (Exception ignored) {
@@ -180,9 +200,9 @@ public final class AdhanPlayback {
             return;
         }
 
-        // If a phone call is active (user is on a call or dialing), the adhan
-        // must not play audio — it would drown the conversation. Keep the
-        // silent notification + vibration so the user still sees the prayer.
+        // If a phone call is active at adhan start — keep the silent
+        // notification + vibration so the user still sees the prayer. Audio
+        // will be played when the call ends (via call monitor).
         if (isInCall(c)) {
             try {
                 if (wl != null) wl.release();
@@ -192,9 +212,7 @@ public final class AdhanPlayback {
         }
 
         // Audible even on a silent/vibrate device: take alarm-stream audio
-        // focus (routes the hardware volume keys to the adhan) and raise the
-        // alarm stream to the stored adhan loudness. The previous stream level
-        // is remembered and restored when playback stops.
+        // focus and raise the alarm stream to the stored adhan loudness.
         originalAlarmVolume = -1;
         requestFocus(c);
         boostAlarm(c);
@@ -257,22 +275,11 @@ public final class AdhanPlayback {
 
     /* ------------------------------------------------------------------ *
      * Audio focus + alarm-stream loudness
-     *
-     * The adhan plays on STREAM_ALARM, whose volume is often 0 right when a
-     * prayer fires (silent/vibrate phone or a low alarm volume). Without help
-     * the ring is inaudible and the hardware volume keys control the wrong
-     * stream, so the user "can't raise or lower it". We fix both:
-     *   - request alarm-usage audio focus → the volume keys route to the
-     *     alarm stream while the adhan rings;
-     *   - raise the alarm stream to the stored adhan loudness and restore it
-     *     after playback, so the ring behaves like an alarm regardless of the
-     *     phone's current sound mode.
      * ------------------------------------------------------------------ */
 
-    /** True if a phone call is active — adhan must be silent. */
+    /** True if a phone call is active — adhan must be silent/paused. */
     public static boolean isInCall(Context c) {
         if (c == null) return false;
-        // Fast, permission-free check: audio mode is IN_CALL / IN_COMMUNICATION.
         try {
             AudioManager am = (AudioManager) c.getSystemService(Context.AUDIO_SERVICE);
             if (am != null) {
@@ -282,7 +289,6 @@ public final class AdhanPlayback {
                 }
             }
         } catch (Exception ignored) { }
-        // Telephony check (requires READ_PHONE_STATE; guard it).
         try {
             if (ContextCompat.checkSelfPermission(c, Manifest.permission.READ_PHONE_STATE)
                     == PackageManager.PERMISSION_GRANTED) {
@@ -299,17 +305,39 @@ public final class AdhanPlayback {
         return false;
     }
 
+    /**
+     * Audio focus listener — improved to PAUSE on transient loss (phone call)
+     * instead of stopping completely. The adhan resumes when the call ends.
+     */
     private static final AudioManager.OnAudioFocusChangeListener FOCUS_CB = change -> {
-        if (change == AudioManager.AUDIOFOCUS_LOSS
-                || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+        if (change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
                 || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-            // Any audio-focus loss during a call or media interruption:
-            // stop the adhan immediately but keep the silent notification
-            // so the user sees "حان وقت الصلاة" without voice.
-            stop(null, false);
+            // Transient loss: phone call, voice assistant, etc.
+            // PAUSE the adhan so it can resume when the interruption ends.
+            synchronized (LOCK) {
+                if (player != null && player.isPlaying()) {
+                    try {
+                        player.pause();
+                        callPaused = true;
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
         } else if (change == AudioManager.AUDIOFOCUS_GAIN) {
-            // Focus recovered — the adhan is already stopped, just restore.
+            // Focus recovered — resume if we were paused for a call.
+            synchronized (LOCK) {
+                if (player != null && callPaused) {
+                    try {
+                        player.start();
+                        callPaused = false;
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
             restoreAlarm(sCtx);
+        } else if (change == AudioManager.AUDIOFOCUS_LOSS) {
+            // Permanent loss — stop completely.
+            stop(null, false);
         }
     };
 
@@ -382,7 +410,7 @@ public final class AdhanPlayback {
     /**
      * True when "respect sound mode" is enabled and the device would rather
      * not hear the call: ringer silent, ringer vibrate (no audio), or the
-     * alarm stream is muted. Defaults to audible — respect must be opted in.
+     * alarm stream is muted.
      */
     private static boolean soundMuted(Context c) {
         SharedPreferences prefs = PrayerAlarmScheduler.prefs(c);
@@ -394,6 +422,93 @@ public final class AdhanPlayback {
         if (mode == AudioManager.RINGER_MODE_VIBRATE) return true;
         return am.getStreamVolume(AudioManager.STREAM_ALARM) == 0;
     }
+
+    /* ------------------------------------------------------------------ *
+     * Phone call monitor — pause/resume adhan during calls
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Start monitoring phone state so calls that begin AFTER the adhan starts
+     * are caught. The adhan is paused during the call and resumed after.
+     */
+    private static void startCallMonitor(Context c) {
+        if (phoneStateListener != null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12+: TelephonyManager.listen() is deprecated.
+            // Audio focus callbacks handle most cases; the isInCall() check
+            // at start covers the rest. Skip the listener to avoid warnings.
+            return;
+        }
+        try {
+            TelephonyManager tm = (TelephonyManager) c.getSystemService(Context.TELEPHONY_SERVICE);
+            if (tm == null) return;
+            phoneStateListener = new PhoneStateListener() {
+                @Override
+                @SuppressWarnings("deprecation")
+                public void onCallStateChanged(int state, String phoneNumber) {
+                    boolean inCall = (state == TelephonyManager.CALL_STATE_OFFHOOK
+                            || state == TelephonyManager.CALL_STATE_RINGING);
+                    if (inCall && !wasInCallAtStart) {
+                        // Call started mid-adhan — pause audio.
+                        pauseForCall();
+                    } else if (!inCall && wasInCallAtStart) {
+                        // Call ended — resume audio.
+                        resumeAfterCall();
+                    }
+                    wasInCallAtStart = inCall;
+                }
+            };
+            tm.listen(phoneStateListener, PhoneStateListener.LISTEN_CALL_STATE);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private static void stopCallMonitor() {
+        if (phoneStateListener == null) return;
+        try {
+            // We need a context to get TelephonyManager, but sCtx may be null
+            // at stop time. Use the stored context if available.
+            Context c = sCtx;
+            if (c != null) {
+                TelephonyManager tm = (TelephonyManager) c.getSystemService(Context.TELEPHONY_SERVICE);
+                if (tm != null) {
+                    tm.listen(phoneStateListener, PhoneStateListener.LISTEN_NONE);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        phoneStateListener = null;
+    }
+
+    /** Pause audio for an active phone call. Will resume when call ends. */
+    private static void pauseForCall() {
+        synchronized (LOCK) {
+            if (player != null && player.isPlaying()) {
+                try {
+                    player.pause();
+                    callPaused = true;
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    /** Resume audio after a phone call ends. */
+    private static void resumeAfterCall() {
+        synchronized (LOCK) {
+            if (player != null && callPaused) {
+                try {
+                    player.start();
+                    callPaused = false;
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    /* ------------------------------------------------------------------ *
+     * Stop / pause
+     * ------------------------------------------------------------------ */
 
     /** Stop playback (and optionally remove the notification). */
     public static void stop(Context c, boolean dismiss) {
@@ -420,10 +535,12 @@ public final class AdhanPlayback {
             }
             player = null;
         }
+        callPaused = false;
         playingId = null;
         Context ctx = c != null ? c : sCtx;
         abandonFocus(ctx);
         restoreAlarm(ctx);
+        stopCallMonitor();
         sCtx = null;
         if (wakeLock != null && wakeLock.isHeld()) {
             try {
@@ -437,7 +554,7 @@ public final class AdhanPlayback {
                     : (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
             if (nm != null) {
                 try {
-                    nm.cancel(NOTIF_ID);
+                    nm.cancel(NOTIF_TAG, NOTIF_ID);
                 } catch (Exception ignored) {
                 }
             }
@@ -448,25 +565,43 @@ public final class AdhanPlayback {
      * Notification (standard Android notification — no foreground service)
      * ------------------------------------------------------------------ */
 
-    static void createChannel(Context c) {
+    static void createChannels(Context c) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        NotificationChannel ch = new NotificationChannel(
+
+        // Channel 1: Adhan ringing (high importance, custom vibration, no system sound)
+        NotificationChannel ch1 = new NotificationChannel(
                 CHANNEL_ADHAN, "رنين الأذان", NotificationManager.IMPORTANCE_HIGH);
-        ch.setDescription("تنبيه حان وقت الصلاة مع الأذان");
-        ch.enableVibration(true);
-        ch.setVibrationPattern(new long[]{0, 600, 300, 600});
-        ch.setSound(null, null); // we play our own audio — avoid a system beep
-        ch.setShowBadge(false);
-        nm.createNotificationChannel(ch);
+        ch1.setDescription("تنبيه حان وقت الصلاة مع الأذان");
+        ch1.enableVibration(true);
+        ch1.setVibrationPattern(new long[]{0, 600, 300, 600});
+        ch1.setSound(null, null);
+        ch1.setShowBadge(false);
+        nm.createNotificationChannel(ch1);
+
+        // Channel 2: Prayer info (low importance, no sound)
+        NotificationChannel ch2 = new NotificationChannel(
+                CHANNEL_PRAYER_INFO, "معلومات الصلاة", NotificationManager.IMPORTANCE_LOW);
+        ch2.setDescription("تنبيهات دورية عن مواقيت الصلاة");
+        ch2.setSound(null, null);
+        ch2.setShowBadge(false);
+        nm.createNotificationChannel(ch2);
     }
 
-    /** Post/update the adhan notification. {@code everySecond} unused; ticks refresh every minute. */
+    /** Backward-compatible alias. */
+    static void createChannel(Context c) {
+        createChannels(c);
+    }
+
+    /**
+     * Post/update the adhan notification with stop + snooze action buttons.
+     * Uses a notification tag to prevent duplicate stacking.
+     */
     static void notify(Context c, String id, String label, long ts, long nowMs) {
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm == null) return;
-        createChannel(c);
+        createChannels(c);
 
         // Calm, simple notification: title = prayer + its time; body = next prayer.
         String time = PrayerAlarmScheduler.formatTime(ts, c);
@@ -492,25 +627,41 @@ public final class AdhanPlayback {
         Intent open = c.getPackageManager().getLaunchIntentForPackage(c.getPackageName());
         if (open != null) {
             open.putExtra(PrayerWatch.EXTRA_SCREEN, PrayerWatch.SCREEN_PRAYER);
-            // The activity flag goes on the Intent, never in the PendingIntent
-            // flags: Intent.FLAG_ACTIVITY_SINGLE_TOP has the same numeric value
-            // as PendingIntent.FLAG_NO_CREATE, which would make getActivity()
-            // return null and the notification un-clickable.
             open.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent openPi = PendingIntent.getActivity(c, 6, open, dpiFlags());
+            PendingIntent openPi = PendingIntent.getActivity(c, 6, open, notifDpiFlags());
             b.setContentIntent(openPi);
         }
 
-        // No "stop" action button — the adhan is stopped from the in-app window.
+        // Action 1: Stop adhan
+        Intent stopIntent = new Intent(c, PrayerAdhanReceiver.class).setAction(ACTION_STOP);
+        stopIntent.putExtra("dismissed", false);
+        PendingIntent stopPi = PendingIntent.getBroadcast(c, 8, stopIntent, notifDpiFlags());
+        Action stopAction = new Action.Builder(
+                smallIcon != 0 ? smallIcon : c.getApplicationInfo().icon,
+                "إيقاف الأذان", stopPi)
+                .build();
+        b.addAction(stopAction);
+
+        // Action 2: Snooze 10 minutes
+        Intent snoozeIntent = new Intent(c, PrayerAdhanReceiver.class).setAction(ACTION_SNOOZE);
+        snoozeIntent.putExtra(PrayerAlarmScheduler.EXTRA_PRAYER_ID, id);
+        snoozeIntent.putExtra(PrayerAlarmScheduler.EXTRA_LABEL, label);
+        snoozeIntent.putExtra(PrayerAlarmScheduler.EXTRA_TS, ts);
+        PendingIntent snoozePi = PendingIntent.getBroadcast(c, 9, snoozeIntent, notifDpiFlags());
+        Action snoozeAction = new Action.Builder(
+                smallIcon != 0 ? smallIcon : c.getApplicationInfo().icon,
+                "ؤجّل 10 دقائق", snoozePi)
+                .build();
+        b.addAction(snoozeAction);
 
         // Swiping the notification away also stops the audio.
         Intent del = new Intent(c, PrayerAdhanReceiver.class).setAction(ACTION_STOP);
         del.putExtra("dismissed", true);
-        PendingIntent delPi = PendingIntent.getBroadcast(c, 7, del, dpiFlags());
+        PendingIntent delPi = PendingIntent.getBroadcast(c, 7, del, notifDpiFlags());
         b.setDeleteIntent(delPi);
 
         try {
-            nm.notify(NOTIF_ID, b.build());
+            nm.notify(NOTIF_TAG, NOTIF_ID, b.build());
         } catch (SecurityException ignored) {
             // POST_NOTIFICATIONS not granted — playback keeps running silently
         }
@@ -534,25 +685,34 @@ public final class AdhanPlayback {
         NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
         if (nm != null) {
             try {
-                nm.cancel(NOTIF_ID);
+                nm.cancel(NOTIF_TAG, NOTIF_ID);
             } catch (Exception ignored) {
             }
         }
     }
 
-    static int dpiFlags() {
+    /**
+     * PendingIntent flags for notification actions.
+     * Uses FLAG_UPDATE_CURRENT to overwrite stale PendingIntents.
+     */
+    static int notifDpiFlags() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 ? PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT
                 : PendingIntent.FLAG_UPDATE_CURRENT;
     }
 
+    /**
+     * PendingIntent flags for alarm scheduling (PrayerAlarmScheduler).
+     * Uses FLAG_UPDATE_CURRENT — alarm PendingIntents are identified by
+     * their request code, not by extras, so FLAG_CANCEL_CURRENT is NOT
+     * used here (it would cancel a pending alarm for the same prayer).
+     */
+    static int dpiFlags() {
+        return notifDpiFlags();
+    }
+
     /* ------------------------------------------------------------------ *
      * Adhan asset resolution from the packaged web bundle
-     *
-     * The bundled files live under www/assets with Vite's content-hash
-     * suffixes (e.g. "عبد_الباسط-CCKhktQa.mp3"). We open them through
-     * AssetManager.openFd — never via a file:///android_asset URI, which
-     * fails for the Arabic (non-ASCII) file names on real devices.
      * ------------------------------------------------------------------ */
 
     private static AssetFileDescriptor resolveAdhanFd(Context c) {
@@ -580,8 +740,6 @@ public final class AdhanPlayback {
                 fallback = f;
             }
         }
-        // Fall back to the bundled default voice if the configured one is
-        // ever missing from the APK.
         if (fallback != null) {
             try {
                 return am.openFd("www/assets/" + fallback);

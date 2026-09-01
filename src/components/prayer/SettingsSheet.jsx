@@ -31,21 +31,6 @@ export function SettingsSheet({ onClose }) {
   const [testMsg, setTestMsg] = useState('')
   const [audio, setAudio] = useState(null)
   const fileRef = React.useRef(null)
-  const [editManualBaseSheet, setEditManualBaseSheet] = useState(() => {
-    const iso = loadConfig().timeSource?.manualIso
-    return iso ? new Date(iso) : new Date()
-  })
-  const [manualSavedSheet, setManualSavedSheet] = useState(false)
-  const [liveNowSheetMs, setLiveNowSheetMs] = useState(() => getNowMs())
-  useEffect(() => {
-    const iso = config.timeSource?.manualIso
-    if (iso) setEditManualBaseSheet(new Date(iso))
-  }, [config.timeSource?.manualIso])
-  useEffect(() => {
-    if (config.timeSource?.mode !== 'manual') return
-    const t = setInterval(() => setLiveNowSheetMs(getNowMs()), 1000)
-    return () => clearInterval(t)
-  }, [config.timeSource?.mode, config.timeSource?.manualIso, config.timeSource?.manualSetAt])
 
   useEffect(() => {
     getCustomAdhanBlob().then((blob) => setHasCustom(!!blob))
@@ -187,115 +172,6 @@ export function SettingsSheet({ onClose }) {
           <Section title="تعديل دقائق الصلوات">
             <p className="set-sheet__note">اضبط كل صلاة بالدقائق (+ أو −) حسب جهات التوقيت المحلية.</p>
             <AdjustList config={config} update={update} />
-          </Section>
-
-          <Section title="مصدر الوقت">
-            <p className="set-sheet__note">
-              اختر مصدر الوقت: تلقائي (وقت الجهاز) أو يدوي (تحدد التاريخ والوقت كاملاً ويستمر في التقدم).
-            </p>
-            <div className="set-sheet__list">
-              <button
-                className={`set-sheet__row${(config.timeSource?.mode || 'auto') === 'auto' ? ' set-sheet__row--active' : ''}`}
-                onClick={() => update((c) => ({ ...c, timeSource: { mode: 'auto', manualIso: null, manualSetAt: null } }))}
-                type="button"
-              >
-                <span>تلقائي — وقت الجهاز</span>
-                {(config.timeSource?.mode || 'auto') === 'auto' && <Icon name="check" size={16} />}
-              </button>
-              <button
-                className={`set-sheet__row${config.timeSource?.mode === 'manual' ? ' set-sheet__row--active' : ''}`}
-                onClick={() => {
-                  const nowIso = new Date().toISOString()
-                  update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: nowIso, manualSetAt: Date.now() } }))
-                }}
-                type="button"
-              >
-                <span>يدوي — تحديد كامل</span>
-                {config.timeSource?.mode === 'manual' && <Icon name="check" size={16} />}
-              </button>
-            </div>
-            {config.timeSource?.mode === 'manual' && (() => {
-              const pad = (n) => String(n).padStart(2,'0')
-              const hasChange = (() => {
-                const iso = config.timeSource?.manualIso
-                const cur = editManualBaseSheet
-                if (!iso || !cur) return false
-                return new Date(iso).getTime() !== cur.getTime()
-              })()
-              const base = hasChange ? (editManualBaseSheet || new Date(liveNowSheetMs)) : new Date(liveNowSheetMs)
-              return (
-                <div className="set-sheet__time-card">
-                  <div className="set-sheet__time-card__head">
-                    <span className="set-sheet__time-card__icon"><Icon name="calendar" size={16} /></span>
-                    <div>
-                      <b>التاريخ والوقت اليدوي</b>
-                      <small>عدّل ثم اضغط حفظ</small>
-                    </div>
-                  </div>
-                  <div className="set-sheet__time-card__grid">
-                    <label>
-                      <span><Icon name="calendar" size={12} /> التاريخ</span>
-                      <div className="custom-date-picker small">
-                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
-                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>اليوم</small>
-                          <select value={base.getDate()} onChange={(e) => {
-                            const d = new Date(base); d.setDate(Number(e.target.value)); setEditManualBaseSheet(d); setManualSavedSheet(false)
-                          }} className="custom-select small" aria-label="اليوم">
-                            {Array.from({length: 31}, (_, i) => i+1).map(d => <option key={d} value={d}>{arabicDigits(d)}</option>)}
-                          </select>
-                        </div>
-                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
-                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>الشهر</small>
-                          <select value={base.getMonth()+1} onChange={(e) => {
-                            const d = new Date(base); d.setMonth(Number(e.target.value)-1); setEditManualBaseSheet(d); setManualSavedSheet(false)
-                          }} className="custom-select small" aria-label="الشهر">
-                            {['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'].map((m,i) => <option key={i+1} value={i+1}>{m}</option>)}
-                          </select>
-                        </div>
-                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
-                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>السنة</small>
-                          <select value={base.getFullYear()} onChange={(e) => {
-                            const d = new Date(base); d.setFullYear(Number(e.target.value)); setEditManualBaseSheet(d); setManualSavedSheet(false)
-                          }} className="custom-select small" aria-label="السنة">
-                            {(() => { const cy = new Date().getFullYear(); const start = cy - 60; const end = cy + 40; return Array.from({length: end - start + 1}, (_, i) => start + i).map(y => <option key={y} value={y}>{arabicDigits(y)}</option>) })()}
-                          </select>
-                        </div>
-                      </div>
-                    </label>
-                    <label>
-                      <span><Icon name="clock" size={12} /> الوقت <small style={{fontWeight:400, color:'var(--text-muted)'}}>(24 ساعة)</small></span>
-                      <div className="custom-time-picker small">
-                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
-                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>دقيقة</small>
-                          <select value={pad(base.getMinutes())} onChange={(e) => {
-                            const d = new Date(base); d.setMinutes(Number(e.target.value)); setEditManualBaseSheet(d); setManualSavedSheet(false)
-                          }} className="custom-select small" aria-label="دقيقة">
-                            {Array.from({length: 60}, (_, i) => pad(i)).map(m => <option key={m} value={m}>{arabicDigits(m)}</option>)}
-                          </select>
-                        </div>
-                        <span style={{paddingTop:'14px'}}>:</span>
-                        <div style={{display:'flex', flexDirection:'column', gap:'2px', flex:1}}>
-                          <small style={{fontSize:'9px', color:'var(--text-muted)', textAlign:'center'}}>ساعة</small>
-                          <select value={pad(base.getHours())} onChange={(e) => {
-                            const d = new Date(base); d.setHours(Number(e.target.value)); setEditManualBaseSheet(d); setManualSavedSheet(false)
-                          }} className="custom-select small" aria-label="ساعة (24)">
-                            {Array.from({length: 24}, (_, i) => pad(i)).map(h => <option key={h} value={h}>{arabicDigits(h)}</option>)}
-                          </select>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                  <div style={{display:'flex', justifyContent:'flex-end', marginTop:'8px'}}>
-                    <button onClick={async () => { const src = hasChange ? base : new Date(liveNowSheetMs); await update((c) => ({ ...c, timeSource: { mode: 'manual', manualIso: src.toISOString(), manualSetAt: Date.now() } })); setManualSavedSheet(true); setTimeout(()=>setManualSavedSheet(false),2000)}} disabled={!hasChange} type="button" style={{fontSize:'10px', padding:'3px 10px', borderRadius:'999px', border:'1px solid var(--border)', background: hasChange ? 'var(--primary)' : 'var(--surface)', color: hasChange ? 'var(--on-primary)' : 'var(--text-muted)', cursor: hasChange ? 'pointer' : 'not-allowed', opacity: hasChange ? 1 : 0.7, fontWeight:700}}>
-                      {manualSavedSheet ? '✓ تم الحفظ' : 'حفظ'}
-                    </button>
-                  </div>
-                  <p className="set-sheet__time-card__hint">
-                    الوقت الفعّال الآن: <b dir="ltr">{new Date(liveNowSheetMs).toLocaleString('ar-EG')}</b>
-                  </p>
-                </div>
-              )
-            })()}
           </Section>
 
           <Section title="صوت الأذان">
@@ -448,10 +324,12 @@ export function SettingsSheet({ onClose }) {
               }
               onOpen={() => openSystemSetting('battery')}
             />
-            <p className="set-sheet__note">
-              على أجهزة Xiaomi/MIUI افتح أيضًا: الإعدادات ← التطبيقات ← التطبيق ← «التحكم في البطارية» =
-              لا قيود، وفعّل «التشغيل التلقائي عند بدء التشغيل» حتى تعود المنبّهات بعد إغلاق التطبيق.
-            </p>
+            {status?.oem && status.oem !== 'other' && (
+              <div className="set-sheet__note" style={{ margin: '8px 0' }}>
+                <b>{oemLabels[status.oem] || status.oem}:</b>{' '}
+                {(oemHints[status.oem] || 'تأكد من تعطيل تحسين البطارية')}
+              </div>
+            )}
             {nativeOk === false && (
               <p className="set-sheet__note">الإضافة غير متوفرة — الأذان يظهر داخل التطبيق فقط.</p>
             )}
@@ -550,4 +428,20 @@ function AdjustList({ config, update }) {
       ))}
     </div>
   )
+}
+
+const oemLabels = {
+  xiaomi: 'Xiaomi / Redmi / Poco',
+  samsung: 'Samsung / OneUI',
+  oppo: 'OPPO / Realme / OnePlus',
+  huawei: 'Huawei / Honor',
+  vivo: 'Vivo',
+}
+
+const oemHints = {
+  xiaomi: 'تأكد من تعطيل تحسين البطارية وتفعيل التشغيل التلقائي',
+  samsung: 'تأكد من تعيين البطارية على "غير مقيّد"',
+  oppo: 'تأكد من تفعيل التشغيل التarel والتعلي_ChBackground',
+  huawei: 'تأكد من تعيين بدء التشغيل على "يدوياً"',
+  vivo: 'تأكد من تفعيل التشغيل التلقائي والعمل في الخلفية',
 }

@@ -115,6 +115,9 @@ public class PrayerWatch extends CordovaPlugin {
             case "stopAdhan":
                 stopAdhan(ctx);
                 return true;
+            case "snoozeAdhan":
+                snoozeAdhan(ctx);
+                return true;
             case "exactAlarms":
                 exactAlarms(ctx);
                 return true;
@@ -384,6 +387,50 @@ public class PrayerWatch extends CordovaPlugin {
         ctx.success(true);
     }
 
+    private void snoozeAdhan(CallbackContext ctx) {
+        Context c = this.cordova.getContext();
+        // Stop the current adhan completely.
+        AdhanPlayback.stop(c, true);
+        PrayerAlarmScheduler.cancelAdhanTicks(c);
+
+        // Get the last fired prayer info for snooze.
+        String fired = PrayerAlarmScheduler.peekFired(c);
+        String id = "snooze";
+        String label = "الصلاة";
+        long ts = PrayerTime.now(c);
+        try {
+            if (fired != null && !fired.isEmpty()) {
+                org.json.JSONObject o = new org.json.JSONObject(fired);
+                id = o.optString("key", id) + "_snooze";
+                label = o.optString("name", label);
+                ts = o.optLong("ts", ts);
+            }
+        } catch (Exception ignored) {}
+
+        // Schedule a new alarm 10 minutes from now.
+        long snoozeAt = System.currentTimeMillis() + 10 * 60 * 1000L;
+        Intent i = PrayerAlarmScheduler.adhanIntent(c, id, label, ts);
+        i.putExtra("force", true);
+        PendingIntent pi = PendingIntent.getBroadcast(
+                c, (int) ((snoozeAt + 2_000_000L) % Integer.MAX_VALUE),
+                i, dpiFlags());
+        AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
+        if (am != null) {
+            try {
+                if (canScheduleExactAlarms(c)) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, snoozeAt, pi);
+                } else {
+                    am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, snoozeAt, pi);
+                }
+                ctx.success(true);
+            } catch (Exception ex) {
+                ctx.error(ex.getMessage());
+            }
+        } else {
+            ctx.error("no alarm service");
+        }
+    }
+
     private void start(JSONObject opts, CallbackContext ctx) {
         Context c = this.cordova.getContext();
         boolean enabled = opts == null || opts.optBoolean("enabled", true);
@@ -563,6 +610,10 @@ public class PrayerWatch extends CordovaPlugin {
             o.put("timeMode", PrayerTime.isManual(c) ? "manual" : "auto");
             o.put("timeOffsetMs", PrayerTime.offset(c));
             o.put("appNow", PrayerTime.now(c));
+            o.put("oem", detectOEM());
+            o.put("androidVersion", Build.VERSION.SDK_INT);
+            o.put("manufacturer", Build.MANUFACTURER);
+            o.put("model", Build.MODEL);
             ctx.success(o);
         } catch (JSONException e) {
             ctx.error(e.getMessage());
@@ -573,6 +624,31 @@ public class PrayerWatch extends CordovaPlugin {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true;
         return ContextCompat.checkSelfPermission(c, Manifest.permission.POST_NOTIFICATIONS)
                 == PackageManager.PERMISSION_GRANTED;
+    }
+
+    /**
+     * Detect the device OEM to provide targeted battery optimization guidance.
+     * Each manufacturer has different battery saving policies that can kill
+     * background alarms.
+     */
+    private static String detectOEM() {
+        String manufacturer = Build.MANUFACTURER.toLowerCase();
+        if (manufacturer.contains("xiaomi") || manufacturer.contains("redmi") || manufacturer.contains("poco")) {
+            return "xiaomi";
+        }
+        if (manufacturer.contains("samsung")) {
+            return "samsung";
+        }
+        if (manufacturer.contains("oppo") || manufacturer.contains("realme") || manufacturer.contains("oneplus")) {
+            return "oppo";
+        }
+        if (manufacturer.contains("huawei") || manufacturer.contains("honor")) {
+            return "huawei";
+        }
+        if (manufacturer.contains("vivo")) {
+            return "vivo";
+        }
+        return "other";
     }
 
     private static boolean isBatteryOptimized(Context c) {

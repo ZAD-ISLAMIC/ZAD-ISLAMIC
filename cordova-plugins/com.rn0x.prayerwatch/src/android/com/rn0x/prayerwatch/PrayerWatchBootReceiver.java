@@ -6,9 +6,10 @@ import android.content.Intent;
 import android.os.Build;
 
 /**
- * Re-arms the exact prayer alarms after a reboot / app update. No foreground
- * service is involved — alarm-based scheduling survives process death, and
- * the periodic {@link PrayerWatchWorker} keeps it fresh afterwards.
+ * Re-arms the exact prayer alarms after a reboot / app update / date change /
+ * timezone change / time change. No foreground service is involved —
+ * alarm-based scheduling survives process death, and the periodic
+ * {@link PrayerWatchWorker} keeps it fresh afterwards.
  */
 public class PrayerWatchBootReceiver extends BroadcastReceiver {
 
@@ -20,10 +21,12 @@ public class PrayerWatchBootReceiver extends BroadcastReceiver {
                 || (!a.equals(Intent.ACTION_BOOT_COMPLETED)
                 && !a.equals(Intent.ACTION_MY_PACKAGE_REPLACED)
                 && !a.equals(Intent.ACTION_TIME_CHANGED)
-                && !a.equals(Intent.ACTION_TIMEZONE_CHANGED))) {
+                && !a.equals(Intent.ACTION_TIMEZONE_CHANGED)
+                && !a.equals(Intent.ACTION_DATE_CHANGED))) {
             return;
         }
         if (!PrayerAlarmScheduler.isAdhanEnabled(c)) return;
+        // Re-schedule all alarms from the stored 8-day event list.
         PrayerAlarmScheduler.scheduleAlarms(c);
     }
 }

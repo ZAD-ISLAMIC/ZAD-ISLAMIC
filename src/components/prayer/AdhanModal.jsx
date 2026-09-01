@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { playAzan } from '../../services/sound.mjs'
-import { stopNativeAdhan, setAdhanVolume, getAdhanVolume } from '../../services/prayerWatch.mjs'
+import { stopNativeAdhan, snoozeAdhan, setAdhanVolume, getAdhanVolume } from '../../services/prayerWatch.mjs'
 import { getNowMs } from '../../services/prayerConfig.mjs'
 
 /**
@@ -152,6 +152,17 @@ export function AdhanModal({ prayer, onClose }) {
     onClose()
   }
 
+  const handleSnooze = () => {
+    try {
+      audioRef.current?.pause?.()
+    } catch {
+      /* ignore */
+    }
+    // Snooze: stop current ring and schedule new alarm in 10 minutes.
+    snoozeAdhan()
+    onClose()
+  }
+
   // Live loudness: drives the native playback and the WebView fallback alike,
   // and remembers the value as the default for the next adhan.
   const changeVolume = (e) => {
@@ -209,6 +220,9 @@ export function AdhanModal({ prayer, onClose }) {
           <span className="adhan-modal__volume-value" aria-hidden="true">{volume}%</span>
         </div>
         <div className="adhan-modal__actions">
+          <button className="adhan-modal__btn adhan-modal__btn--snooze" onClick={handleSnooze} type="button">
+            ؤجّل 10 دقائق
+          </button>
           <button className="adhan-modal__btn adhan-modal__btn--min" onClick={() => setMinimized(true)} type="button">
             تصغير
           </button>

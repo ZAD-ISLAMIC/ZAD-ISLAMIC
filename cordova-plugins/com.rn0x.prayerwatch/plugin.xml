@@ -4,9 +4,9 @@
         id="com.rn0x.prayerwatch"
         version="1.0.0">
     <name>PrayerWatch</name>
-    <description>Persistent prayer-times foreground service with WorkManager-based periodic updates and boot restart (Android)</description>
+    <description>Alarm-based prayer-times background stack with adhan playback, notifications, phone-call pause/resume, snooze, and OEM battery optimization detection (Android)</description>
     <license>MIT</license>
-    <keywords>cordova, prayer, notification, foreground-service, workmanager, android</keywords>
+    <keywords>cordova, prayer, notification, alarm, adhan, snooze, workmanager, android</keywords>
     <author>rn0x</author>
 
     <js-module src="www/prayerwatch.js" name="PrayerWatch">
@@ -44,6 +44,7 @@
                     <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                     <action android:name="android.intent.action.TIME_SET" />
                     <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                    <action android:name="android.intent.action.DATE_CHANGED" />
                 </intent-filter>
             </receiver>
         </config-file>

@@ -338,6 +338,9 @@ let nativePushPrayerKey = null
 // Prevents the backup timer from firing a second time for the same prayer.
 // Reset when the prayer window moves to a new prayer.
 let backupFiredKey = null
+// Global lifetime dedupe: once a prayer has been backed-up-fired, it can
+// never fire again in the same session, even if backupFiredKey is reset.
+let permanentBackupDedupe = new Set()
 /** Establish/refresh the foreground boundary: nothing already due may ring. */
 function markActive() {
   activeAt = getNowMs()
@@ -484,6 +487,7 @@ export function clearAllFiredToday() {
   backupFiredKey = null
   nativePushReceived = false
   nativePushPrayerKey = null
+  permanentBackupDedupe.clear()
 }
 
 /** Persist that a prayer's adhan has been consumed (rung or deliberately skipped). */
@@ -601,12 +605,14 @@ function checkTransitions() {
           // alreadyFired is checked BEFORE markFired above — once a prayer
           // is marked (by native push, backup timer, or manual close), it
           // never re-fires in the same day.
-          if (!hidden && !alreadyFired) {
+          // Also check permanentBackupDedupe to prevent ANY duplicate backup.
+          if (!hidden && !alreadyFired && !permanentBackupDedupe.has(dayPrayerKey)) {
             // Stop any native sound that might be playing (even if the push
             // failed, the native MediaPlayer could still be ringing). This
             // prevents two sounds playing simultaneously.
             stopNativeAdhan()
             backupFiredKey = dayPrayerKey
+            permanentBackupDedupe.add(dayPrayerKey)
             fireAdhan(e, fires, day)
             break
           }
@@ -768,6 +774,9 @@ export function announceNativeAdhan({ key, name, ts } = {}) {
   // from firing a duplicate in-app adhan.
   nativePushReceived = true
   nativePushPrayerKey = key
+  // Also add to permanent dedupe so even if the watcher re-runs, the
+  // backup timer will never fire for this prayer.
+  permanentBackupDedupe.add(dedupe)
   // If the backup timer already fired a LIVE adhan for this prayer, don't
   // emit a second SILENT event — the modal is already showing and the
   // sound is already playing.
@@ -790,6 +799,27 @@ export function stopNativeAdhan() {
     plugin.stopAdhan()
   } catch (err) {
     console.warn('[prayerwatch] stopAdhan failed', err)
+  }
+}
+
+/**
+ * Snooze the adhan for 10 minutes. Stops the current ring and schedules
+ * a new alarm 10 minutes from now. Works from both the notification action
+ * and the in-app modal.
+ */
+export function snoozeAdhan() {
+  const plugin = watchPlugin()
+  if (!plugin || typeof plugin.snoozeAdhan !== 'function') {
+    // Fallback: just stop if snooze is not available
+    stopNativeAdhan()
+    return false
+  }
+  try {
+    plugin.snoozeAdhan()
+    return true
+  } catch (err) {
+    console.warn('[prayerwatch] snoozeAdhan failed', err)
+    return false
   }
 }
 
@@ -973,6 +1003,8 @@ export async function checkSilentAdhan() {
     // Record that native fired — prevents the backup timer from duplicating.
     nativePushReceived = true
     nativePushPrayerKey = win.key
+    // Add to permanent dedupe so backup timer never fires for this prayer.
+    permanentBackupDedupe.add(dedupe)
     // Also mark JS firedMap so the backup never re-fires for this prayer
     // even if the app was killed when native fired (native record is separate).
     try {
@@ -1008,6 +1040,7 @@ export async function checkSilentAdhan() {
         } catch {}
         nativePushReceived = true
         nativePushPrayerKey = last.key
+        permanentBackupDedupe.add(dedupeLast)
         // Keep silentShownKey as dedupe so the earlier `silentShownKey === dayPrayerKey` check in checkTransitions also suppresses backup
         if (!silentShownKey) silentShownKey = dedupeLast
       } else {
@@ -1027,6 +1060,7 @@ export function clearSilentAdhan() {
   lastSilentEvent = null
   nativePushPrayerKey = null
   backupFiredKey = null
+  permanentBackupDedupe.clear()
 }
 
 /** Navigate a HashRouter app to a route like "/prayer". */

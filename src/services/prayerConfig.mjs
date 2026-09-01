@@ -32,7 +32,7 @@ const DEFAULT_CONFIG = {
   adhanEnabled: true, // master switch: ring the adhan in the background + at prayer time
   adhanSound: 'عبد_الباسط.mp3', // adhan voice (ADHAN_VOICES[].file)
   adhanVolume: 1, // adhan loudness 0..1 (of the alarm stream)
-  respectSoundMode: false, // true => silent/vibrate device ring only vibrate+notification
+  respectSoundMode: true, // true => silent/vibrate device ring only vibrate+notification
   updateMissing: false,
   // مصدر الوقت: تلقائي (وقت الجهاز) أو يدوي (تاريخ/وقت يحدده المستخدم ويستمر في التقدم)
   timeSource: { mode: 'auto', manualIso: null, manualSetAt: null }, // mode: 'auto' | 'manual'
