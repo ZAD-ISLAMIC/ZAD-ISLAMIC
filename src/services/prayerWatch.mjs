@@ -323,6 +323,10 @@ const RESUME_GAP_MS = 3 * WATCH_INTERVAL_MS + 5_000
 let lastTickAt = 0
 let lastTimeOffset = getTimeOffsetMs()
 let lastTimeMode = isManualTime() ? 'manual' : 'auto'
+let silentAdhanPollTimer = null
+// Keys the user explicitly dismissed (closed the in-app modal). Prevents the
+// 5s poll from re-showing the same adhan after the user closed it.
+const dismissedAdhanKeys = new Set()
 
 function getResumeGapMs() {
   // In manual mode the app-time can jump by hours when the user changes the
@@ -680,6 +684,14 @@ export function startWatchLoop() {
     document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('resume', onVisibility)
   }
+  // Periodic poll: check for an active native adhan window every 5 seconds.
+  // Catches snooze alarms and edge cases where pushAdhanToJs failed (e.g.
+  // app was in background when the alarm fired but is now foreground).
+  if (silentAdhanPollTimer) clearInterval(silentAdhanPollTimer)
+  silentAdhanPollTimer = setInterval(() => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+    checkSilentAdhan().catch(() => {})
+  }, 5_000)
 }
 
 function onVisibility() {
@@ -999,6 +1011,7 @@ export async function checkSilentAdhan() {
     // never suppressed by a stale marker from an earlier session.
     const dedupe = dayKeyOf(new Date(win.ts)) + ':' + win.key
     if (silentShownKey === dedupe) return
+    if (dismissedAdhanKeys.has(dedupe)) return
     silentShownKey = dedupe
     // Record that native fired — prevents the backup timer from duplicating.
     nativePushReceived = true
@@ -1056,6 +1069,8 @@ export async function checkSilentAdhan() {
 
 /** Forget the dedupe marker when the user closes the window. */
 export function clearSilentAdhan() {
+  // Track the dismissed key so the poll doesn't re-show it.
+  if (silentShownKey) dismissedAdhanKeys.add(silentShownKey)
   silentShownKey = null
   lastSilentEvent = null
   nativePushPrayerKey = null
@@ -1075,6 +1090,10 @@ export function stopWatchLoop() {
   if (timer) {
     clearInterval(timer)
     timer = null
+  }
+  if (silentAdhanPollTimer) {
+    clearInterval(silentAdhanPollTimer)
+    silentAdhanPollTimer = null
   }
   if (watchConfigUnsub) {
     watchConfigUnsub()

@@ -53,8 +53,6 @@ public final class AdhanPlayback {
     private static Context sCtx;
     private static AudioFocusRequest audioFocusRequest;
     private static int originalAlarmVolume = -1;
-    /** Set when the user swipes the notification away. Prevents the tick chain from re-posting. */
-    private static volatile boolean notificationDismissed;
     /** Set when audio was paused for a phone call. Resume when call ends. */
     private static volatile boolean callPaused;
     /** Dedicated phone state listener for calls that start mid-adhan. */
@@ -145,7 +143,6 @@ public final class AdhanPlayback {
     }
 
     public static void start(final Context c, final String id, final String label, final long ts, final boolean force) {
-        notificationDismissed = false;
         callPaused = false;
         synchronized (LOCK) {
             if (player != null && !force) {
@@ -620,6 +617,7 @@ public final class AdhanPlayback {
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(false)
+                .setOngoing(true)
                 .setShowWhen(false);
         if (!body.isEmpty()) b.setContentText(body);
 
@@ -650,15 +648,9 @@ public final class AdhanPlayback {
         PendingIntent snoozePi = PendingIntent.getBroadcast(c, 9, snoozeIntent, notifDpiFlags());
         Action snoozeAction = new Action.Builder(
                 smallIcon != 0 ? smallIcon : c.getApplicationInfo().icon,
-                "ؤجّل 10 دقائق", snoozePi)
+                "أَجِّلْ 10 دقائق", snoozePi)
                 .build();
         b.addAction(snoozeAction);
-
-        // Swiping the notification away also stops the audio.
-        Intent del = new Intent(c, PrayerAdhanReceiver.class).setAction(ACTION_STOP);
-        del.putExtra("dismissed", true);
-        PendingIntent delPi = PendingIntent.getBroadcast(c, 7, del, notifDpiFlags());
-        b.setDeleteIntent(delPi);
 
         try {
             nm.notify(NOTIF_TAG, NOTIF_ID, b.build());
@@ -667,28 +659,9 @@ public final class AdhanPlayback {
         }
     }
 
-    /** Refreshed on each resolved minute tick. Skips if notification was dismissed. */
+    /** Refreshed on each resolved minute tick. */
     static void refresh(Context c, String id, String label, long ts) {
-        if (notificationDismissed) return;
         notify(c, id, label, ts, PrayerTime.now(c));
-    }
-
-    /**
-     * Dismiss the notification WITHOUT stopping the audio. Called from the
-     * swipe-delete intent so the adhan keeps playing while the user closes
-     * it from the in-app modal.
-     */
-    public static void dismissNotificationOnly(Context c) {
-        notificationDismissed = true;
-        Context ctx = c != null ? c : sCtx;
-        if (ctx == null) return;
-        NotificationManager nm = (NotificationManager) ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (nm != null) {
-            try {
-                nm.cancel(NOTIF_TAG, NOTIF_ID);
-            } catch (Exception ignored) {
-            }
-        }
     }
 
     /**

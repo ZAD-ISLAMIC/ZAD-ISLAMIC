@@ -109,7 +109,7 @@ test('fired adhan map is keyed by day so dedupe survives restart', () => {
   assert.ok(restored[day]?.asr, 'day key must be preserved after reload')
 })
 
-test('default config keeps respectSoundMode off (always audible)', async () => {
+test('default config enables respectSoundMode (respects silent/vibrate)', async () => {
   // storage.mjs writes via window.localStorage — provide a minimal shim.
   const store = new Map()
   globalThis.window = {
@@ -121,7 +121,7 @@ test('default config keeps respectSoundMode off (always audible)', async () => {
   }
   const { loadConfig, updateConfig } = await import('../src/services/prayerConfig.mjs')
   const base = loadConfig()
-  assert.equal(base.respectSoundMode, false, 'must default to always-audible')
+  assert.equal(base.respectSoundMode, true, 'must default to respecting silent/vibrate')
   const next = updateConfig({ respectSoundMode: true })
   assert.equal(next.respectSoundMode, true)
   assert.equal(loadConfig().respectSoundMode, true)

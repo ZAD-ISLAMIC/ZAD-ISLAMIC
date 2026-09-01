@@ -17,8 +17,8 @@ import static com.rn0x.prayerwatch.PrayerAlarmScheduler.EXTRA_TS;
 /**
  * Receives the exact prayer alarms plus the minute-refresh, stop, and snooze
  * actions. Rings the adhan with {@link AdhanPlayback} (MediaPlayer + WakeLock),
- * posts/refreshes the standard notification, answers the "stop" action /
- * swipe-dismiss, and handles the "snooze 10 minutes" action.
+ * posts/refreshes the standard notification, answers the "stop" action, and
+ * handles the "snooze 10 minutes" action.
  */
 public class PrayerAdhanReceiver extends BroadcastReceiver {
 
@@ -29,20 +29,9 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
             if (intent == null) return;
             String action = intent.getAction();
             if (AdhanPlayback.ACTION_STOP.equals(action)) {
-                boolean dismissed = intent.getBooleanExtra("dismissed", true);
-                if (dismissed) {
-                    // Swipe-dismiss: remove the notification ONLY — the adhan
-                    // keeps playing so the user can close it from the in-app
-                    // modal. The tick chain will skip re-posting because the
-                    // notificationDismissed flag is now set.
-                    AdhanPlayback.dismissNotificationOnly(c);
-                    PrayerAlarmScheduler.cancelAdhanTicks(c);
-                } else {
-                    // Explicit stop from in-app modal or notification action:
-                    // stop everything.
-                    AdhanPlayback.stop(c, true);
-                    PrayerAlarmScheduler.cancelAdhanTicks(c);
-                }
+                // Stop everything: audio + notification + tick chain.
+                AdhanPlayback.stop(c, true);
+                PrayerAlarmScheduler.cancelAdhanTicks(c);
                 return;
             }
             if (AdhanPlayback.ACTION_SNOOZE.equals(action)) {
@@ -138,7 +127,7 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
         long now = PrayerTime.now(c);
         // Stay with the +count while inside the window.
         if (now - ts < PrayerAlarmScheduler.ADHAN_WINDOW_MS && remaining > 0) {
-            // refresh() skips automatically if the notification was dismissed.
+            // refresh() re-posts the notification with an updated +count.
             AdhanPlayback.refresh(c, id, label, ts);
             PrayerAlarmScheduler.scheduleTick(c, id, label, ts, remaining - 1);
         } else {

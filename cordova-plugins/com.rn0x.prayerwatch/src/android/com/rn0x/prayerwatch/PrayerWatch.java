@@ -204,12 +204,25 @@ public class PrayerWatch extends CordovaPlugin {
     /**
      * Push a just-fired adhan onto the open JS push channel so the in-app
      * adhan window opens immediately (the WebView shows it SILENT — the native
-     * layer is the single audio source). Best-effort: if the app process is
-     * gone or nothing subscribed, the notification window pull still covers it.
+     * layer is the single audio source). If the push channel is not available
+     * (app backgrounded / WebView suspended), persist to SharedPreferences so
+     * the periodic JS poll (checkSilentAdhan) picks it up on next resume.
      */
     public static void pushAdhanToJs(String key, String name, long ts) {
         PrayerWatch inst = sInstance;
-        if (inst == null || inst.pushListener == null) return;
+        if (inst == null || inst.pushListener == null) {
+            // Fallback: persist so the JS poll can pick it up on resume.
+            try {
+                Context c = inst != null ? inst.cordova.getContext() : null;
+                if (c != null) {
+                    PrayerAlarmScheduler.recordFired(c,
+                            key == null ? "" : key,
+                            name == null ? "" : name, ts);
+                }
+            } catch (Exception ignored) {
+            }
+            return;
+        }
         try {
             JSONObject o = new JSONObject();
             o.put("t", "adhan");
