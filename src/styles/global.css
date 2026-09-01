@@ -5725,6 +5725,12 @@ h3 {
   transform: scale(0.95);
 }
 
+.adhan-modal__btn--snooze {
+  background: var(--surface);
+  border: 1px solid var(--accent, #f59e0b);
+  color: var(--accent, #f59e0b);
+}
+
 .adhan-modal__btn--close {
   background: var(--surface);
   border: 1px solid var(--border);
