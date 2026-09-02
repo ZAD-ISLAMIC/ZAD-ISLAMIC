@@ -34,8 +34,13 @@ export function SettingsSheet({ onClose }) {
 
   useEffect(() => {
     getCustomAdhanBlob().then((blob) => setHasCustom(!!blob))
-    getWatchStatus().then(setStatus)
-    getAudioState().then(setAudio)
+    const poll = () => {
+      getWatchStatus().then(setStatus)
+      getAudioState().then(setAudio)
+    }
+    poll()
+    const t = setInterval(poll, 3_000)
+    return () => clearInterval(t)
   }, [])
 
   const refreshStatus = () => getWatchStatus().then(setStatus)

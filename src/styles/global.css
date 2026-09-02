@@ -5280,7 +5280,6 @@ h3 {
   padding: 10px 12px;
   border-radius: 12px;
   background: var(--surface);
-  border: 1px solid var(--border);
   border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 
@@ -5593,7 +5592,6 @@ h3 {
   padding: 11px 14px;
   border-radius: 12px;
   background: var(--surface);
-  border: 1px solid var(--border);
   border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   font-size: 13px;
   font-weight: 600;
