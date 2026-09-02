@@ -1,0 +1,22 @@
+{
+  "name": "com.rn0x.downloader",
+  "version": "1.2.0",
+  "description": "Background file downloader with progress, resume, and cancel (Cordova)",
+  "author": "rn0x",
+  "cordova": {
+    "id": "com.rn0x.downloader",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "download",
+    "background",
+    "worker",
+    "progress",
+    "resume",
+    "android"
+  ],
+  "license": "MIT"
+}

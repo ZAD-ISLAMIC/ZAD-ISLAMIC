@@ -1,0 +1,22 @@
+{
+  "name": "com.rn0x.fileopener",
+  "version": "1.1.0",
+  "description": "Open files with the appropriate app using Android Intent chooser (Cordova)",
+  "author": "rn0x",
+  "cordova": {
+    "id": "com.rn0x.fileopener",
+    "platforms": [
+      "android"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "file",
+    "open",
+    "intent",
+    "viewer",
+    "fileprovider",
+    "android"
+  ],
+  "license": "MIT"
+}

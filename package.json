@@ -6,29 +6,19 @@
   "description": "تطبيق التقوى — تطبيق إسلامي مبني بـ React + Cordova",
   "scripts": {
     "dev": "vite",
-    "preview": "vite preview",
     "build": "vite build",
-    "clean": "node scripts/clean.mjs",
-    "clean:all": "node scripts/clean.mjs --all",
-    "cordova:setup": "node scripts/setup.mjs",
+    "setup": "node scripts/setup.mjs",
     "postinstall": "node scripts/patch-cordova.mjs",
-    "build:native": "node cordova-plugins/moonshine-stt/src/android/native/build.mjs",
     "build:apk": "node scripts/build.mjs",
     "build:apk:release": "node scripts/build.mjs --release",
     "build:aab:release": "node scripts/build.mjs --release --bundle",
     "install:apk": "node scripts/install.mjs",
-    "keystore": "node scripts/create-keystore.mjs",
-    "test:adhan": "node scripts/adhantest.mjs --install",
     "run:android": "npm run build:apk && npm run install:apk",
     "run:android:release": "npm run build:apk:release && npm run install:apk -- --release",
-    "test": "node --test \"tests/**/*.test.mjs\"",
-    "gen:ui-sounds": "node scripts/generate-ui-sounds.mjs",
-    "gen:icons": "python3 scripts/generate-icons.py",
-    "gen:fatwas": "node scripts/split-fatwas.mjs",
-    "gen:history": "node scripts/split-history.mjs",
-    "gen:tafseer": "node scripts/split-tafseer.mjs",
-    "gen:khutbah": "node scripts/split-khutbah.mjs",
-    "convert:tafseer": "node scripts/convert-tafseer-v3.mjs"
+    "keystore": "node scripts/create-keystore.mjs",
+    "clean": "node scripts/clean.mjs",
+    "clean:all": "node scripts/clean.mjs --all",
+    "test": "node --test \"tests/**/*.test.mjs\""
   },
   "author": {
     "name": "Rayan Almalki",
@@ -46,17 +36,17 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^5.2.0",
     "com.altaqwaa.moonshinestt": "file:cordova-plugins/moonshine-stt",
+    "com.rn0x.downloader": "file:cordova-plugins/com.rn0x.downloader",
+    "com.rn0x.fileopener": "file:cordova-plugins/com.rn0x.fileopener",
     "com.rn0x.prayerlocation": "file:cordova-plugins/com.rn0x.prayerlocation",
     "com.rn0x.prayerwatch": "file:cordova-plugins/com.rn0x.prayerwatch",
     "com.rn0x.qibla": "file:cordova-plugins/com.rn0x.qibla",
     "com.rn0x.systemui": "file:cordova-plugins/system-ui",
     "cordova": "^13.0.0",
-    "cordova-android": "15.1.0",
-    "cordova-plugin-advanced-http": "^3.3.1",
+    "cordova-android": "^15.1.0",
     "cordova-plugin-compat": "^1.2.0",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-file": "^4.3.3",
-    "cordova-plugin-file-opener2": "^4.0.0",
     "cordova-plugin-inappbrowser": "6.0.1",
     "cordova-plugin-local-notification": "^1.2.3",
     "cordova-plugin-x-socialsharing": "^6.0.4",
@@ -74,16 +64,14 @@
         "ANDROIDX_CORE_VERSION": "1.12.0"
       },
       "com.rn0x.prayerlocation": {},
+      "com.rn0x.downloader": {},
+      "com.rn0x.fileopener": {},
       "com.rn0x.qibla": {},
       "com.rn0x.prayerwatch": {},
       "com.rn0x.systemui": {},
       "cordova-plugin-inappbrowser": {},
-      "cordova-plugin-file-opener2": {},
       "cordova-plugin-x-socialsharing": {},
-      "com.altaqwaa.moonshinestt": {},
-      "cordova-plugin-advanced-http": {
-        "ANDROIDBLACKLISTSECURESOCKETPROTOCOLS": "SSLv3,TLSv1"
-      }
+      "com.altaqwaa.moonshinestt": {}
     }
   }
 }

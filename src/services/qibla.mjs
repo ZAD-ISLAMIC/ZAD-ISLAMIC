@@ -473,9 +473,13 @@ async function applyLocation(loc) {
  */
 async function maybeAutoLocate() {
   if (autoLocating || autoLocatedOnce) return
-  autoLocatedOnce = true
-  if (isGpsLocation(loadLocation())) return // GPS location already saved
+  // لا تضع العلامة هنا — نضعها فقط بعد اكتمال المحاولة حتى لا نمنع إعادة المحاولة
+  if (isGpsLocation(loadLocation())) {
+    autoLocatedOnce = true
+    return // GPS location already saved
+  }
   autoLocating = true
+  autoLocatedOnce = true // الآن نسمح فقط بمحاولة واحدة
   state.locationStatus = 'locating'
   emit()
   const res = await detectCurrentPosition()

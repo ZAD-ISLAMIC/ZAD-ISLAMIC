@@ -662,18 +662,88 @@ export async function localUrlFor(ns, fileName) {
   return url
 }
 
-// مسار file:// الفعلي لملف محفوظ — يُستخدم لفتحه في تطبيق خارجي
-// (file-opener2). يعيد null خارج Cordova أو عند غياب الملف.
+// مسار الملف لفتحه في تطبيق خارجي (fileopener plugin).
+// يُرجع file:// أو content:// حسب إصدار SDK.
+// يعيد null خارج Cordova أو عند غياب الملف.
 export async function localFileUrlFor(ns, fileName) {
   const name = String(fileName)
-  if ((await getBackend()) !== 'cordova') return null
-  try {
-    const entry = await entryFor(ns, name, false)
-    const url = entry.toURL()
-    return typeof url === 'string' && url.startsWith('file://') ? url : null
-  } catch {
-    return null
+  const backend = await getBackend()
+
+  // المسار المباشر عبر Cordova File System
+  if (backend === 'cordova') {
+    try {
+      const entry = await entryFor(ns, name, false)
+      const url = entry.toURL()
+      if (typeof url === 'string' && (url.startsWith('file://') || url.startsWith('content://'))) {
+        return url
+      }
+      if (entry.nativeURL) return entry.nativeURL
+    } catch {
+      // fall through to IndexedDB fallback
+    }
   }
+
+  // IndexedDB fallback: نقرأ الملف من IDB ونكتبه في cache directory ثم نُرجع المسار
+  if (typeof window !== 'undefined' && window.cordova?.file?.cacheDirectory) {
+    try {
+      const record = await idbGet(fileKey(ns, name))
+      if (!record?.blob) return null
+      const cacheDir = window.cordova.file.cacheDirectory
+      return await new Promise((resolve, reject) => {
+        window.resolveLocalFileSystemURL(
+          cacheDir,
+          (dirEntry) => {
+            dirEntry.getFile(
+              name,
+              { create: true },
+              (fileEntry) => {
+                fileEntry.createWriter(
+                  (writer) => {
+                    writer.onwriteend = () => {
+                      // بعد الكتابة، نُرجع المسار
+                      const path = fileEntry.toURL()
+                      resolve(path.startsWith('file://') || path.startsWith('content://') ? path : null)
+                    }
+                    writer.onerror = () => reject(writer.error)
+                    writer.write(record.blob)
+                  },
+                  reject
+                )
+              },
+              reject
+            )
+          },
+          reject
+        )
+      })
+    } catch (err) {
+      if (typeof console !== 'undefined') {
+        console.warn('[altaqwaa] localFileUrlFor IDB→cache failed', { ns, name, error: err?.message })
+      }
+      return null
+    }
+  }
+
+  return null
+}
+
+/**
+ * إرجاع مسار الملف المحلي (file://) لاستخدامه في العمليات الأصلية.
+ * يعيد null خارج Cordova أو عند غياب الملف.
+ */
+export async function localFilePathFor(ns, fileName) {
+  const name = String(fileName)
+  const backend = await getBackend()
+  if (backend !== 'cordova') return null
+  try {
+    const entry = await entryFor(ns, name, true)
+    const url = entry.toURL()
+    if (typeof url === 'string' && url.startsWith('file://')) return url
+    if (entry.nativeURL) return entry.nativeURL
+  } catch {
+    /* fall through */
+  }
+  return null
 }
 
 export function markStoredByFile(ns, fileName, byteSize) {

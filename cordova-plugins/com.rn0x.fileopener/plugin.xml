@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="com.rn0x.fileopener"
+        version="1.0.0">
+    <name>FileOpener</name>
+    <description>Open files with the appropriate app using Android Intent (Android)</description>
+    <license>MIT</license>
+    <keywords>cordova, file, open, intent, viewer, android</keywords>
+    <author>rn0x</author>
+
+    <js-module src="www/fileopener.js" name="FileOpener">
+        <clobbers target="cordova.plugins.FileOpener" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="FileOpener">
+                <param name="android-package" value="com.rn0x.fileopener.FileOpenerPlugin" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <provider
+                android:name="androidx.core.content.FileProvider"
+                android:authorities="${applicationId}.fileprovider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+                <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/file_opener_paths" />
+            </provider>
+        </config-file>
+
+        <source-file src="src/android/com/rn0x/fileopener/FileOpenerPlugin.java"
+                     target-dir="src/com/rn0x/fileopener" />
+        <source-file src="src/android/com/rn0x/fileopener/file_opener_paths.xml"
+                     target-dir="res/xml" />
+    </platform>
+</plugin>

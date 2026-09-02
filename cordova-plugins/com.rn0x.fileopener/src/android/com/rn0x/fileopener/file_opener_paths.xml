@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<paths>
+    <files-path name="root"       path="." />
+    <files-path name="downloads"  path="downloads/" />
+    <files-path name="altaqwaa"   path="altaqwaa-audios/" />
+    <cache-path name="cache"      path="." />
+    <external-files-path name="external" path="." />
+</paths>

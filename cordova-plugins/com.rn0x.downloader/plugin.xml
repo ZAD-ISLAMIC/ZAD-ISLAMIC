@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        id="com.rn0x.downloader"
+        version="1.0.0">
+    <name>Downloader</name>
+    <description>Background file downloader with progress, resume, and cancel (Android)</description>
+    <license>MIT</license>
+    <keywords>cordova, download, background, worker, progress, android</keywords>
+    <author>rn0x</author>
+
+    <js-module src="www/downloader.js" name="Downloader">
+        <clobbers target="cordova.plugins.Downloader" />
+    </js-module>
+
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="Downloader">
+                <param name="android-package" value="com.rn0x.downloader.DownloaderPlugin" />
+            </feature>
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+        </config-file>
+
+        <config-file target="AndroidManifest.xml" parent="/manifest/application">
+            <provider
+                android:name="androidx.core.content.FileProvider"
+                android:authorities="${applicationId}.downloader.fileprovider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+                <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/downloader_paths" />
+            </provider>
+        </config-file>
+
+        <framework src="androidx.work:work-runtime:2.9.1" />
+
+        <source-file src="src/android/com/rn0x/downloader/DownloaderPlugin.java"
+                     target-dir="src/com/rn0x/downloader" />
+        <source-file src="src/android/com/rn0x/downloader/DownloadWorker.java"
+                     target-dir="src/com/rn0x/downloader" />
+        <source-file src="src/android/com/rn0x/downloader/DownloadStore.java"
+                     target-dir="src/com/rn0x/downloader" />
+        <source-file src="src/android/com/rn0x/downloader/downloader_paths.xml"
+                     target-dir="res/xml" />
+    </platform>
+</plugin>

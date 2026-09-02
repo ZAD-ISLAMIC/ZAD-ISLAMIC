@@ -93,6 +93,36 @@ h3 {
   line-height: 1.35;
 }
 
+/* ------------------------------------------------------------------ *
+ * Performance optimizations — reduce layout thrashing and jank
+ * during navigation transitions on low-end devices.
+ * ------------------------------------------------------------------ */
+.shell__main {
+  contain: layout style;
+  will-change: scroll-position;
+  overscroll-behavior-y: contain;
+}
+
+.bottomnav,
+.player-bar {
+  contain: layout style;
+}
+
+/* GPU-accelerate transitions that fire on every navigation */
+.prayer-row,
+.kht-att,
+.qcards-media__mini {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Reduce paint cost on list items during scroll */
+.loc-list__city,
+.prayer-row {
+  contain: layout style paint;
+  content-visibility: auto;
+}
+
 .shell {
   display: flex;
   flex-direction: column;
@@ -10455,19 +10485,28 @@ h3 {
   transform: translateX(-50%);
   z-index: 160;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 7px;
-  padding: 10px 18px;
-  border-radius: 999px;
+  padding: 10px 16px;
+  border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--ok-border);
   color: var(--ok-text);
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
+  line-height: 1.5;
   box-shadow: var(--shadow);
   animation: kht-toast-in 0.2s ease;
   pointer-events: none;
-  max-width: 90vw;
+  max-width: 85vw;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-align: right;
+}
+
+.kht-toast .icon {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 @keyframes kht-toast-in {

@@ -12,15 +12,24 @@ import { SettingsSheet } from '../prayer/SettingsSheet.jsx'
 
 const CARD_PRAYERS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
 
-export function PrayerCard() {
+export const PrayerCard = React.memo(function PrayerCard() {
   const navigate = useNavigate()
   const [snapshot, setSnapshot] = useState(() => getWatchSnapshot())
   const [now, setNow] = useState(() => getNowMs())
   const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
-    const t = setInterval(() => setNow(getNowMs()), 1000)
-    return () => clearInterval(t)
+    let raf
+    let last = 0
+    const tick = (ts) => {
+      if (ts - last >= 1000) {
+        last = ts
+        setNow(getNowMs())
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   useEffect(() => onWatchSnapshot(setSnapshot), [])
@@ -84,4 +93,4 @@ export function PrayerCard() {
       {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
     </>
   )
-}
+})

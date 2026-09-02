@@ -72,6 +72,33 @@ function hasWatchPlugin() {
   )
 }
 
+/**
+ * طلب صلاحيات الموقع إذا لم تكن ممنوحة بعد.
+ * يُستخدم قبل محاولة تحديد الموقع لتجنب timeout بسبب انتظار رد المستخدم.
+ */
+async function ensureLocationPermission() {
+  if (!hasLocationPlugin()) return
+  try {
+    const status = await new Promise((resolve) => {
+      window.cordova.plugins.PrayerLocation.permissionStatus(
+        (s) => resolve(s),
+        () => resolve({ granted: false })
+      )
+    })
+    if (status?.granted) return
+
+    // طلب الصلاحيات وانتظار رد المستخدم
+    await new Promise((resolve) => {
+      window.cordova.plugins.PrayerLocation.requestPermission(
+        (s) => resolve(s),
+        () => resolve({ granted: false })
+      )
+    })
+  } catch {
+    // تجاهل الأخطاء — المحاولة ستفشل بشكل أنيق لاحقاً
+  }
+}
+
 function normalizeCoords({ latitude, longitude, accuracy, provider, altitude }) {
   if (
     !Number.isFinite(latitude) ||
@@ -99,6 +126,8 @@ function normalizeCoords({ latitude, longitude, accuracy, provider, altitude }) 
  */
 export async function detectCurrentPosition() {
   if (hasLocationPlugin()) {
+    // طلب الصلاحيات أولاً إذا لم تكن ممنوحة
+    await ensureLocationPermission()
     try {
       const res = await new Promise((resolve) => {
         let settled = false
@@ -109,9 +138,9 @@ export async function detectCurrentPosition() {
           if (timeoutId) clearTimeout(timeoutId)
           resolve(v)
         }
-        timeoutId = setTimeout(() => done({ ok: false, code: 'timeout', message: messageFor('timeout') }), 32000)
+        timeoutId = setTimeout(() => done({ ok: false, code: 'timeout', message: messageFor('timeout') }), 48000)
         window.cordova.plugins.PrayerLocation.getCurrentPosition(
-          { timeoutMs: 30000 },
+          { timeoutMs: 45000 },
           (r) => done(r),
           (e) => done({ ok: false, ...(e || {}) })
         )

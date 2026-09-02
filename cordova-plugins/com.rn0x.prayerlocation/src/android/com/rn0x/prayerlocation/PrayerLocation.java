@@ -33,7 +33,7 @@ import org.json.JSONObject;
 public class PrayerLocation extends CordovaPlugin {
 
     private static final int REQ_LOCATION = 4201;
-    private static final long DEFAULT_TIMEOUT_MS = 30_000L;
+    private static final long DEFAULT_TIMEOUT_MS = 45_000L;
 
     private CallbackContext pending;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -150,8 +150,9 @@ public class PrayerLocation extends CordovaPlugin {
                 .getSystemService(Context.LOCATION_SERVICE);
 
         // Fresh cached fix is a fast, legitimate result — use it if available.
+        // 180s (3 min) is generous enough for most devices to have a recent fix.
         Location cached = bestLastKnown(lm);
-        if (cached != null && System.currentTimeMillis() - cached.getTime() < 90_000L) {
+        if (cached != null && System.currentTimeMillis() - cached.getTime() < 180_000L) {
             publishFix(ctx, cached);
             return;
         }

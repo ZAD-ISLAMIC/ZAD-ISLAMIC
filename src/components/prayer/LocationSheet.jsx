@@ -81,6 +81,16 @@ function GpsTab({ busy, setBusy, error, setError, onClose }) {
   const [detailsMsg, setDetailsMsg] = useState('')
   const apply = useApplyLocation()
 
+  // طلب الصلاحيات تلقائياً عند فتح التبويب
+  useEffect(() => {
+    if (isCordova() && window.cordova?.plugins?.PrayerLocation?.requestPermission) {
+      window.cordova.plugins.PrayerLocation.requestPermission(
+        () => {},
+        () => {}
+      )
+    }
+  }, [])
+
   const start = async () => {
     setBusy(true)
     setError('')
@@ -121,6 +131,11 @@ function GpsTab({ busy, setBusy, error, setError, onClose }) {
           {detailsMsg && (
             <button className="loc-gps__link" onClick={openSettings} type="button">
               فتح الإعدادات
+            </button>
+          )}
+          {!busy && (
+            <button className="loc-gps__link" onClick={start} type="button" style={{marginRight:'8px'}}>
+              إعادة المحاولة
             </button>
           )}
         </p>

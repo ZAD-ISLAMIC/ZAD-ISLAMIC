@@ -34,16 +34,14 @@ npm run build:apk:release  # release APK موقّع (يتطلب build.json + key
 ### ماذا يفعل `npm run build:apk` (المسار الكامل)
 
 1. `scripts/patch-cordova.mjs` — إصلاح معروف لـ SystemWebChromeClient.
-2. `scripts/sync-plugins.mjs` — يعكس مصادر الإضافات المحلية (Java + `.so`) إلى المنصة. **مهم**: `cordova prepare` لا ينسخ ملفات موجودة مسبقًا، لذا هذا السكربت يضمن وصول مكتبات النواة المبنية حديثًا.
-3. `scripts/dedupe-platform.mjs` — تنظيف.
-4. **`node cordova-plugins/moonshine-stt/src/android/native/build.mjs`** — يبني نواة التعرف الصوتي (Moonshine STT) **من المصدر** عبر NDK:
+2. **`node cordova-plugins/moonshine-stt/src/android/native/build.mjs`** — يبني نواة التعرف الصوتي (Moonshine STT) **من المصدر** عبر NDK:
    - `transcribe.cpp v0.2.0` (مضمّن في `cordova-plugins/moonshine-stt/src/android/native/transcribe.cpp`) + ggml → `libtranscribe.so`, `libggml.so`, `libggml-base.so`, `libggml-cpu.so`
    - طبقة JNI (`native/jni/moonshine_jni.cpp`) → `libmoonshine_stt.so`
    - `libc++_shared.so` من NDK
    - تُنسخ إلى `cordova-plugins/moonshine-stt/src/android/libs/arm64-v8a/` (وهي **مُتجاهَلة** في git؛ لا تُرفع ثنائيات).
-5. `vite build` → `www/`.
-6. `python3 scripts/generate-icons.py` → أيقونات/سبلاش.
-7. `cordova prepare` ثم `cordova compile android` (أو `--release`).
+3. `vite build` → `www/`.
+4. `python3 scripts/generate-icons.py` → أيقونات/سبلاش.
+5. `cordova prepare` ثم `cordova compile android` (أو `--release`).
 
 ## ملاحظات F-Droid
 

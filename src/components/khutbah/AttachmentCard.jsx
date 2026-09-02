@@ -7,7 +7,7 @@ import { Icon } from '../ui/Icon.jsx'
 
 /**
  * بطاقة مرفق واحدة (PDF/DOC): تحميل/حذف للوصول دون إنترنت، وفتح في مشغّل
- * خارجي عبر file-opener2 بعد الحفظ. تستخدم مدير التحميل العام بنمط الفتاوى.
+ * خارجي عبر fileopener plugin بعد الحفظ. تستخدم مدير التحميل العام بنمط الفتاوى.
  */
 export function AttachmentCard({ khutbah, attachment, onMessage }) {
   const downloads = useKhutbahDownloads()

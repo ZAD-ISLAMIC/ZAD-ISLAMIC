@@ -15,11 +15,9 @@
     `cordova-plugins/moonshine-stt/src/android/native/transcribe.cpp` (نسخة `v0.2.0` من
     `handy-computer/transcribe.cpp` + ggml، MIT) + طبقة JNI `native/jni/moonshine_jni.cpp`.
   - أُزيلت مكتبات `.so` المبنية مسبقًا من git (كانت بلا مصدر)، وأصبحت **مُنتجة وقت
-    البناء** عبر `npm run build:native` (build.mjs يبنيها بـ NDK ثم ينسخها داخل plugin).
+    البناء** عبر `npm run build:apk` (build.mjs يبنيها بـ NDK ثم ينسخها داخل plugin).
   - بقي `libs/` مولّدًا ومُتجاهلًا؛ لا تُرفع ثنائيات.
 - `package-lock.json` ملتزم الآن لبناء npm قابل للتكرار.
-- يُحدَّث `scripts/sync-plugins.mjs` ليعكس `.so` المبنية حديثًا إلى المنصة (لأن
-  `cordova prepare` لا ينسخ الموجود).
 - دليل بناء مفصل: `docs/fdroid-build.md`.
 
 ## ما تبقى لفتح الـ PR في `f-droid/fdroiddata`

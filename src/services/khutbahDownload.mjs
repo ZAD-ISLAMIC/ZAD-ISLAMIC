@@ -6,6 +6,7 @@ import {
   removeFileBy,
   localFileUrlFor,
   localUrlFor,
+  localFilePathFor,
 } from './reciterStorage.mjs'
 import { isCordova } from './device.mjs'
 
@@ -14,6 +15,17 @@ const MAX_ATTEMPTS = 3
 const IDLE_TIMEOUT_MS = 30000
 const EMIT_INTERVAL_MS = 120
 const RETRY_STEP_MS = 900
+
+// تحويل روابط khutabaa.com إلى proxy محلي في بيئة التطوير (dev server)
+function devProxyUrl(url) {
+  if (!url || typeof url !== 'string') return url
+  if (typeof window !== 'undefined' && window.location?.hostname === 'localhost' && !isCordova()) {
+    if (url.startsWith('https://khutabaa.com/')) {
+      return url.replace('https://khutabaa.com/', '/khutabaa-proxy/')
+    }
+  }
+  return url
+}
 
 const tasks = new Map()
 const listeners = new Set()
@@ -156,10 +168,36 @@ async function runTask(task) {
   let sink = null
   let start = 0
   try {
+    // في Cordova: نستخدم HTTP أصلي لتجاوز CORS
+    if (isCordova() && window.cordova?.plugins?.Downloader?.httpGet) {
+      const filePath = await localFilePathFor(KHUTBAH_NS, task.fileName)
+      if (!filePath) throw { code: 'storage', message: 'تعذّر الوصول إلى مسار التخزين' }
+
+      task.progress = null
+      markDirty()
+
+      const result = await window.cordova.plugins.Downloader.httpGet({
+        url: task.url,
+        dest: filePath,
+      })
+
+      const totalBytes = result.contentLength || 0
+      task.bytes = totalBytes
+      task.progress = 1
+      markStoredByFile(KHUTBAH_NS, task.fileName, totalBytes)
+
+      task.state = 'done'
+      task.error = null
+      task.controller = null
+      markDirty()
+      return
+    }
+
+    // Web / dev: fetch streaming
     sink = await openFileSink(KHUTBAH_NS, task.fileName)
     start = sink.offset
 
-    const res = await fetch(task.url, {
+    const res = await fetch(devProxyUrl(task.url), {
       headers: start > 0 ? { Range: `bytes=${start}-` } : undefined,
       signal: controller.signal,
     })
@@ -397,7 +435,7 @@ export async function removeAttachment(ref, fileName) {
 
 /**
  * فتح مرفق محفوظ في مشغّل خارجي:
- * - على الجهاز: cordova-plugin-file-opener2 → قائمة «فتح بواسطة» (PDF/Word…).
+ * - على الجهاز: fileopener plugin.
  * - على الويب: blob URL في تبويب جديد.
  * يعيد { ok } أو { ok:false, message } عند تعذّر الفتح.
  */
@@ -409,23 +447,27 @@ export async function openAttachment(khutbah, attachment) {
   }
   const mime = mimeOf(fileName)
 
-  if (isCordova() && window.cordova?.plugins?.fileOpener2) {
+  if (isCordova()) {
     const path = await localFileUrlFor(KHUTBAH_NS, fileName)
-    if (path) {
-      return new Promise((resolve) => {
-        window.cordova.plugins.fileOpener2.open(
-          path,
-          mime,
-          {
-            error: (e) => resolve({ ok: false, message: String(e?.message || 'تعذّر فتح الملف') }),
-            success: () => resolve({ ok: true }),
-          }
-        )
-      })
+    if (!path) {
+      return { ok: false, message: 'تعذّر الوصول إلى الملف المحفوظ' }
     }
-    return { ok: false, message: 'تعذّر الوصول إلى الملف المحفوظ' }
+
+    // فتح عبر fileopener plugin
+    if (window.cordova?.plugins?.FileOpener) {
+      try {
+        await window.cordova.plugins.FileOpener.open({ path, mimeType: mime })
+        return { ok: true }
+      } catch (err) {
+        console.warn('[khutbahDownload] FileOpener error', err)
+        return { ok: false, message: err?.message || 'تعذّر فتح الملف' }
+      }
+    }
+
+    return { ok: false, message: 'تعذّر فتح الملف — تأكد من تثبيت تطبيق مناسب' }
   }
 
+  // Web fallback
   const url = await localUrlFor(KHUTBAH_NS, fileName)
   if (!url) return { ok: false, message: 'تعذّر الوصول إلى الملف المحفوظ' }
   const a = document.createElement('a')

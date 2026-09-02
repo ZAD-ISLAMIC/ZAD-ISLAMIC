@@ -6,6 +6,7 @@ import {
   removeFileBy,
   localFileUrlFor,
   localUrlFor,
+  localFilePathFor,
 } from './reciterStorage.mjs'
 import { isCordova } from './device.mjs'
 
@@ -147,17 +148,16 @@ function pump() {
  * Download task
  * ------------------------------------------------------------------ */
 
-function nativeHttpGet(url, headers) {
-  const http = window.cordova?.plugin?.http
-  if (!http) return null
-  return new Promise((resolve, reject) => {
-    http.sendRequest(
-      url,
-      { method: 'get', headers: headers || {}, responseType: 'blob' },
-      (response) => resolve(response),
-      (error) => reject(error)
-    )
-  })
+// تحويل رابط archive.org إلى proxy محلي في بيئة التطوير (dev server)
+function devProxyUrl(url) {
+  if (!url || typeof url !== 'string') return url
+  // فقط في بيئة dev server (localhost) وليس على الجهاز
+  if (typeof window !== 'undefined' && window.location?.hostname === 'localhost' && !isCordova()) {
+    if (url.startsWith('https://archive.org/')) {
+      return url.replace('https://archive.org/', '/archive-proxy/')
+    }
+  }
+  return url
 }
 
 async function runTask(task) {
@@ -169,149 +169,102 @@ async function runTask(task) {
   let sink = null
   let start = 0
   try {
+    // في Cordova: نستخدم HTTP أصلي لتجاوز CORS
+    if (isCordova() && window.cordova?.plugins?.Downloader?.httpGet) {
+      const filePath = await localFilePathFor(QURAN_CARDS_NS, task.fileName)
+      if (!filePath) throw { code: 'storage', message: 'تعذّر الوصول إلى مسار التخزين' }
+
+      task.progress = null
+      markDirty()
+
+      const result = await window.cordova.plugins.Downloader.httpGet({
+        url: task.url,
+        dest: filePath,
+      })
+
+      const totalBytes = result.contentLength || 0
+      task.bytes = totalBytes
+      task.progress = 1
+      markStoredByFile(QURAN_CARDS_NS, task.fileName, totalBytes)
+
+      task.state = 'done'
+      task.error = null
+      task.controller = null
+      markDirty()
+      return
+    }
+
+    // Web / dev: fetch streaming
     sink = await openFileSink(QURAN_CARDS_NS, task.fileName)
     start = sink.offset
 
-    const useNative = isCordova() && window.cordova?.plugin?.http
-    let res
+    const effectiveUrl = devProxyUrl(task.url)
 
-    if (useNative) {
-      const headers = start > 0 ? { Range: `bytes=${start}-` } : {}
-      const nativeRes = await nativeHttpGet(task.url, headers)
-      const blob = nativeRes.data instanceof Blob
-        ? nativeRes.data
-        : new Blob([nativeRes.data])
-      const status = nativeRes.status || 200
+    // fetch مع streaming
+    const fetchRes = await fetch(effectiveUrl, {
+      headers: start > 0 ? { Range: `bytes=${start}-` } : undefined,
+      redirect: 'follow',
+      signal: controller.signal,
+    })
 
-      if (status < 200 || status >= 400) {
-        throw { httpStatus: status }
-      }
+    if (!fetchRes.ok) {
+      throw { httpStatus: fetchRes.status }
+    }
 
-      const contentType = nativeRes.headers?.['content-type'] || 'application/octet-stream'
-      if (/text\/html|text\/plain/i.test(contentType)) {
-        throw { code: 'badlink' }
-      }
+    const total = parseInt(fetchRes.headers?.get('content-range')?.split('/')[1], 10)
+      || parseInt(fetchRes.headers?.get('content-length'), 10)
+      || 0
+    const contentType = fetchRes.headers?.get('content-type') || 'application/pdf'
+    if (/text\/html|text\/plain/i.test(contentType)) {
+      throw { code: 'badlink' }
+    }
 
-      const total = parseInt(nativeRes.headers?.['content-length'], 10) || 0
+    if (start > 0 && fetchRes.status === 200) {
+      start = 0
+      await sink.reset()
+    }
 
-      if (start > 0 && status === 200) {
-        start = 0
-        await sink.reset()
-      }
+    let received = start
+    const reader = fetchRes.body.getReader()
+    const MAX_WRITE = 512 * 1024
+    const chunks = []
 
-      let received = start
-      const MAX_WRITE = 512 * 1024
-      const buffer = new Uint8Array(await blob.arrayBuffer())
-
-      for (let i = 0; i < buffer.length; i += MAX_WRITE) {
-        if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError')
-        const chunk = new Blob([buffer.subarray(i, i + MAX_WRITE)], { type: contentType })
-        await sink.write(chunk, received)
-        received += chunk.size
+    for (;;) {
+      if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError')
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(value)
+      const bufLen = chunks.reduce((s, c) => s + c.length, 0)
+      if (bufLen >= MAX_WRITE) {
+        const merged = new Uint8Array(bufLen)
+        let offset = 0
+        for (const c of chunks) { merged.set(c, offset); offset += c.length }
+        chunks.length = 0
+        const blob = new Blob([merged], { type: contentType })
+        await sink.write(blob, received)
+        received += merged.length
         task.bytes = received
         task.progress = total > 0 ? received / total : null
         if (received % (MAX_WRITE * 4) === 0) markDirty()
       }
-
-      await sink.done()
-      markStoredByFile(QURAN_CARDS_NS, task.fileName, received - start)
-
-      task.state = 'done'
-      task.progress = 1
-      task.error = null
-      task.controller = null
-      markDirty()
-    } else {
-      res = await fetch(task.url, {
-        headers: start > 0 ? { Range: `bytes=${start}-` } : undefined,
-        signal: controller.signal,
-      })
-
-      if (res.status < 200 || res.status >= 400) {
-        throw { httpStatus: res.status }
-      }
-
-      const contentType = res.headers.get('content-type') || 'application/octet-stream'
-
-      if (/text\/html|text\/plain/i.test(contentType)) {
-        throw { code: 'badlink' }
-      }
-
-      const total = totalFromHeaders(res, start)
-
-      if (start > 0 && res.status === 200) {
-        start = 0
-        await sink.reset()
-      }
-
-      let received = start
-      let writes = 0
-      let lastActivity = Date.now()
-
-      async function flushChunk(blob) {
-        await sink.write(blob, received)
-        received += blob.size
-        task.bytes = received
-        task.progress = total > 0 ? received / total : null
-        lastActivity = Date.now()
-      }
-
-      const MAX_WRITE = 512 * 1024
-
-      function blobFrom(chunks, type) {
-        const size = chunks.reduce((acc, c) => acc + c.byteLength, 0)
-        const out = new Uint8Array(size)
-        let offset = 0
-        for (const c of chunks) {
-          out.set(c, offset)
-          offset += c.byteLength
-        }
-        return new Blob([out], { type })
-      }
-
-      const reader = res.body && res.body.getReader ? res.body.getReader() : null
-      if (reader) {
-        let pending = []
-        let pendingSize = 0
-        for (;;) {
-          if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError')
-          if (Date.now() - lastActivity > IDLE_TIMEOUT_MS) {
-            throw { code: 'timeout', message: '' }
-          }
-          const { done, value } = await reader.read()
-          if (done) break
-          pending.push(value)
-          pendingSize += value.byteLength
-          if (pendingSize >= MAX_WRITE) {
-            await flushChunk(blobFrom(pending, contentType))
-            pending = []
-            pendingSize = 0
-            writes += 1
-            if (writes % 4 === 0) markDirty()
-          }
-        }
-        if (pending.length) {
-          await flushChunk(blobFrom(pending, contentType))
-          writes += 1
-          markDirty()
-        }
-      } else {
-        const buffer = new Uint8Array(await res.arrayBuffer())
-        for (let i = 0; i < buffer.length; i += MAX_WRITE) {
-          await flushChunk(new Blob([buffer.subarray(i, i + MAX_WRITE)], { type: contentType }))
-        }
-        markDirty()
-      }
-
-      await sink.done()
-      markStoredByFile(QURAN_CARDS_NS, task.fileName, received - start)
-
-      task.state = 'done'
-      task.progress = 1
-      task.error = null
-      task.controller = null
-      markDirty()
     }
+    if (chunks.length > 0) {
+      const merged = new Uint8Array(chunks.reduce((s, c) => s + c.length, 0))
+      let offset = 0
+      for (const c of chunks) { merged.set(c, offset); offset += c.length }
+      const blob = new Blob([merged], { type: contentType })
+      await sink.write(blob, received)
+      received += merged.length
+    }
+
+    await sink.done()
+    markStoredByFile(QURAN_CARDS_NS, task.fileName, received - start)
+
+    task.state = 'done'
+    task.progress = 1
+    task.error = null
+    task.controller = null
+    markDirty()
   } catch (err) {
     task.controller = null
     if (err?.name === 'AbortError' || controller.signal.aborted) {
@@ -478,7 +431,7 @@ export async function removeFile(ref, fileName) {
 
 /**
  * فتح ملف PDF محفوظ في مشغّل خارجي:
- * - على الجهاز: cordova-plugin-file-opener2
+ * - على الجهاز: fileopener plugin.
  * - على الويب: blob URL في تبويب جديد
  */
 export async function openPdf(number) {
@@ -489,23 +442,27 @@ export async function openPdf(number) {
   }
   const mime = 'application/pdf'
 
-  if (isCordova() && window.cordova?.plugins?.fileOpener2) {
+  if (isCordova()) {
     const path = await localFileUrlFor(QURAN_CARDS_NS, fileName)
-    if (path) {
-      return new Promise((resolve) => {
-        window.cordova.plugins.fileOpener2.open(
-          path,
-          mime,
-          {
-            error: (e) => resolve({ ok: false, message: String(e?.message || 'تعذّر فتح الملف') }),
-            success: () => resolve({ ok: true }),
-          }
-        )
-      })
+    if (!path) {
+      return { ok: false, message: 'تعذّر الوصول إلى الملف المحفوظ' }
     }
-    return { ok: false, message: 'تعذّر الوصول إلى الملف المحفوظ' }
+
+    // فتح عبر fileopener plugin
+    if (window.cordova?.plugins?.FileOpener) {
+      try {
+        await window.cordova.plugins.FileOpener.open({ path, mimeType: mime })
+        return { ok: true }
+      } catch (err) {
+        console.warn('[quranCardDownload] FileOpener error', err)
+        return { ok: false, message: err?.message || 'تعذّر فتح الملف' }
+      }
+    }
+
+    return { ok: false, message: 'تعذّر فتح الملف — تأكد من تثبيت تطبيق قارئ PDF' }
   }
 
+  // Web fallback
   const url = await localUrlFor(QURAN_CARDS_NS, fileName)
   if (!url) return { ok: false, message: 'تعذّر الوصول إلى الملف المحفوظ' }
   const a = document.createElement('a')

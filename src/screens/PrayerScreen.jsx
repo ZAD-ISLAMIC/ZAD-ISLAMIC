@@ -30,10 +30,19 @@ export default function PrayerScreen() {
       ? [location.cityAr, location.countryAr].filter(Boolean).join('، ')
       : (location?.label || 'تحديد الموقع')
 
-  // live clock for the countdown
+  // live clock for the countdown — use RAF for smoother updates on 120Hz displays
   useEffect(() => {
-    const t = setInterval(() => setNow(getNowMs()), 1000)
-    return () => clearInterval(t)
+    let raf
+    let last = 0
+    const tick = (ts) => {
+      if (ts - last >= 1000) {
+        last = ts
+        setNow(getNowMs())
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
   }, [])
 
   // snapshot subscription (the global loop in main.jsx keeps it fresh)

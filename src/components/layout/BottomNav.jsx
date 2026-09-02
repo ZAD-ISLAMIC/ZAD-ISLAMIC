@@ -7,7 +7,7 @@ function isItemActive(pathname, itemPath) {
   return pathname === itemPath || pathname.startsWith(itemPath + '/')
 }
 
-export function BottomNav() {
+export const BottomNav = React.memo(function BottomNav() {
   const { pathname } = useLocation()
 
   const onMenu = BOTTOM_NAV_ITEMS.some((item) => isItemActive(pathname, item.path))
@@ -29,4 +29,4 @@ export function BottomNav() {
       })}
     </nav>
   )
-}
+})

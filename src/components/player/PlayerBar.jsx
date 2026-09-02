@@ -17,7 +17,7 @@ function formatTime(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-export function PlayerBar() {
+export const PlayerBar = React.memo(function PlayerBar() {
   const player = usePlayer()
   const [expanded, setExpanded] = useState(false)
   const sliderRef = useRef(null)
@@ -294,4 +294,4 @@ export function PlayerBar() {
       )}
     </div>
   )
-}
+})

@@ -43,13 +43,9 @@ function patchSource(content) {
       ].join(' ')
     )
     // 2. Replace the launcher callback: resolve ALL pending listeners
+    //    Handles both multi-line and single-line formats
     .replace(
-      [
-        'permissionLauncher = parentEngine.cordova.getActivity().registerForActivityResult(',
-        '    new ActivityResultContracts.RequestMultiplePermissions(), isGranted -> {',
-        '        if (permissionListener != null) {',
-        '            boolean granted = true;',
-      ].join('\n'),
+      /permissionLauncher = parentEngine\.cordova\.getActivity\(\)\.registerForActivityResult\(\s*new ActivityResultContracts\.RequestMultiplePermissions\(\), isGranted -> \{\s*if \(permissionListener != null\) \{\s*boolean granted = true;/,
       [
         'permissionLauncher = parentEngine.cordova.getActivity().registerForActivityResult(',
         '    new ActivityResultContracts.RequestMultiplePermissions(), isGranted -> {',
@@ -57,13 +53,7 @@ function patchSource(content) {
       ].join('\n')
     )
     .replace(
-      [
-        '            for (Map.Entry<String, Boolean> permission : isGranted.entrySet()) {',
-        '                if (!permission.getValue()) granted = false;',
-        '            }',
-        '            permissionListener.onPermissionSelect(granted);',
-        '        }',
-      ].join('\n'),
+      /for \(Map\.Entry<String, Boolean> permission : isGranted\.entrySet\(\)\) \{\s*if \(!permission\.getValue\(\)\) granted = false;\s*\}\s*permissionListener\.onPermissionSelect\(granted\);\s*\}/,
       [
         '        for (Map.Entry<String, Boolean> permission : isGranted.entrySet()) {',
         '            if (!permission.getValue()) granted = false;',
@@ -82,21 +72,10 @@ function patchSource(content) {
         '        }',
       ].join('\n')
     )
-    // 3. Replace onPermissionRequest body
+    // 3. Replace onPermissionRequest body — handles both formats
     .replace(
+      /permissionListener = \(isGranted\) -> \{\s*if \(isGranted\) \{\s*request\.grant\(request\.getResources\(\)\);\s*\} else \{\s*request\.deny\(\);\s*\}\s*\};\s*permissionLauncher\.launch\(permissions\);/,
       [
-        '        String[] permissions = permissionList.toArray(new String[0]);',
-        '        permissionListener = (isGranted) -> {',
-        '            if (isGranted) {',
-        '                request.grant(request.getResources());',
-        '            } else {',
-        '                request.deny();',
-        '            }',
-        '        };',
-        '        permissionLauncher.launch(permissions);',
-      ].join('\n'),
-      [
-        '        String[] permissions = permissionList.toArray(new String[0]);',
         '        PermissionListener listener = (isGranted) -> {',
         '            try {',
         '                if (isGranted) {',
