@@ -349,6 +349,11 @@
   border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 
+.settings-slider-row + .settings-row,
+.settings-row + .settings-slider-row {
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
 .settings-slider-row__head {
   display: flex;
   align-items: center;
