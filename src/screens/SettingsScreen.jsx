@@ -4,12 +4,14 @@ import { SettingsGroup } from '../components/settings/SettingsGroup.jsx'
 import { SettingsSwitch } from '../components/settings/SettingsSwitch.jsx'
 import { SettingsNavRow } from '../components/settings/SettingsNavRow.jsx'
 import { SettingsSelect } from '../components/settings/SettingsSelect.jsx'
+import { SettingsSlider } from '../components/settings/SettingsSlider.jsx'
+import { SettingsRow } from '../components/settings/SettingsRow.jsx'
 import { Icon } from '../components/ui/Icon.jsx'
 import { useTheme } from '../hooks/useTheme.mjs'
 import * as player from '../services/player.mjs'
 import { storage } from '../services/storage.mjs'
 import { loadConfig, updateConfig, getNowMs, setTimeSource } from '../services/prayerConfig.mjs'
-import { refreshWatch } from '../services/prayerWatch.mjs'
+import { refreshWatch, getWatchStatus, getAudioState, openSystemSetting, setAdhanVolume } from '../services/prayerWatch.mjs'
 import { getCurrentLocation } from '../services/location.mjs'
 import { arabicDigits } from '../utils/arabic.mjs'
 import { getSettings as getTasbihSettings, saveSettings as saveTasbihSettings } from '../services/tasbih.mjs'
@@ -55,6 +57,13 @@ export default function SettingsScreen() {
   const [playerRate, setPlayerRate] = useState(() => storage.get('player.rate', 1))
   const [adhkarSound, setAdhkarSound] = useState(() => isSoundEnabled())
   const [adhkarVibration, setAdhkarVibration] = useState(() => isVibrationEnabled())
+  const [status, setStatus] = useState(null)
+  const [audio, setAudio] = useState(null)
+
+  useEffect(() => {
+    getWatchStatus().then(setStatus)
+    getAudioState().then(setAudio)
+  }, [])
 
   const locationText =
     (location && (location.cityAr || location.countryAr))
@@ -74,6 +83,16 @@ export default function SettingsScreen() {
     const next = updateConfig({ adhanEnabled: !config.adhanEnabled })
     setConfig(next)
     await refreshWatch({ config: next })
+    getWatchStatus().then(setStatus)
+    getAudioState().then(setAudio)
+  }
+
+  const applyAdhanSetting = async (partial) => {
+    const next = updateConfig(partial)
+    setConfig(next)
+    await refreshWatch({ config: next })
+    getWatchStatus().then(setStatus)
+    getAudioState().then(setAudio)
   }
 
   const changeTimeMode = async (mode) => {
@@ -121,6 +140,18 @@ export default function SettingsScreen() {
     setPlayerRate(rate)
     player.setRate(rate)
   }
+
+  const volumePercent = Math.round(Math.min(1, Math.max(0, config.adhanVolume ?? 1)) * 100)
+  const changeAdhanVolume = (v) => {
+    const value = v / 100
+    setConfig((c) => ({ ...c, adhanVolume: value }))
+    setAdhanVolume(value)
+  }
+
+  const audioStateText =
+    audio && audio.ringerMode === 'silent'
+      ? 'الصوت عادي: حاليًا صامت — لن يرنّ الأذان'
+      : null
 
   return (
     <section className="screen settings-screen">
@@ -267,10 +298,104 @@ export default function SettingsScreen() {
         <SettingsNavRow
           icon={<Icon name="mic" size={20} />}
           label="صوت الأذان"
-          description="اختيار المؤذن وحجم الصوت والصلاحيات"
+          description="اختيار المؤذن وتجربة الصوت"
           value={adhanVoice}
           onClick={() => navigate('/settings/adhan')}
         />
+      </SettingsGroup>
+
+      <SettingsGroup title="حجم صوت الأذان">
+        <SettingsSlider
+          icon={<Icon name="volume" size={20} />}
+          label="مستوى الرنين"
+          description="يرنّ الأذان بهذا المستوى حتى لو كان الهاتف صامتًا"
+          value={volumePercent}
+          onChange={changeAdhanVolume}
+        />
+      </SettingsGroup>
+
+      <SettingsGroup title="احترام وضع الصوت">
+        <SettingsSwitch
+          icon={<Icon name="bolt" size={20} />}
+          label="احترام الصامت/الاهتزاز"
+          description={config.respectSoundMode ? 'مفعّل — الصامت/الاهتزاز بلا صوت' : 'متوقف — يرنّ دائمًا كمنبّه'}
+          checked={!!config.respectSoundMode}
+          onChange={(v) => applyAdhanSetting({ respectSoundMode: v })}
+        />
+        {audio && (
+          <div className="settings-status">
+            <Icon name="volume" size={16} />
+            <span>
+              الحالة الآن:{' '}
+              {audio.ringerMode === 'silent'
+                ? 'صامت'
+                : audio.ringerMode === 'vibrate'
+                  ? 'اهتزاز'
+                  : `صوت عادي (منبّه ${arabicDigits(audio.alarmVolume || 0)}/${arabicDigits(audio.alarmMax || 0)})`}
+            </span>
+          </div>
+        )}
+      </SettingsGroup>
+
+      <SettingsGroup title="الصلاحيات للعمل في الخلفية">
+        <PermissionRow
+          title="إشعارات النظام"
+          ok={status ? !!status.notifications : null}
+          hint={status && status.notifications === false ? 'الإشعارات محجوبة — يجب السماح لإظهار تنبيه الأذان' : ''}
+          onOpen={() => openSystemSetting('notifications')}
+        />
+        <PermissionRow
+          title="المنبّهات الدقيقة (أندرويد 12+)"
+          ok={status ? !!status.exactAlarms : null}
+          hint={
+            status && status.exactAlarms === false
+              ? 'بدونها قد يتأخر التنبيه حتى ربع ساعة — فعّل لضبط الأذان في وقته'
+              : ''
+          }
+          onOpen={() => openSystemSetting('alarms')}
+        />
+        <PermissionRow
+          title="تحسين البطارية"
+          ok={status ? !status.batteryOptimized : null}
+          hint={
+            status && status.batteryOptimized
+              ? 'اضبط "غير محسَّن/غير مقيد" لضمان عمل الخلفية على أجهزة Xiaomi/Oppo/Samsung'
+              : ''
+          }
+          onOpen={() => openSystemSetting('battery')}
+        />
+      </SettingsGroup>
+
+      {status?.oem && status.oem !== 'other' && (
+        <SettingsGroup title={`إرشادات特别 — ${oemLabels[status.oem] || status.oem}`}>
+          {(oemWarnings[status.oem] || []).map((step, i) => (
+            <div key={i} className="settings-row" style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text)' }}>
+              <span style={{ color: 'var(--primary)', fontWeight: 700, marginInlineEnd: 6 }}>{i + 1}.</span>
+              {step}
+            </div>
+          ))}
+        </SettingsGroup>
+      )}
+
+      <SettingsGroup title="حالة النظام">
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>الجهاز:</span>{' '}
+          <span style={{ fontWeight: 600 }}>{status?.manufacturer || '—'} {status?.model || ''}</span>
+        </div>
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>نظام Android:</span>{' '}
+          <span style={{ fontWeight: 600 }}>{status?.androidVersion ? `API ${status.androidVersion}` : '—'}</span>
+        </div>
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>نوع الشركة:</span>{' '}
+          <span style={{ fontWeight: 600 }}>{oemLabels[status?.oem] || '—'}</span>
+        </div>
+        <div className="settings-row" style={{ padding: '10px 14px', fontSize: '13px' }}>
+          <span style={{ color: 'var(--text-muted)' }}>الأذان في الخلفية:</span>{' '}
+          <span style={{ fontWeight: 600, color: status?.scheduleArmed ? 'var(--primary)' : 'var(--text-muted)' }}>
+            {status?.scheduleArmed ? 'مفعّل' : 'متوقف'}
+          </span>
+        </div>
       </SettingsGroup>
 
       <SettingsGroup title="الصوت والمشغّل">
@@ -360,4 +485,68 @@ export default function SettingsScreen() {
       </SettingsGroup>
     </section>
   )
+}
+
+function PermissionRow({ title, ok, hint, onOpen }) {
+  const chip = ok === null ? (
+    <span className="settings-chip">جارٍ الفحص</span>
+  ) : ok ? (
+    <span className="settings-chip settings-chip--ok">
+      <Icon name="check" size={13} />
+      مفوّض
+    </span>
+  ) : (
+    <span className="settings-chip settings-chip--warn">
+      <Icon name="alert" size={13} />
+      ينقص الإذن
+    </span>
+  )
+
+  return (
+    <SettingsRow
+      icon={<Icon name="shield" size={20} />}
+      label={title}
+      description={hint}
+      onClick={onOpen}
+      trailing={<span className="settings-perm__status">{chip}</span>}
+    />
+  )
+}
+
+const oemLabels = {
+  xiaomi: 'Xiaomi / Redmi / Poco',
+  samsung: 'Samsung / OneUI',
+  oppo: 'OPPO / Realme / OnePlus',
+  huawei: 'Huawei / Honor',
+  vivo: 'Vivo',
+  other: 'أخرى',
+}
+
+const oemWarnings = {
+  xiaomi: [
+    'الإعدادات ← التطبيقات ← التطبيق',
+    'البطارية ← 「لا قيود」',
+    'الإعدادات ← التطبيقات ← التأذين التلقائي ← فعّل لهذا التطبيق',
+    'الإعدادات ← البطارية ← تحسين البطارية ← أوقف تحسين لهذا التطبيق',
+  ],
+  samsung: [
+    'الإعدادات ← التطبيقات ← التطبيق',
+    'البطارية ← 「غير مقيّد」',
+    'الإعدادات ← البطارية ← خيارات أخرى ← 「إيقاف تحسين البطارية」',
+  ],
+  oppo: [
+    'الإعدادات ← التطبيقات ← إدارة التطبيقات',
+    'التشغيل التلقائي ← فعّل لهذا التطبيق',
+    'الإعدادات ← البطارية ← تعليق في الخلفية ← اسمح بهذا التطبيق',
+  ],
+  huawei: [
+    'الإعدادات ← البطارية ← بدء التشغيل التلقائي',
+    'اختر 「يدوياً」 وفعّل جميع الخيارات',
+    'الإعدادات ← البطارية ← حماية البطارية ← اسمح لهذا التطبيق',
+  ],
+  vivo: [
+    'الإعدادات ← البطارية ← إدارة الطاقة',
+    'التشغيل التلقائي ← فعّل لهذا التطبيق',
+    'الإعدادات ← التطبيقات ← التطبيق ← البطارية ← اسمح بالعمل في الخلفية',
+  ],
 }
