@@ -44,9 +44,9 @@ Builds:
       - bash scripts/fdroid-build.sh
     ndk: r27b
 
-  - versionName: 3.0.2
-    versionCode: 30002
-    commit: v3.0.2-fdroid
+  - versionName: 3.0.3
+    versionCode: 30003
+    commit: v3.0.3-fdroid
     sudo:
       - apt-get update
       - apt-get install -y cmake ninja-build openjdk-21-jdk-headless python3 python3-pil
@@ -75,5 +75,5 @@ MaintainerNotes: |-
 
 AutoUpdateMode: None
 UpdateCheckMode: None
-CurrentVersion: 3.0.2
-CurrentVersionCode: 30002
+CurrentVersion: 3.0.3
+CurrentVersionCode: 30003

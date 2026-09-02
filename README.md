@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/rn0x/altaqwaa-android/releases"><img src="https://img.shields.io/badge/version-3.0.2-7c9cff?style=for-the-badge" alt="الإصدار 3.0.2"></a>
+  <a href="https://github.com/rn0x/altaqwaa-android/releases"><img src="https://img.shields.io/badge/version-3.0.3-7c9cff?style=for-the-badge" alt="الإصدار 3.0.3"></a>
   <a href="https://github.com/rn0x/altaqwaa-android/releases"><img src="https://img.shields.io/github/downloads/rn0x/altaqwaa-android/total?style=for-the-badge&logo=github&color=10b981" alt="تحميلات GitHub"></a>
   <a href="https://github.com/rn0x/altaqwaa-android"><img src="https://img.shields.io/github/stars/rn0x/altaqwaa-android?style=for-the-badge&color=d4af37" alt="نجوم"></a>
   <a href="https://github.com/rn0x/altaqwaa-android/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rn0x/altaqwaa-android?style=for-the-badge&color=64748b" alt="الرخصة GPL-3.0"></a>

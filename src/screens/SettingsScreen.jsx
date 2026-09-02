@@ -488,7 +488,7 @@ export default function SettingsScreen() {
           icon={<Icon name="info" size={20} />}
           label="حول التقوى"
           description="نسخة التطبيق والمحتوى والمصادر"
-          value="v3.0.2"
+          value="v3.0.3"
           onClick={() => navigate('/settings/about')}
         />
       </SettingsGroup>
