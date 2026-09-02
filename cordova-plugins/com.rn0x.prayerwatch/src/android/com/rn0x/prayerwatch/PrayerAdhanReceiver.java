@@ -124,12 +124,30 @@ public class PrayerAdhanReceiver extends BroadcastReceiver {
         int remaining = intent.getIntExtra(EXTRA_REMAINING, 0);
         if (ts == 0) return;
 
+        // Guard: if the stored fired record points to a different prayer
+        // (e.g. the user dismissed one and the Worker re-armed alarms for
+        // the next prayer), don't touch the stale tick chain.
+        try {
+            String stored = PrayerAlarmScheduler.peekFired(c);
+            if (stored != null && !stored.isEmpty()) {
+                long storedTs = new org.json.JSONObject(stored).optLong("ts", 0L);
+                if (storedTs != ts) return;
+            }
+        } catch (Exception ignored) {}
+
         long now = PrayerTime.now(c);
         // Stay with the +count while inside the window.
         if (now - ts < PrayerAlarmScheduler.ADHAN_WINDOW_MS && remaining > 0) {
-            // refresh() re-posts the notification with an updated +count.
-            AdhanPlayback.refresh(c, id, label, ts);
-            PrayerAlarmScheduler.scheduleTick(c, id, label, ts, remaining - 1);
+            // Only refresh + re-schedule if the native player is still active.
+            // A stale tick from Doze delays or a late scheduleAlarms call may
+            // arrive after the MediaPlayer has already stopped — in that case
+            // clean up instead of extending the notification chain.
+            if (AdhanPlayback.isPlaying()) {
+                AdhanPlayback.refresh(c, id, label, ts);
+                PrayerAlarmScheduler.scheduleTick(c, id, label, ts, remaining - 1);
+            } else {
+                AdhanPlayback.stop(c, true);
+            }
         } else {
             // The window is over — clean up: stop everything.
             AdhanPlayback.stop(c, true);

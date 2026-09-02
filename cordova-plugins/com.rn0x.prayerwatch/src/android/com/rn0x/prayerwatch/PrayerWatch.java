@@ -142,6 +142,9 @@ public class PrayerWatch extends CordovaPlugin {
             case "getAdhanVolume":
                 getAdhanVolume(ctx);
                 return true;
+            case "isPlaying":
+                isPlaying(ctx);
+                return true;
             case "testNow":
                 testNow(ctx);
                 return true;
@@ -349,6 +352,11 @@ public class PrayerWatch extends CordovaPlugin {
         } catch (Exception e) {
             ctx.error(e.getMessage());
         }
+    }
+
+    /** Whether the native MediaPlayer is currently playing an adhan. */
+    private void isPlaying(CallbackContext ctx) {
+        ctx.success(AdhanPlayback.isPlaying());
     }
 
     /** Stored adhan loudness in 0..1 (prefs). */

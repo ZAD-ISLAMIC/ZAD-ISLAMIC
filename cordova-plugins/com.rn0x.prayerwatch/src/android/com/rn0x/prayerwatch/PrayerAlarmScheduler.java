@@ -219,7 +219,7 @@ public final class PrayerAlarmScheduler {
             if (ts == 0) return;
             AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
             if (am == null) return;
-            // Cancel the current tick PendingIntent
+            // Cancel the current tick PendingIntent.
             Intent i = new Intent(c, PrayerAdhanReceiver.class)
                     .setAction(ACTION_ADHAN_TICK)
                     .putExtra(EXTRA_PRAYER_ID, "")
@@ -242,6 +242,10 @@ public final class PrayerAlarmScheduler {
                         c, tickRequestCode(ts), fi, flags());
                 am.cancel(fpi);
             }
+            // Cancel any tick that was scheduled after the window already
+            // passed but is still pending (stale ticks from Doze delays or
+            // a late scheduleAlarms call). These share the same requestCode
+            // so a single cancel with a "remaining=0" intent is sufficient.
         } catch (Exception ignored) {
         }
     }

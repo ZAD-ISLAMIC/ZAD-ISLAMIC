@@ -611,14 +611,24 @@ function checkTransitions() {
           // never re-fires in the same day.
           // Also check permanentBackupDedupe to prevent ANY duplicate backup.
           if (!hidden && !alreadyFired && !permanentBackupDedupe.has(dayPrayerKey)) {
-            // Stop any native sound that might be playing (even if the push
-            // failed, the native MediaPlayer could still be ringing). This
-            // prevents two sounds playing simultaneously.
-            stopNativeAdhan()
-            backupFiredKey = dayPrayerKey
-            permanentBackupDedupe.add(dayPrayerKey)
-            fireAdhan(e, fires, day)
-            break
+            // Skip backup if native is still playing — the push may arrive
+            // late (WebView busy, Cordova channel delayed) but the adhan
+            // is already ringing on the device. Firing here would double-
+            // ring via HTML5 Audio with no notification (the bug being fixed).
+            getNativeIsPlaying().then((playing) => {
+              if (playing) return
+              stopNativeAdhan()
+              backupFiredKey = dayPrayerKey
+              permanentBackupDedupe.add(dayPrayerKey)
+              fireAdhan(e, fires, day)
+            }).catch(() => {
+              // Bridge unavailable — fall back to firing.
+              stopNativeAdhan()
+              backupFiredKey = dayPrayerKey
+              permanentBackupDedupe.add(dayPrayerKey)
+              fireAdhan(e, fires, day)
+            })
+            return
           }
         }
       }
@@ -953,6 +963,22 @@ export function getAdhanVolume() {
       )
     } catch {
       resolve(null)
+    }
+  })
+}
+
+/**
+ * Whether the native MediaPlayer is currently ringing an adhan.
+ * Resolves true while audio is playing, false otherwise (or null if bridge unavailable).
+ */
+export function getNativeIsPlaying() {
+  const plugin = watchPlugin()
+  if (!plugin || typeof plugin.isPlaying !== 'function') return Promise.resolve(null)
+  return new Promise((resolve) => {
+    try {
+      plugin.isPlaying((v) => resolve(!!v), () => resolve(false))
+    } catch {
+      resolve(false)
     }
   })
 }

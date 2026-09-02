@@ -135,6 +135,11 @@ exports.getAdhanVolume = function (onOk, onErr) {
   call('getAdhanVolume', [], onOk, onErr)
 }
 
+/** Resolve { playing: boolean } — true while the native MediaPlayer is ringing. */
+exports.isPlaying = function (onOk, onErr) {
+  call('isPlaying', [], onOk, onErr)
+}
+
 /** Schedule a demo adhan ~20s from now (force-plays even in the foreground). */
 exports.testNow = function (onOk, onErr) {
   call('testNow', [], onOk, onErr)

@@ -145,7 +145,9 @@ public final class AdhanPlayback {
     public static void start(final Context c, final String id, final String label, final long ts, final boolean force) {
         callPaused = false;
         synchronized (LOCK) {
-            if (player != null && !force) {
+            if (player != null) {
+                // Always stop any currently-playing adhan before starting a
+                // new one, even when force=true (snooze, test, etc.).
                 stopLocked(c, false);
             }
         }
@@ -234,7 +236,7 @@ public final class AdhanPlayback {
             mp.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
             mp.prepare();
             mp.setVolume(0.95f, 0.95f);
-            mp.setOnCompletionListener(m -> stop(c, false));
+            mp.setOnCompletionListener(m -> stop(c, true));
             mp.start();
             synchronized (LOCK) {
                 if (player != null) {
@@ -516,7 +518,14 @@ public final class AdhanPlayback {
                 stopLocked(c, dismiss);
             } catch (Exception ignored) {
             }
-            if (dismiss) PrayerAlarmScheduler.clearFired(c);
+            if (dismiss) {
+                // Cancel tick alarms FIRST while the fired record still exists,
+                // then clear the record. Reversing this order would leave stale
+                // tick alarms scheduled with no way to cancel them (peekFired
+                // returns empty after clearFired, so cancelAdhanTicks bails out).
+                PrayerAlarmScheduler.cancelAdhanTicks(c);
+                PrayerAlarmScheduler.clearFired(c);
+            }
         }
     }
 
