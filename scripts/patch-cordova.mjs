@@ -27,6 +27,9 @@ const NODE_MODULES_FILE = resolve(
 const PLATFORM_FILE = resolve(
   'platforms/android/CordovaLib/src/org/apache/cordova/engine/SystemWebChromeClient.java'
 )
+const MANIFEST_FILE = resolve(
+  'platforms/android/app/src/main/AndroidManifest.xml'
+)
 
 const PATCH_MARKER = 'pendingPermissionListeners'
 const ORIGINAL_FIELD = 'private PermissionListener permissionListener;'
@@ -137,4 +140,23 @@ if (process.env.FDROID_BUILD === '1') {
   }
 } else {
   console.log('[patch-cordova] No platform CordovaLib found — nothing to sync.')
+}
+
+// ---- 3. Ensure extractNativeLibs is set in AndroidManifest.xml ----
+// The .so native libraries need extraction for Google Play 16KB page-size compatibility.
+// cordova prepare may reset the manifest, so we re-apply this flag idempotently.
+if (existsSync(MANIFEST_FILE)) {
+  const manifest = readFileSync(MANIFEST_FILE, 'utf-8')
+  if (!manifest.includes('extractNativeLibs')) {
+    const patched = manifest.replace(
+      /<application[^>]*android:supportsRtl="true"[^>]*/g,
+      (match) => match.replace(/android:supportsRtl="true"/, 'android:supportsRtl="true" android:extractNativeLibs="true"')
+    )
+    writeFileSync(MANIFEST_FILE, patched, 'utf-8')
+    console.log('[patch-cordova] ✓ AndroidManifest.xml: extractNativeLibs ensured.')
+  } else {
+    console.log('[patch-cordova] AndroidManifest.xml already has extractNativeLibs — skipping.')
+  }
+} else {
+  console.log('[patch-cordova] No AndroidManifest.xml found — skipping manifest patch.')
 }
