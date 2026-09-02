@@ -359,8 +359,8 @@ public class PrayerWatch extends CordovaPlugin {
 
     private void testNow(CallbackContext ctx) {
         Context c = this.cordova.getContext();
-        long appAt = PrayerTime.now(c) + 20_000L;
-        long realAt = System.currentTimeMillis() + 20_000L;
+        long appAt = PrayerTime.now(c) + 2_000L;
+        long realAt = System.currentTimeMillis() + 2_000L;
         String id = "test_" + appAt;
         Intent i = new Intent(c, PrayerAdhanReceiver.class)
                 .setAction(PrayerAlarmScheduler.ACTION_ADHAN)
