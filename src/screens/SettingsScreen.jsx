@@ -302,22 +302,16 @@ export default function SettingsScreen() {
           value={adhanVoice}
           onClick={() => navigate('/settings/adhan')}
         />
-      </SettingsGroup>
-
-      <SettingsGroup title="حجم صوت الأذان">
         <SettingsSlider
           icon={<Icon name="volume" size={20} />}
-          label="مستوى الرنين"
-          description="يرنّ الأذان بهذا المستوى حتى لو كان الهاتف صامتًا"
+          label="حجم صوت الأذان"
+          description="مستوى الرنين — يرنّ بهذا المستوى حتى لو كان الهاتف صامتًا"
           value={volumePercent}
           onChange={changeAdhanVolume}
         />
-      </SettingsGroup>
-
-      <SettingsGroup title="احترام وضع الصوت">
         <SettingsSwitch
           icon={<Icon name="bolt" size={20} />}
-          label="احترام الصامت/الاهتزاز"
+          label="احترام وضع الصمت"
           description={config.respectSoundMode ? 'مفعّل — الصامت/الاهتزاز بلا صوت' : 'متوقف — يرنّ دائمًا كمنبّه'}
           checked={!!config.respectSoundMode}
           onChange={(v) => applyAdhanSetting({ respectSoundMode: v })}
