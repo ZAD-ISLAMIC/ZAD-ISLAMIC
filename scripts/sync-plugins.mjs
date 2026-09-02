@@ -122,6 +122,23 @@ for (const dir of pluginDirs) {
     ensureCopyNative(from, toJni)
   }
 
+  // Mirror model assets (.gguf) into the platform's assets directory.
+  // cordova prepare only copies these at first `plugin add`, so they go stale
+  // otherwise.
+  const ggufRegex = /<source-file\s+src="([^"]+\.gguf)"[^>]*target-dir="([^"]+)"/g
+  const ggufEntries = []
+  let gg
+  while ((gg = ggufRegex.exec(xml)) !== null) ggufEntries.push({ srcFile: gg[1], targetDir: gg[2] })
+  for (const { srcFile, targetDir } of ggufEntries) {
+    const from = join(pluginRoot, srcFile)
+    if (!existsSync(from)) continue
+    const toPlugins = join(PLUGINS, id, srcFile)
+    ensureCopyNative(from, toPlugins)
+    // target-dir "app/src/main/assets/models" is relative to platforms/android/
+    const toPlatform = join(ROOT, 'platforms/android', targetDir, srcFile.split('/').pop())
+    ensureCopyNative(from, toPlatform)
+  }
+
   const wwwSrc = join(pluginRoot, 'www')
   if (existsSync(wwwSrc)) {
     // cordova-lib wraps each <js-module> as `cordova.define("<pluginId>.<name>",
@@ -167,6 +184,128 @@ function syncDir(fromDir, toDir, jsModules = null) {
     mkdirSync(dirname(to), { recursive: true })
     writeFileSync(to, content)
     console.log(`[sync-plugins] ✓ ${to}`)
+  }
+}
+
+// ---- Phase 2: Inject <feature> entries into platform config.xml ----
+// cordova prepare regenerates config.xml from config_munge, which is empty for
+// local (file:) plugins.  We parse each plugin.xml's <config-file> blocks for
+// res/xml/config.xml and inject missing <feature> entries.
+
+const PLATFORM_CONFIG = join(ROOT, 'platforms/android/app/src/main/res/xml/config.xml')
+const ANDROID_MANIFEST = join(ROOT, 'platforms/android/app/src/main/AndroidManifest.xml')
+
+if (existsSync(PLATFORM_CONFIG)) {
+  let configXml = readFileSync(PLATFORM_CONFIG, 'utf-8')
+  let changed = false
+
+  for (const dir of pluginDirs) {
+    const pluginRoot = join(SRC, dir)
+    const xmlPath = join(pluginRoot, 'plugin.xml')
+    const id = pluginId(xmlPath)
+    if (!id) continue
+    const xml = readFileSync(xmlPath, 'utf-8')
+
+    // Extract <config-file target="res/xml/config.xml"> blocks
+    const cfgRe = /<config-file\s+target="res\/xml\/config\.xml"[^>]*>([\s\S]*?)<\/config-file>/g
+    let cm
+    while ((cm = cfgRe.exec(xml)) !== null) {
+      const block = cm[1].trim()
+      // Extract feature name to check for duplicates
+      const nameMatch = /<feature\s+name="([^"]+)"/.exec(block)
+      if (nameMatch) {
+        const featureName = nameMatch[1]
+        if (!configXml.includes(`name="${featureName}"`)) {
+          // Inject before </widget>
+          configXml = configXml.replace('</widget>', `    ${block.split('\n').join('\n    ')}\n</widget>`)
+          changed = true
+          console.log(`[sync-plugins] ✓ injected <feature name="${featureName}"> into config.xml`)
+        }
+      }
+    }
+  }
+
+  // Ensure RECORD_AUDIO permission in config.xml
+  if (!configXml.includes('android.permission.RECORD_AUDIO')) {
+    configXml = configXml.replace(
+      '<uses-permission android:name="android.permission.INTERNET" />',
+      '<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />'
+    )
+    changed = true
+    console.log('[sync-plugins] ✓ injected RECORD_AUDIO permission into config.xml')
+  }
+
+  if (changed) {
+    writeFileSync(PLATFORM_CONFIG, configXml)
+  }
+}
+
+// ---- Phase 3: Inject RECORD_AUDIO into AndroidManifest.xml ----
+if (existsSync(ANDROID_MANIFEST)) {
+  let manifest = readFileSync(ANDROID_MANIFEST, 'utf-8')
+  if (!manifest.includes('android.permission.RECORD_AUDIO')) {
+    manifest = manifest.replace(
+      /(<uses-permission android:name="android.permission.INTERNET"[^/]*\/>)/,
+      '$1\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />'
+    )
+    writeFileSync(ANDROID_MANIFEST, manifest)
+    console.log('[sync-plugins] ✓ injected RECORD_AUDIO into AndroidManifest.xml')
+  }
+}
+
+// ---- Phase 4: Regenerate cordova_plugins.js ----
+// Collect all local plugins with JS modules and build a fresh registry.
+const PLUGIN_LIST_JS = join(ROOT, 'platforms/android/app/src/main/assets/www/cordova_plugins.js')
+const PLUGIN_LIST_PLATFORM = join(ROOT, 'platforms/android/platform_www/cordova_plugins.js')
+
+const pluginEntries = []
+const pluginMeta = {}
+
+for (const dir of pluginDirs) {
+  const pluginRoot = join(SRC, dir)
+  const xmlPath = join(pluginRoot, 'plugin.xml')
+  const id = pluginId(xmlPath)
+  if (!id) continue
+  const xml = readFileSync(xmlPath, 'utf-8')
+
+  const jsRe = /<js-module\s+src="([^"]+)"[^>]*\bname="([^"]+)"/g
+  let jm
+  while ((jm = jsRe.exec(xml)) !== null) {
+    if (!jm[1].startsWith('www/')) continue
+    const clobRe = /<clobbers\s+target="([^"]+)"/.exec(xml.slice(jm.index))
+    const clobTarget = clobRe ? clobRe[1] : `cordova.plugins.${jm[2]}`
+    pluginEntries.push({
+      id: `${id}.${jm[2]}`,
+      file: `plugins/${id}/${jm[1]}`,
+      pluginId: id,
+      clobbers: [clobTarget],
+    })
+  }
+
+  // Version from package.json
+  const pkgPath = join(pluginRoot, 'package.json')
+  if (existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+      pluginMeta[id] = pkg.version || '1.0.0'
+    } catch { pluginMeta[id] = '1.0.0' }
+  } else {
+    pluginMeta[id] = '1.0.0'
+  }
+}
+
+const registryJs = `cordova.define('cordova/plugin_list', function(require, exports, module) {
+  module.exports = ${JSON.stringify(pluginEntries, null, 2)};
+  module.exports.metadata = ${JSON.stringify(pluginMeta, null, 2)};
+});
+`
+
+for (const target of [PLUGIN_LIST_JS, PLUGIN_LIST_PLATFORM]) {
+  if (!existsSync(target)) continue
+  const current = readFileSync(target, 'utf-8')
+  if (current !== registryJs) {
+    writeFileSync(target, registryJs)
+    console.log(`[sync-plugins] ✓ regenerated ${target.split('/').pop()}`)
   }
 }
 

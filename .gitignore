@@ -2,6 +2,7 @@ node_modules/
 /www/
 platforms/
 plugins/
+app/
 .DS_Store
 *.log
 scripts/secrets/

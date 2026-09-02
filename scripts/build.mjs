@@ -34,11 +34,6 @@ if (!skipNative) {
   run('node cordova-plugins/moonshine-stt/src/android/native/build.mjs')
 }
 
-// Sync local plugin Java sources into plugins/ and the platform project
-// (cordova prepare does not overwrite already-copied Java files, so we
-// mirror our edited cordova-plugins sources here directly).
-run('node scripts/sync-plugins.mjs')
-
 // Remove any stray Cordova core-class duplicates in the app module that
 // would break D8 dex-merging on release builds (platform rot).
 run('node scripts/dedupe-platform.mjs')
@@ -53,6 +48,14 @@ run('python3 scripts/generate-icons.py')
 // Ensure cordova plugins are synced (copies our modified plugin sources);
 // also copies the res/ icon + splash layers into the platform.
 run('cordova prepare')
+
+// Sync local plugin Java sources + JS bridges + native libs + model assets
+// INTO the platform AFTER cordova prepare, because prepare regenerates
+// config.xml and cordova_plugins.js from config_munge — and config_munge
+// is empty for local (file:) plugins.  This second pass injects the missing
+// <feature> entries into platform config.xml, updates cordova_plugins.js,
+// and mirrors .so / .gguf assets that prepare only copies at first `plugin add`.
+run('node scripts/sync-plugins.mjs')
 
 // F-Droid: leave a marker file so the before_compile hook (which runs AFTER
 // `cordova compile`'s internal prepare, i.e. right before javac) can rewire
