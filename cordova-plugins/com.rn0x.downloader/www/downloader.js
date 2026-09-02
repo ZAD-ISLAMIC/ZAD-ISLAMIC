@@ -150,6 +150,86 @@ exports.getContentUri = function (path) {
 }
 
 /**
+ * Get the absolute file path for a file in the app's private storage.
+ * Does NOT depend on cordova-plugin-file.
+ *
+ * @param {Object} opts
+ * @param {string} opts.ns       - Namespace (e.g. 'reciter-1', 'quran-cards', 'khutbah')
+ * @param {string} opts.fileName - File name
+ * @returns {Promise<{path, exists, size}>}
+ */
+exports.getAppFilePath = function (opts) {
+  return new Promise(function (resolve, reject) {
+    exec(
+      function (result) { resolve(result) },
+      function (err) { reject(err) },
+      SERVICE, 'getAppFilePath',
+      [{ ns: opts.ns, fileName: opts.fileName }]
+    )
+  })
+}
+
+/**
+ * Write base64-encoded data to a file in the app's private storage.
+ * Supports append via `offset`. Creates parent directories automatically.
+ *
+ * @param {Object} opts
+ * @param {string} opts.ns          - Namespace
+ * @param {string} opts.fileName    - File name
+ * @param {string} opts.data        - Base64-encoded byte data
+ * @param {number} [opts.offset]    - Byte offset to write at (0 = overwrite)
+ * @returns {Promise<{success, bytesWritten, totalSize}>}
+ */
+exports.writeFile = function (opts) {
+  return new Promise(function (resolve, reject) {
+    exec(
+      function (result) { resolve(result) },
+      function (err) { reject(err) },
+      SERVICE, 'writeFile',
+      [{ ns: opts.ns, fileName: opts.fileName, data: opts.data, offset: opts.offset || 0 }]
+    )
+  })
+}
+
+/**
+ * Delete a file from the app's private storage.
+ *
+ * @param {Object} opts
+ * @param {string} opts.ns       - Namespace
+ * @param {string} opts.fileName - File name
+ * @returns {Promise<{success}>}
+ */
+exports.deleteFile = function (opts) {
+  return new Promise(function (resolve, reject) {
+    exec(
+      function (result) { resolve(result) },
+      function (err) { reject(err) },
+      SERVICE, 'deleteFile',
+      [{ ns: opts.ns, fileName: opts.fileName }]
+    )
+  })
+}
+
+/**
+ * Read a file from the app's private storage as base64-encoded data.
+ *
+ * @param {Object} opts
+ * @param {string} opts.ns       - Namespace
+ * @param {string} opts.fileName - File name
+ * @returns {Promise<{success, data (base64), size}>}
+ */
+exports.readFile = function (opts) {
+  return new Promise(function (resolve, reject) {
+    exec(
+      function (result) { resolve(result) },
+      function (err) { reject(err) },
+      SERVICE, 'readFile',
+      [{ ns: opts.ns, fileName: opts.fileName }]
+    )
+  })
+}
+
+/**
  * Native HTTP GET that bypasses WebView CORS.
  * Uses Java HttpURLConnection with manual redirect following.
  *

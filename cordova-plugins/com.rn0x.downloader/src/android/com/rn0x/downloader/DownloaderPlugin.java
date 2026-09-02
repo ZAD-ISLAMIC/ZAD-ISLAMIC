@@ -65,6 +65,18 @@ public class DownloaderPlugin extends CordovaPlugin {
             case "httpGet":
                 httpGet(args.getJSONObject(0), ctx);
                 return true;
+            case "getAppFilePath":
+                getAppFilePath(args.getJSONObject(0), ctx);
+                return true;
+            case "writeFile":
+                writeFile(args.getJSONObject(0), ctx);
+                return true;
+            case "deleteFile":
+                deleteFile(args.getJSONObject(0), ctx);
+                return true;
+            case "readFile":
+                readFile(args.getJSONObject(0), ctx);
+                return true;
             default:
                 return false;
         }
@@ -388,5 +400,172 @@ public class DownloaderPlugin extends CordovaPlugin {
         // Don't cancel work — let downloads continue in background
         progressCallbacks.clear();
         super.onDestroy();
+    }
+
+    /* ------------------------------------------------------------------ *\
+     * File management helpers (replace cordova-plugin-file usage)
+     * ------------------------------------------------------------------ */
+
+    /**
+     * Returns the base directory for app-private audio storage.
+     * Path: /data/user/0/<pkg>/files/altaqwaa-audios/
+     */
+    private static File baseAudioDir(Context ctx) {
+        return new File(ctx.getFilesDir(), "altaqwaa-audios");
+    }
+
+    /**
+     * Get or create the namespace directory, then return the file info.
+     * Path format: <baseDir>/<ns>/<fileName>
+     */
+    private void getAppFilePath(JSONObject opts, CallbackContext ctx) throws JSONException {
+        String ns = opts.optString("ns", "default");
+        String fileName = opts.optString("fileName", "");
+        if (fileName.isEmpty()) {
+            ctx.error("fileName is required");
+            return;
+        }
+        try {
+            File baseDir = baseAudioDir(cordova.getContext());
+            if (!baseDir.exists()) baseDir.mkdirs();
+            File nsDir = new File(baseDir, ns);
+            if (!nsDir.exists()) nsDir.mkdirs();
+            File file = new File(nsDir, fileName);
+            JSONObject result = new JSONObject();
+            result.put("path", file.getAbsolutePath());
+            result.put("exists", file.exists());
+            result.put("size", file.exists() ? file.length() : 0);
+            ctx.success(result);
+        } catch (Exception e) {
+            ctx.error(e.getMessage());
+        }
+    }
+
+    /**
+     * Write base64-encoded data to a file in the app's private storage.
+     * Supports append via `offset`. Creates parent directories automatically.
+     * Params: { ns, fileName, data (base64), offset }
+     */
+    private void writeFile(JSONObject opts, CallbackContext ctx) throws JSONException {
+        final String ns = opts.optString("ns", "default");
+        final String fileName = opts.optString("fileName", "");
+        final String dataBase64 = opts.optString("data", "");
+        final long offset = opts.optLong("offset", 0);
+
+        if (fileName.isEmpty()) {
+            ctx.error("fileName is required");
+            return;
+        }
+
+        cordova.getThreadPool().execute(() -> {
+            try {
+                File baseDir = baseAudioDir(cordova.getContext());
+                if (!baseDir.exists()) baseDir.mkdirs();
+                File nsDir = new File(baseDir, ns);
+                if (!nsDir.exists()) nsDir.mkdirs();
+                File file = new File(nsDir, fileName);
+
+                byte[] data;
+                if (dataBase64.isEmpty()) {
+                    data = new byte[0];
+                } else {
+                    data = android.util.Base64.decode(dataBase64, android.util.Base64.NO_WRAP);
+                }
+
+                java.io.FileOutputStream fos;
+                if (offset > 0 && file.exists()) {
+                    fos = new java.io.FileOutputStream(file, true); // append mode
+                    fos.getChannel().position(offset);
+                } else {
+                    fos = new java.io.FileOutputStream(file);
+                }
+                fos.write(data);
+                fos.flush();
+                fos.close();
+
+                JSONObject result = new JSONObject();
+                result.put("success", true);
+                result.put("bytesWritten", data.length);
+                result.put("totalSize", file.length());
+                ctx.success(result);
+            } catch (Exception e) {
+                ctx.error(e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Read a file from the app's private storage and return as base64.
+     * Params: { ns, fileName }
+     */
+    private void readFile(JSONObject opts, CallbackContext ctx) throws JSONException {
+        final String ns = opts.optString("ns", "default");
+        final String fileName = opts.optString("fileName", "");
+
+        if (fileName.isEmpty()) {
+            ctx.error("fileName is required");
+            return;
+        }
+
+        cordova.getThreadPool().execute(() -> {
+            try {
+                File baseDir = baseAudioDir(cordova.getContext());
+                File nsDir = new File(baseDir, ns);
+                File file = new File(nsDir, fileName);
+                if (!file.exists()) {
+                    ctx.error("File not found: " + file.getAbsolutePath());
+                    return;
+                }
+                long fileSize = file.length();
+                // Guard against impossibly large files (> 2 GB) to avoid OOM.
+                if (fileSize > Integer.MAX_VALUE) {
+                    ctx.error("File too large: " + fileSize + " bytes");
+                    return;
+                }
+                byte[] data = new byte[(int) fileSize];
+                java.io.FileInputStream fis = new java.io.FileInputStream(file);
+                int read = fis.read(data);
+                fis.close();
+                if (read < data.length) {
+                    data = java.util.Arrays.copyOf(data, read);
+                }
+                String base64 = android.util.Base64.encodeToString(data, android.util.Base64.NO_WRAP);
+                JSONObject result = new JSONObject();
+                result.put("success", true);
+                result.put("data", base64);
+                result.put("size", data.length);
+                ctx.success(result);
+            } catch (Exception e) {
+                ctx.error(e.getMessage());
+            }
+        });
+    }
+
+    /**
+     * Delete a file from the app's private storage.
+     * Params: { ns, fileName }
+     */
+    private void deleteFile(JSONObject opts, CallbackContext ctx) throws JSONException {
+        final String ns = opts.optString("ns", "default");
+        final String fileName = opts.optString("fileName", "");
+
+        if (fileName.isEmpty()) {
+            ctx.error("fileName is required");
+            return;
+        }
+
+        cordova.getThreadPool().execute(() -> {
+            try {
+                File baseDir = baseAudioDir(cordova.getContext());
+                File nsDir = new File(baseDir, ns);
+                File file = new File(nsDir, fileName);
+                boolean deleted = file.delete();
+                JSONObject result = new JSONObject();
+                result.put("success", deleted || !file.exists());
+                ctx.success(result);
+            } catch (Exception e) {
+                ctx.error(e.getMessage());
+            }
+        });
     }
 }

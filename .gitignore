@@ -12,3 +12,5 @@ module/
 # Secrets — never commit
 tqw.keystore
 build.json
+
+.hermes

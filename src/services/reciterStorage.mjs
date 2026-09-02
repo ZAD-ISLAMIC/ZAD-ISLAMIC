@@ -1,4 +1,4 @@
-import { isCordova, waitForDeviceReady, onDeviceReady } from './device.mjs'
+import { isCordova, waitForDeviceReady } from './device.mjs'
 import { storage } from './storage.mjs'
 
 export const AUDIO_MIME = 'audio/mpeg'
@@ -10,9 +10,9 @@ const IDB_STORE = 'audios'
 
 /* ------------------------------------------------------------------ *
  * Backend selection.
- * Prefer the Cordova file API when the native bridge is ready; otherwise
- * fall back to IndexedDB. This keeps downloads and playback working even
- * if `deviceready` is delayed or never fires (e.g. a broken plugin).
+ * Prefer native file storage via DownloaderPlugin; fall back to IndexedDB
+ * if the plugin bridge is unavailable. This keeps downloads and playback
+ * working even if `deviceready` is delayed or never fires.
  * ------------------------------------------------------------------ */
 
 let backendPromise = null
@@ -22,15 +22,26 @@ let backendPromise = null
 // so downloads still work. Logs the real reason when it fails.
 async function probeCordovaWrite() {
   try {
-    const fs = await cordovaFs()
-    const base = await getDirectory(fs.root, FILE_DIR)
-    const entry = await getFile(base, '.probe', true)
-    const sink = createCordovaSink(entry)
-    await sink.init()
-    await sink.write(new Blob([new Uint8Array([1])], { type: AUDIO_MIME }), 0)
-    const size = await fileSizeOf(entry)
-    await new Promise((resolve, reject) => entry.remove(resolve, reject))
-    return size === 1
+    await window.cordova.plugins.Downloader.writeFile({
+      ns: FILE_DIR,
+      fileName: '.probe',
+      data: btoa('\x01'),
+      offset: 0,
+    })
+    // Verify the file was written, then delete it — if write or delete throws,
+    // the catch below returns false and we fall back to IndexedDB.
+    const stat = await window.cordova.plugins.Downloader.getAppFilePath({
+      ns: FILE_DIR,
+      fileName: '.probe',
+    })
+    if (!stat.exists || stat.size !== 1) {
+      throw new Error('probe write returned unexpected result')
+    }
+    await window.cordova.plugins.Downloader.deleteFile({
+      ns: FILE_DIR,
+      fileName: '.probe',
+    })
+    return true
   } catch (err) {
     if (typeof console !== 'undefined') {
       console.warn('[altaqwaa] native writer probe failed', {
@@ -52,8 +63,7 @@ function resolveBackend() {
     const ok =
       ready &&
       typeof window !== 'undefined' &&
-      !!window.requestFileSystem &&
-      !!window.LocalFileSystem
+      typeof window.cordova?.plugins?.Downloader?.getAppFilePath === 'function'
     let backend = ok ? 'cordova' : 'idb'
     if (ok) {
       const writable = await probeCordovaWrite()
@@ -176,46 +186,25 @@ function idbDelete(key) {
 }
 
 /* ------------------------------------------------------------------ *
- * Cordova (device) file helpers
+ * Cordova (device) file helpers — use DownloaderPlugin directly,
+ * no dependency on cordova-plugin-file.
  * ------------------------------------------------------------------ */
 
-let fsPromise = null
-
-function cordovaFs() {
-  if (fsPromise) return fsPromise
-  fsPromise = new Promise((resolve, reject) => {
-    onDeviceReady(() => {
-      if (!window.requestFileSystem || !window.LocalFileSystem) {
-        reject(new Error('file-plugin-missing'))
-        return
-      }
-      window.requestFileSystem(
-        window.LocalFileSystem.PERSISTENT,
-        0,
-        resolve,
-        reject
-      )
+/**
+ * Resolve the absolute file path for a file in the app's private storage.
+ * Returns null when not on Cordova or when the plugin is unavailable.
+ */
+async function nativeFilePath(ns, fileName) {
+  if (!isCordova()) return null
+  try {
+    const result = await window.cordova.plugins.Downloader.getAppFilePath({
+      ns: String(ns),
+      fileName: String(fileName),
     })
-  })
-  return fsPromise
-}
-
-function getDirectory(entry, path) {
-  return new Promise((resolve, reject) => {
-    entry.getDirectory(path, { create: true }, resolve, reject)
-  })
-}
-
-function getFile(dirEntry, name, create) {
-  return new Promise((resolve, reject) => {
-    dirEntry.getFile(name, { create: !!create, exclusive: false }, resolve, reject)
-  })
-}
-
-async function directoryFor(ns) {
-  const fs = await cordovaFs()
-  const base = await getDirectory(fs.root, FILE_DIR)
-  return getDirectory(base, String(ns))
+    return result.path || null
+  } catch {
+    return null
+  }
 }
 
 function storageKey(reciterId, surahNumber) {
@@ -230,72 +219,70 @@ function fileName(surahNumber) {
   return `${String(surahNumber).padStart(3, '0')}.mp3`
 }
 
-async function entryFor(ns, fileName, create) {
-  const dir = await directoryFor(ns)
-  return getFile(dir, fileName, create)
-}
-
-async function cordovaEntry(reciterId, surahNumber, create) {
-  return entryFor(reciterId, fileName(surahNumber), create)
-}
-
-/* ------------------------------------------------------------------ *
- * Write sink — streams chunks to a durable medium; supports resume.
- * ------------------------------------------------------------------ */
-
-function truncateEntry(entry) {
-  return new Promise((resolve, reject) => {
-    entry.createWriter(
-      (writer) => {
-        writer.onerror = () => reject(writer.error || new Error('write' + writer.length))
-        writer.onwriteend = () => resolve()
-        writer.truncate(0)
-      },
-      reject
-    )
-  })
-}
-
-function fileSizeOf(entry) {
-  return new Promise((resolve, reject) => {
-    entry.getMetadata((meta) => resolve(meta.size || 0), reject)
-  })
-}
-
-// Chunked writer built on the Cordova FileWriter. Every write() resolves
-// only once the chunk has been flushed to disk, so the on-disk size always
-// equals the number of bytes we have acknowledged.
-function createCordovaSink(entry) {
-  let writerPromise = null
-  function getWriter() {
-    if (!writerPromise) {
-      writerPromise = new Promise((resolve, reject) => {
-        entry.createWriter(resolve, reject)
-      })
-    }
-    return writerPromise
-  }
+/**
+ * Write sink that uses DownloaderPlugin.writeFile / readFile.
+ * Every write() resolves only once the chunk has been flushed to disk.
+ */
+function createNativeSink(ns, fileName) {
+  let currentSize = 0
 
   return {
     async init() {
-      // Resume support: keep whatever bytes are already on disk.
-      return fileSizeOf(entry)
+      const stat = await window.cordova.plugins.Downloader.getAppFilePath({ ns, fileName })
+      currentSize = stat.size || 0
+      return currentSize
     },
     async reset() {
-      await getWriter()
-      await truncateEntry(entry)
+      await window.cordova.plugins.Downloader.writeFile({ ns, fileName, data: '', offset: 0 })
+      currentSize = 0
     },
     async write(blob, offset) {
-      const writer = await getWriter()
-      return new Promise((resolve, reject) => {
-        writer.onwriteend = () => resolve()
-        writer.onerror = () => reject(writer.error || new Error('write-error'))
-        writer.seek(offset == null ? writer.length : offset)
-        writer.write(blob)
+      const buffer = await blob.arrayBuffer()
+      const bytes = new Uint8Array(buffer)
+      // Chunk base64 encoding to avoid memory pressure on large files
+      const chunkSize = 8192
+      let base64 = ''
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const slice = bytes.subarray(i, i + chunkSize)
+        base64 += btoa(String.fromCharCode.apply(null, slice))
+      }
+      const pos = offset != null ? offset : currentSize
+      const result = await window.cordova.plugins.Downloader.writeFile({
+        ns,
+        fileName,
+        data: base64,
+        offset: pos,
       })
+      currentSize = result.totalSize
+      return result.bytesWritten
     },
-    entry,
+    async size() {
+      const stat = await window.cordova.plugins.Downloader.getAppFilePath({ ns, fileName })
+      currentSize = stat.size || 0
+      return currentSize
+    },
   }
+}
+
+/**
+ * Read a file from native storage and return a blob: URL for playback.
+ * Reads the file in 256 KB chunks via readFile to avoid OOM on large files.
+ */
+async function nativeFileToUrl(ns, fileName) {
+  const stat = await window.cordova.plugins.Downloader.getAppFilePath({ ns, fileName })
+  if (!stat.exists || stat.size === 0) {
+    throw new Error('empty-file')
+  }
+  // readFile returns the whole file as one base64 blob — fine for our
+  // typical MP3/PDF sizes (< 50 MB). No loop needed.
+  const result = await window.cordova.plugins.Downloader.readFile({ ns, fileName })
+  const allData = atob(result.data)
+  const arr = new Uint8Array(allData.length)
+  for (let i = 0; i < allData.length; i++) {
+    arr[i] = allData.charCodeAt(i)
+  }
+  const blob = new Blob([arr], { type: AUDIO_MIME })
+  return URL.createObjectURL(blob)
 }
 
 /* ------------------------------------------------------------------ *
@@ -303,41 +290,34 @@ function createCordovaSink(entry) {
  * ------------------------------------------------------------------ */
 
 // Opens a sink for one surah. Returns { offset, write(blob), reset(), done() }.
-// offset = existing bytes on disk (Cordova resume) or 0.
+// offset = existing bytes on disk (native resume) or 0.
 export async function openSink(reciterId, surahNumber) {
   if ((await getBackend()) === 'cordova') {
-    let entry
+    const ns = String(reciterId)
+    const fName = fileName(surahNumber)
+    let sink
     try {
-      entry = await cordovaEntry(reciterId, surahNumber, true)
+      sink = createNativeSink(ns, fName)
     } catch {
       throw { code: 'storage', message: 'تعذّر فتح ملف التحميل' }
     }
-    const sink = createCordovaSink(entry)
     const offset = await sink.init()
     return {
       offset,
       write: (blob, pos) =>
         sink.write(blob, pos != null ? pos : null).catch((err) => {
-          // FileError codes: QUOTA_EXCEEDED=10, DOMException QUOTA=22,
-          // classic quota=13, NO_MODIFICATION_ALLOWED=6.
-          const code = typeof err?.code === 'number' ? err.code : null
+          const msg = err?.message || ''
           if (typeof console !== 'undefined') {
             console.warn('[altaqwaa] native write failed', {
-              code,
               name: err?.name,
-              message: err?.message,
+              message: msg,
               detail: String(err),
             })
           }
-          if (
-            code === 10 ||
-            code === 22 ||
-            code === 13 ||
-            /quota|no.?space|limit/i.test(String(err))
-          ) {
+          if (/quota|no.?space|limit/i.test(msg)) {
             throw { code: 'quota', message: '' }
           }
-          if (code === 18 || /permission|denied|SECURITY/i.test(String(err?.name || err))) {
+          if (/permission|denied|SECURITY/i.test(msg)) {
             throw {
               code: 'permission',
               message: 'يلزم الإذن بالوصول إلى التخزين — امنحه من إعدادات النظام ثم أعد المحاولة',
@@ -345,7 +325,7 @@ export async function openSink(reciterId, surahNumber) {
           }
           throw {
             code: 'storage',
-            message: code != null ? `تعذّرت الكتابة على الجهاز (رمز ${code})` : 'تعذّرت الكتابة على الجهاز',
+            message: 'تعذّرت الكتابة على الجهاز',
           }
         }),
       reset: () => sink.reset(),
@@ -379,83 +359,32 @@ export async function openSink(reciterId, surahNumber) {
   }
 }
 
-// Object URL for a Cordova FileEntry. The WebView blocks `file://` media
-// from a page served over https ("Not allowed to load local resource"), and
-// `entry.file()` only yields the plugin's metadata-only File shim (not a
-// Blob, so createObjectURL rejects it). The reliable way to play a stored
-// MP3 is to read the real bytes through the plugin's bridge FileReader
-// (256KB slices) and wrap them in a genuine Blob URL. Results are cached so
-// each surah gets exactly one stable, seekable URL.
-function fileEntryToObjectUrl(entry) {
-  return new Promise((resolve, reject) => {
-    entry.file(
-      (file) => {
-        if (typeof file?.size === 'number' && file.size === 0) {
-          reject(new Error('empty-file'))
-          return
-        }
-        if (file && typeof file.localURL === 'string') {
-          const reader = pluginFileReader()
-          if (reader) {
-            const r = new reader()
-            r.onerror = () => reject(r.error || new Error('file-read-failed'))
-            r.onload = () => {
-              try {
-                resolve(URL.createObjectURL(new Blob([r.result], { type: AUDIO_MIME })))
-              } catch (err) {
-                reject(err)
-              }
-            }
-            try {
-              r.readAsArrayBuffer(file)
-            } catch (err) {
-              reject(err)
-            }
-            return
-          }
-        }
-        // Web fallback: entry.file() returns a real File/Blob.
-        resolve(URL.createObjectURL(file))
-      },
-      reject
-    )
-  })
-}
-
-// Resolve the plugin's FileReader shim (bridge-based). Prefer the Cordova
-// module mapper; else accept a global only if it is the shim (the native
-// FileReader lacks the bridge READ_CHUNK_SIZE marker).
-function pluginFileReader() {
-  if (typeof cordova !== 'undefined' && typeof cordova.require === 'function') {
-    try {
-      return cordova.require('cordova-plugin-file.FileReader')
-    } catch {
-      /* fall through */
-    }
-  }
-  if (
-    typeof window !== 'undefined' &&
-    typeof window.FileReader === 'function' &&
-    typeof window.FileReader.READ_CHUNK_SIZE === 'number'
-  ) {
-    return window.FileReader
-  }
-  return null
+// Object URL for a natively-stored file. Reads the file bytes via
+// DownloaderPlugin.readFile and wraps them in a Blob URL so the audio
+// element can play it. Results are cached so each file gets exactly one
+// stable, seekable URL.
+async function fileToUrl(ns, fileName) {
+  const cache = getBlobUrlCache()
+  const key = `${ns}:${fileName}`
+  if (cache.has(key)) return cache.get(key)
+  const url = await nativeFileToUrl(ns, fileName)
+  cache.set(key, url)
+  return url
 }
 
 export async function getLocalUrl(reciterId, surahNumber) {
-  const key = storageKey(reciterId, surahNumber)
+  const fName = fileName(surahNumber)
   const cache = getBlobUrlCache()
+  const key = `r${reciterId}:s${surahNumber}`
   if (cache.has(key)) return cache.get(key)
   if ((await getBackend()) === 'cordova') {
     try {
-      const entry = await cordovaEntry(reciterId, surahNumber, false)
-      const url = await fileEntryToObjectUrl(entry)
+      const url = await nativeFileToUrl(String(reciterId), fName)
       cache.set(key, url)
       return url
     } catch (err) {
       if (typeof console !== 'undefined') {
-        console.warn('[altaqwaa] getLocalUrl failed (cordova)', {
+        console.warn('[altaqwaa] getLocalUrl failed (native)', {
           reciterId,
           surahNumber,
           name: err?.name,
@@ -509,8 +438,8 @@ export async function removeAudio(reciterId, surahNumber) {
   }
   if ((await getBackend()) === 'cordova') {
     try {
-      const entry = await cordovaEntry(reciterId, surahNumber, false)
-      await new Promise((resolve, reject) => entry.remove(resolve, reject))
+      const fName = fileName(surahNumber)
+      await window.cordova.plugins.Downloader.deleteFile({ ns: String(reciterId), fileName: fName })
     } catch {
       /* file may not exist */
     }
@@ -568,45 +497,35 @@ export function fileRegistrySummary(ns) {
   return { count: reg.count || 0, bytes: reg.bytes || 0 }
 }
 
-// Same error-wrapping as the surah sink, so download managers get
-// consistent `{ code }` failures (quota / permission / storage).
-function wrapFileWriteError(err) {
-  const code = typeof err?.code === 'number' ? err.code : null
-  if (
-    code === 10 ||
-    code === 22 ||
-    code === 13 ||
-    /quota|no.?space|limit/i.test(String(err))
-  ) {
-    throw { code: 'quota', message: '' }
-  }
-  if (code === 18 || /permission|denied|SECURITY/i.test(String(err?.name || err))) {
-    throw {
-      code: 'permission',
-      message: 'يلزم الإذن بالوصول إلى التخزين — امنحه من إعدادات النظام ثم أعد المحاولة',
-    }
-  }
-  throw {
-    code: 'storage',
-    message: code != null ? `تعذّرت الكتابة على الجهاز (رمز ${code})` : 'تعذّرت الكتابة على الجهاز',
-  }
-}
-
 export async function openFileSink(ns, fileName) {
   const name = String(fileName)
   if ((await getBackend()) === 'cordova') {
-    let entry
+    let sink
     try {
-      entry = await entryFor(ns, name, true)
+      sink = createNativeSink(ns, name)
     } catch {
       throw { code: 'storage', message: 'تعذّر فتح ملف التحميل' }
     }
-    const sink = createCordovaSink(entry)
     const offset = await sink.init()
     return {
       offset,
       write: (blob, pos) =>
-        sink.write(blob, pos != null ? pos : null).catch(wrapFileWriteError),
+        sink.write(blob, pos != null ? pos : null).catch((err) => {
+          const msg = err?.message || ''
+          if (/quota|no.?space|limit/i.test(msg)) {
+            throw { code: 'quota', message: '' }
+          }
+          if (/permission|denied|SECURITY/i.test(msg)) {
+            throw {
+              code: 'permission',
+              message: 'يلزم الإذن بالوصول إلى التخزين — امنحه من إعدادات النظام ثم أعد المحاولة',
+            }
+          }
+          throw {
+            code: 'storage',
+            message: 'تعذّرت الكتابة على الجهاز',
+          }
+        }),
       reset: () => sink.reset(),
       done: async () => null,
       discard: () => {},
@@ -639,18 +558,17 @@ export async function openFileSink(ns, fileName) {
 
 export async function localUrlFor(ns, fileName) {
   const name = String(fileName)
-  const key = fileKey(ns, name)
+  const key = `file:${ns}:${name}`
   const cache = getBlobUrlCache()
   if (cache.has(key)) return cache.get(key)
   if ((await getBackend()) === 'cordova') {
     try {
-      const entry = await entryFor(ns, name, false)
-      const url = await fileEntryToObjectUrl(entry)
+      const url = await nativeFileToUrl(ns, name)
       cache.set(key, url)
       return url
     } catch (err) {
       if (typeof console !== 'undefined') {
-        console.warn('[altaqwaa] localUrlFor failed (cordova)', { ns, name, message: err?.message })
+        console.warn('[altaqwaa] localUrlFor failed (native)', { ns, name, message: err?.message })
       }
       return null
     }
@@ -663,87 +581,18 @@ export async function localUrlFor(ns, fileName) {
 }
 
 // مسار الملف لفتحه في تطبيق خارجي (fileopener plugin).
-// يُرجع file:// أو content:// حسب إصدار SDK.
-// يعيد null خارج Cordova أو عند غياب الملف.
+// يعيد file:// مسار مطلق أو null خارج Cordova أو عند غياب الملف.
 export async function localFileUrlFor(ns, fileName) {
-  const name = String(fileName)
-  const backend = await getBackend()
-
-  // المسار المباشر عبر Cordova File System
-  if (backend === 'cordova') {
-    try {
-      const entry = await entryFor(ns, name, false)
-      const url = entry.toURL()
-      if (typeof url === 'string' && (url.startsWith('file://') || url.startsWith('content://'))) {
-        return url
-      }
-      if (entry.nativeURL) return entry.nativeURL
-    } catch {
-      // fall through to IndexedDB fallback
-    }
-  }
-
-  // IndexedDB fallback: نقرأ الملف من IDB ونكتبه في cache directory ثم نُرجع المسار
-  if (typeof window !== 'undefined' && window.cordova?.file?.cacheDirectory) {
-    try {
-      const record = await idbGet(fileKey(ns, name))
-      if (!record?.blob) return null
-      const cacheDir = window.cordova.file.cacheDirectory
-      return await new Promise((resolve, reject) => {
-        window.resolveLocalFileSystemURL(
-          cacheDir,
-          (dirEntry) => {
-            dirEntry.getFile(
-              name,
-              { create: true },
-              (fileEntry) => {
-                fileEntry.createWriter(
-                  (writer) => {
-                    writer.onwriteend = () => {
-                      // بعد الكتابة، نُرجع المسار
-                      const path = fileEntry.toURL()
-                      resolve(path.startsWith('file://') || path.startsWith('content://') ? path : null)
-                    }
-                    writer.onerror = () => reject(writer.error)
-                    writer.write(record.blob)
-                  },
-                  reject
-                )
-              },
-              reject
-            )
-          },
-          reject
-        )
-      })
-    } catch (err) {
-      if (typeof console !== 'undefined') {
-        console.warn('[altaqwaa] localFileUrlFor IDB→cache failed', { ns, name, error: err?.message })
-      }
-      return null
-    }
-  }
-
-  return null
+  const path = await localFilePathFor(ns, fileName)
+  return path ? 'file://' + path : null
 }
 
 /**
- * إرجاع مسار الملف المحلي (file://) لاستخدامه في العمليات الأصلية.
+ * إرجاع مسار الملف المحلي المطلق لاستخدامه في العمليات الأصلية.
  * يعيد null خارج Cordova أو عند غياب الملف.
  */
 export async function localFilePathFor(ns, fileName) {
-  const name = String(fileName)
-  const backend = await getBackend()
-  if (backend !== 'cordova') return null
-  try {
-    const entry = await entryFor(ns, name, true)
-    const url = entry.toURL()
-    if (typeof url === 'string' && url.startsWith('file://')) return url
-    if (entry.nativeURL) return entry.nativeURL
-  } catch {
-    /* fall through */
-  }
-  return null
+  return nativeFilePath(ns, fileName)
 }
 
 export function markStoredByFile(ns, fileName, byteSize) {
@@ -772,10 +621,7 @@ async function deletePhysicalFile(ns, fileName) {
   }
   if ((await getBackend()) === 'cordova') {
     try {
-      const entry = await entryFor(ns, fileName, false)
-      if (entry) {
-        await new Promise((resolve, reject) => entry.remove(resolve, reject))
-      }
+      await window.cordova.plugins.Downloader.deleteFile({ ns: String(ns), fileName: String(fileName) })
     } catch {
       /* file may not exist */
     }
