@@ -71,9 +71,11 @@ export default function SettingsScreen() {
     }
     window.addEventListener('resume', onVisible)
     window.addEventListener('focus', onVisible)
+    document.addEventListener('visibilitychange', onVisible)
     return () => {
       window.removeEventListener('resume', onVisible)
       window.removeEventListener('focus', onVisible)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])
 
@@ -158,6 +160,7 @@ export default function SettingsScreen() {
     const value = v / 100
     setConfig((c) => ({ ...c, adhanVolume: value }))
     setAdhanVolume(value)
+    getAudioState().then(setAudio)
   }
 
   const audioStateText =
