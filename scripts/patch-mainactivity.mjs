@@ -19,10 +19,20 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const ROOT = process.cwd()
-const MAIN_ACTIVITY = resolve(
+const JAVA_DIR = resolve(
   ROOT,
-  'platforms/android/app/src/main/java/com/rn0x/altaqwaa/MainActivity.java'
+  'platforms/android/app/src/main/java/com/rn0x/altaqwaa'
 )
+const MAIN_ACTIVITY = resolve(JAVA_DIR, 'MainActivity.java')
+const ACTIVITY_PLACEHOLDER = resolve(JAVA_DIR, 'Activity.java')
+
+// If cordova-android found a generic Activity.java placeholder but we need
+// MainActivity (which AndroidManifest.xml references), rename/migrate first.
+if (!existsSync(MAIN_ACTIVITY) && existsSync(ACTIVITY_PLACEHOLDER)) {
+  writeFileSync(MAIN_ACTIVITY, readFileSync(ACTIVITY_PLACEHOLDER, 'utf-8'))
+  try { require('node:fs').unlinkSync(ACTIVITY_PLACEHOLDER) } catch {}
+  console.log('[patch-mainactivity] migrated Activity.java → MainActivity.java')
+}
 
 if (!existsSync(MAIN_ACTIVITY)) {
   console.log('[patch-mainactivity] MainActivity.java not found — skip')
@@ -61,8 +71,10 @@ package com.rn0x.altaqwaa;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import java.io.File;
 
@@ -71,6 +83,23 @@ import org.apache.cordova.*;
 public class MainActivity extends CordovaActivity
 {
     private static final String TAG = "Altaqwaa";
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP
+                || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            // Let the user adjust the adhan volume with hardware keys while
+            // the adhan is ringing — otherwise pass through to the system so
+            // normal ringer/media volume changes still work.
+            if (com.rn0x.prayerwatch.AdhanPlayback.isPlaying()) {
+                int dir = (keyCode == KeyEvent.KEYCODE_VOLUME_UP)
+                        ? AudioManager.ADJUST_RAISE
+                        : AudioManager.ADJUST_LOWER;
+                return com.rn0x.prayerwatch.AdhanPlayback.handleVolumeKey(this, dir);
+            }
+        }
+        return super.onKeyDown(keyCode, event);
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState)
