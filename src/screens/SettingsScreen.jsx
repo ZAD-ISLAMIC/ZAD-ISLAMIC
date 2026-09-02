@@ -63,6 +63,18 @@ export default function SettingsScreen() {
   useEffect(() => {
     getWatchStatus().then(setStatus)
     getAudioState().then(setAudio)
+    // Refresh status/audio whenever the app comes back to foreground
+    // (e.g. after granting/denying permissions in system settings).
+    const onVisible = () => {
+      getWatchStatus().then(setStatus)
+      getAudioState().then(setAudio)
+    }
+    window.addEventListener('resume', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      window.removeEventListener('resume', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
   }, [])
 
   const locationText =
