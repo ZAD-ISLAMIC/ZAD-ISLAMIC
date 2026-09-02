@@ -2,13 +2,20 @@
 
 كل التغييرات الملحوظة على تطبيق «التقوى».
 
+## [3.0.4] - 2026-09-03
+
+### إصلاح الأذون
+- **إصلاح خطأ 16KB صفحة الذاكرة** في Google Play Store:
+  - إضافة `android:extractNativeLibs="true"` في AndroidManifest.xml
+  - يسمح بضغط المكتبات الأصلية داخل الـ bundle مع استخراجها عند التثبيت
+
 ## [3.0.3] - 2026-09-03
 
 ### تحسينات تقنية
-- **إزالة `cordova-plugin-file`**: حُذف الاعتماد كلياً واستُبدل بـ `com.rn0x.downloader@1.3.1` الذي يدير الملفات مباشرة عبر `Context.getFilesDir()` دون جسر WebView.
+- **إزالة `cordova-plugin-file`**: حُذف الاعتماد كليااً واستُبدل بـ `com.rn0x.downloader@1.3.1` الذي يدير الملفات مباشرة عبر `Context.getFilesDir()` دون جسر WebView.
 - إضافة `getAppFilePath`، `writeFile`، `readFile`، `deleteFile` إلى `com.rn0x.downloader`.
 - إعادة كتابة `reciterStorage.mjs` بالكامل لاستخدام الـ plugin المخصص.
-- إصلاح `probeCordovaWrite` ليكون صريحاً في التحقق من حجم الملف.
+- إصلاح `probeCordovaWrite` ليكون صريحاُ في التحقق من حجم الملف.
 - حماية `readFile` من ملفات > 2GB لتجنب OOM.
 
 ## [3.0.2] - 2026-08-22
