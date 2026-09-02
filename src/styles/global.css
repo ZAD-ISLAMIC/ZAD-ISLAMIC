@@ -5281,6 +5281,7 @@ h3 {
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 
 .set-sheet__volume .adhan-modal__volume-slider {
@@ -5593,6 +5594,7 @@ h3 {
   border-radius: 12px;
   background: var(--surface);
   border: 1px solid var(--border);
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
   font-size: 13px;
   font-weight: 600;
   color: var(--text);
