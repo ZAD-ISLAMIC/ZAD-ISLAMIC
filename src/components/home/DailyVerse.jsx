@@ -16,14 +16,6 @@ export function DailyVerse() {
           <Icon name="book-open" size={15} />
           {verse ? 'آية اليوم' : 'ذكر اليوم'}
         </h3>
-        <button
-          className="home-verse__more"
-          onClick={() => navigate('/quran/0')}
-          type="button"
-        >
-          المصحف
-          <Icon name="arrow-left" size={12} />
-        </button>
       </header>
 
       <p className="home-verse__text">{verse ? verse.text : dhikr?.text || ''}</p>

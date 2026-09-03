@@ -13,15 +13,15 @@ import { arabicDigits } from '../utils/arabic.mjs'
 import { Icon } from '../components/ui/Icon.jsx'
 import { LocationSheet } from '../components/prayer/LocationSheet.jsx'
 import { SettingsSheet } from '../components/prayer/SettingsSheet.jsx'
+import { useSheets } from '../components/layout/SheetContext.jsx'
 
 const LABELS = getPrayerLabels()
 
 export default function PrayerScreen() {
   const navigate = useNavigate()
+  const { showLocation, showSettings, openSettings, openLocation, closeSettings, closeLocation } = useSheets()
   const [snapshot, setSnapshot] = useState(() => getWatchSnapshot())
   const [now, setNow] = useState(() => getNowMs())
-  const [showLocation, setShowLocation] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
 
   const config = (snapshot && snapshot.config) || loadConfig()
   const location = (snapshot && snapshot.location) || { label: '' }
@@ -30,7 +30,6 @@ export default function PrayerScreen() {
       ? [location.cityAr, location.countryAr].filter(Boolean).join('، ')
       : (location?.label || 'تحديد الموقع')
 
-  // live clock for the countdown — use RAF for smoother updates on 120Hz displays
   useEffect(() => {
     let raf
     let last = 0
@@ -45,7 +44,6 @@ export default function PrayerScreen() {
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  // snapshot subscription (the global loop in main.jsx keeps it fresh)
   useEffect(() => {
     const off = onWatchSnapshot(setSnapshot)
     return off
@@ -54,12 +52,6 @@ export default function PrayerScreen() {
   const events = snapshot?.events || []
   const nowMs = now
   const next = snapshot?.next
-
-  /**
-   * Match the native notification: find a prayer that fired within the last
-   * 30 min. If found, show it counting up (+) from the adhan; otherwise show
-   * the next upcoming prayer with a negative (−) countdown until its time.
-   */
   const fired = currentFired(events, nowMs)
   const target = fired || next
 
@@ -79,7 +71,7 @@ export default function PrayerScreen() {
   const currentPrayerKey = fired?.key
 
   const hijri = useMemo(() => todayHijri(), [now, snapshot?.dayKey])
-  
+
   return (
     <section className="screen prayer">
       <div className="prayer__hero">
@@ -96,7 +88,7 @@ export default function PrayerScreen() {
           </span>
         </div>
 
-        <button className="prayer__city" onClick={() => setShowLocation(true)} type="button">
+        <button className="prayer__city" onClick={openLocation} type="button">
           <Icon name="map-pin" size={16} />
           <span>{locationText}</span>
           <Icon name="chevron-down" size={16} />
@@ -122,7 +114,7 @@ export default function PrayerScreen() {
         </div>
       </div>
 
-      <button className="prayer__settings" onClick={() => setShowSettings(true)} type="button">
+      <button className="prayer__settings" onClick={openSettings} type="button">
         <Icon name="gear" size={16} />
         <span>إعدادات الحساب والطريقة</span>
         <Icon name="chevron-down" size={14} />
@@ -159,8 +151,8 @@ export default function PrayerScreen() {
         })}
       </ul>
 
-      {showLocation && <LocationSheet onClose={() => setShowLocation(false)} />}
-      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
+      {showLocation && <LocationSheet onClose={closeLocation} />}
+      {showSettings && <SettingsSheet onClose={closeSettings} />}
     </section>
   )
 }
@@ -175,15 +167,10 @@ function formatCountdown(ms) {
     : { 'دقيقة': m, 'ثانية': s }
 }
 
-/**
- * The most recent prayer that went off, only while there is still a live
- * "since the adhan" window open (30 minutes). Returns null otherwise so the
- * UI falls back to the upcoming-prayer countdown.
- */
 function currentFired(events, nowMs) {
   let best = null
   for (const e of events) {
-    if (!e.isPrayer) continue // sunrise/shuruq is a time marker, not a prayer
+    if (!e.isPrayer) continue
     if (e.at <= nowMs && nowMs - e.at < 30 * 60 * 1000) {
       if (!best || e.at > best.at) best = e
     }

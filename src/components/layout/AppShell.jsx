@@ -4,7 +4,10 @@ import { Header } from './Header.jsx'
 import { BottomNav } from './BottomNav.jsx'
 import { PlayerBar } from '../player/PlayerBar.jsx'
 import { AdhanModal } from '../prayer/AdhanModal.jsx'
+import { SettingsSheet } from '../prayer/SettingsSheet.jsx'
+import { LocationSheet } from '../prayer/LocationSheet.jsx'
 import { Icon } from '../ui/Icon.jsx'
+import { SheetProvider, useSheets } from './SheetContext.jsx'
 import * as player from '../../services/player.mjs'
 import { onAdhan, onSilentAdhan, clearSilentAdhan } from '../../services/prayerWatch.mjs'
 import { vibrate } from '../../services/sound.mjs'
@@ -15,7 +18,27 @@ import '../../styles/settings.css'
 const HOME_ROUTES = ['/', '/home']
 const TOP_ROUTES = ['/quran', '/tafseer', '/adhkar', '/hisn', '/fatwas', '/prayer', '/tasbih', '/radio', '/reciters', '/quiz', '/settings', '/history', '/khutbah']
 
+function SheetLockers() {
+  const { showSettings, showLocation } = useSheets()
+
+  useEffect(() => {
+    const anyOpen = showSettings || showLocation
+    document.body.style.overflow = anyOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [showSettings, showLocation])
+
+  return null
+}
+
 export function AppShell() {
+  return (
+    <SheetProvider>
+      <AppShellInner />
+    </SheetProvider>
+  )
+}
+
+function AppShellInner() {
   const location = useLocation()
   const navigate = useNavigate()
   const hasPlayer = useSyncExternalStore(
@@ -24,6 +47,7 @@ export function AppShell() {
   )
   const [adhan, setAdhan] = useState(null)
   const [showExit, setShowExit] = useState(false)
+  const sheets = useSheets()
 
   // Reset the shared scroll container to the top whenever the route changes so
   // a new screen never inherits the previous screen's scroll offset.
@@ -41,18 +65,16 @@ export function AppShell() {
     []
   )
 
-  // A background-announced adhan surfaced when the app (re)opened inside its
-  // window — plays nothing (AdhanModal respects prayer.silent) so the
-  // background adhan is never doubled.
   useEffect(() => onSilentAdhan((p) => setAdhan(p)), [])
 
-  // Android back button:
-  // - on the home screen → ask for confirmation before exiting
-  // - on another top-level tab → go back to the home screen
-  // - on any sub-screen → go back one step through the navigation history
   useEffect(() => {
     const onBack = (event) => {
       if (event) event.preventDefault()
+      if (sheets.showSettings || sheets.showLocation) {
+        if (sheets.showSettings) sheets.closeSettings()
+        else sheets.closeLocation()
+        return
+      }
       if (HOME_ROUTES.includes(location.pathname)) {
         setShowExit(true)
         return
@@ -65,7 +87,7 @@ export function AppShell() {
     }
     document.addEventListener('backbutton', onBack, false)
     return () => document.removeEventListener('backbutton', onBack, false)
-  }, [location.pathname, navigate])
+  }, [location.pathname, navigate, sheets])
 
   const closeExit = () => setShowExit(false)
 
@@ -83,7 +105,6 @@ export function AppShell() {
           onClose={() => {
             clearSilentAdhan()
             setAdhan(null)
-            // silencing the running azan player happens on unmount
           }}
         />
       )}
@@ -102,29 +123,24 @@ export function AppShell() {
               <button
                 className="settings-confirm__btn settings-confirm__btn--gold"
                 onClick={() => {
-                  closeExit()
-                  openExternal(PLAY_STORE_URL)
-                }}
-                type="button"
-              >
-                <Icon name="star-fill" size={15} />
-                تقييم التطبيق
-              </button>
-              <button
-                className="settings-confirm__btn settings-confirm__btn--danger"
-                onClick={() => {
-                  closeExit()
                   exitApp()
                 }}
-                type="button"
               >
-                <Icon name="close" size={15} />
                 خروج
+              </button>
+              <button
+                className="settings-confirm__btn settings-confirm__btn--ghost"
+                onClick={closeExit}
+              >
+                إلغاء
               </button>
             </div>
           </div>
         </div>
       )}
+      <SheetLockers />
+      {sheets.showSettings && <SettingsSheet onClose={sheets.closeSettings} />}
+      {sheets.showLocation && <LocationSheet onClose={sheets.closeLocation} />}
     </div>
   )
 }
