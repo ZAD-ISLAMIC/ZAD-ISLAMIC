@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-  <widget id="com.rn0x.altaqwaa" version="3.0.5" android-versionCode="30005" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+  <widget id="com.rn0x.altaqwaa" version="3.0.6" android-versionCode="30006" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
 
   <name>التقوى</name>
   <description>تطبيق التقوى — تطبيق إسلامي متكامل</description>
@@ -53,10 +53,5 @@
   <!-- Runs after `cordova prepare` and before compiling: strips the stale
        foreground-service manifest entries that cordova itself cannot remove. -->
   <hook src="scripts/patch-manifest.mjs" type="before_compile" />
-  <!-- Patches MainActivity.java to catch AwDataDirLock crashes on Samsung devices. -->
   <hook src="scripts/patch-mainactivity.mjs" type="before_compile" />
-  <!-- F-Droid only: rewires SystemWebChromeClient's permission flow away from
-       androidx.activity (unavailable on the F-Droid CordovaLib classpath). Active
-       only when the .fdroid_build marker exists. -->
-  <hook src="scripts/fdroid-systemwebchrome-fix.mjs" type="before_compile" />
 </widget>

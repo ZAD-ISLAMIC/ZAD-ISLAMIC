@@ -105,20 +105,16 @@ if (!existsSync(NODE_MODULES_FILE)) {
 }
 
 {
-  if (process.env.FDROID_BUILD === '1') {
-    console.log('[patch-cordova] FDROID_BUILD detected — leaving framework pristine (platform handles it).')
-  } else {
-    const content = readFileSync(NODE_MODULES_FILE, 'utf-8')
+  const content = readFileSync(NODE_MODULES_FILE, 'utf-8')
 
-    if (content.includes(PATCH_MARKER)) {
-      console.log('[patch-cordova] node_modules already patched — skipping.')
-    } else if (!content.includes(ORIGINAL_FIELD)) {
-      console.error('[patch-cordova] Unexpected framework content — cannot patch.')
-      process.exit(1)
-    } else {
-      writeFileSync(NODE_MODULES_FILE, patchSource(content), 'utf-8')
-      console.log('[patch-cordova] ✓ node_modules SystemWebChromeClient.java patched.')
-    }
+  if (content.includes(PATCH_MARKER)) {
+    console.log('[patch-cordova] node_modules already patched — skipping.')
+  } else if (!content.includes(ORIGINAL_FIELD)) {
+    console.error('[patch-cordova] Unexpected framework content — cannot patch.')
+    process.exit(1)
+  } else {
+    writeFileSync(NODE_MODULES_FILE, patchSource(content), 'utf-8')
+    console.log('[patch-cordova] ✓ node_modules SystemWebChromeClient.java patched.')
   }
 }
 
@@ -127,9 +123,7 @@ if (!existsSync(NODE_MODULES_FILE)) {
 // node_modules framework this patch was written against, so copying a patched
 // file that no longer matches would break compilation. In that case skip the
 // copy and let the pristine platform file compile.
-if (process.env.FDROID_BUILD === '1') {
-  console.log('[patch-cordova] FDROID_BUILD detected — using pristine platform file (skip patch sync).')
-} else if (existsSync(PLATFORM_FILE)) {
+if (existsSync(PLATFORM_FILE)) {
   const framework = readFileSync(NODE_MODULES_FILE, 'utf-8')
   const platform = readFileSync(PLATFORM_FILE, 'utf-8')
   if (framework === platform) {
@@ -142,20 +136,19 @@ if (process.env.FDROID_BUILD === '1') {
   console.log('[patch-cordova] No platform CordovaLib found — nothing to sync.')
 }
 
-// ---- 3. Ensure extractNativeLibs is set in AndroidManifest.xml ----
-// The .so native libraries need extraction for Google Play 16KB page-size compatibility.
-// cordova prepare may reset the manifest, so we re-apply this flag idempotently.
+// ---- 3. Remove extractNativeLibs from AndroidManifest.xml ----
+// useLegacyPackaging in build-extras.gradle handles .so extraction in release builds.
+// The manifest flag is no longer needed and causes an AGP warning when useLegacyPackaging is set.
 if (existsSync(MANIFEST_FILE)) {
   const manifest = readFileSync(MANIFEST_FILE, 'utf-8')
-  if (!manifest.includes('extractNativeLibs')) {
-    const patched = manifest.replace(
-      /<application[^>]*android:supportsRtl="true"[^>]*/g,
-      (match) => match.replace(/android:supportsRtl="true"/, 'android:supportsRtl="true" android:extractNativeLibs="true"')
-    )
-    writeFileSync(MANIFEST_FILE, patched, 'utf-8')
-    console.log('[patch-cordova] ✓ AndroidManifest.xml: extractNativeLibs ensured.')
+  if (manifest.includes('extractNativeLibs')) {
+    const stripped = manifest.replace(/ android:extractNativeLibs="true"/g, '')
+    if (stripped !== manifest) {
+      writeFileSync(MANIFEST_FILE, stripped, 'utf-8')
+      console.log('[patch-cordova] ✓ AndroidManifest.xml: extractNativeLibs removed (handled by build-extras.gradle).')
+    }
   } else {
-    console.log('[patch-cordova] AndroidManifest.xml already has extractNativeLibs — skipping.')
+    console.log('[patch-cordova] AndroidManifest.xml: no extractNativeLibs — skipping.')
   }
 } else {
   console.log('[patch-cordova] No AndroidManifest.xml found — skipping manifest patch.')
@@ -240,4 +233,25 @@ if (existsSync(BUILD_GRADLE)) {
   } else {
     console.log('[patch-cordova] build.gradle already has work-runtime — skipping.')
   }
+}
+
+// ---- 5. Ensure build-extras.gradle exists in platforms/android/ for useLegacyPackaging ----
+// cordova-android 15 + AGP 8.x requires packaging.jniLibs.useLegacyPackaging = true when
+// native .so libs are bundled (Moonshine STT / ggml). Without it, the release APK bundles
+// the .so files compressed inside the zip, and the OS cannot mmap them — causing
+// UnsatisfiedLinkError at runtime in release builds only.
+// This file is picked up by app/build.gradle line 124: file('../build-extras.gradle').exists()
+const EXTRAS_GRADLE = resolve('platforms/android/build-extras.gradle')
+const EXTRAS_CONTENT = `android {\n    packaging {\n        jniLibs {\n            useLegacyPackaging = true\n        }\n    }\n}\n`
+if (existsSync(EXTRAS_GRADLE)) {
+  const existing = readFileSync(EXTRAS_GRADLE, 'utf-8')
+  if (!existing.includes('useLegacyPackaging')) {
+    writeFileSync(EXTRAS_GRADLE, existing.trimEnd() + '\n' + EXTRAS_CONTENT)
+    console.log('[patch-cordova] ✓ build-extras.gradle: useLegacyPackaging added.')
+  } else {
+    console.log('[patch-cordova] build-extras.gradle already has useLegacyPackaging — skipping.')
+  }
+} else {
+  writeFileSync(EXTRAS_GRADLE, EXTRAS_CONTENT)
+  console.log('[patch-cordova] ✓ build-extras.gradle: created with useLegacyPackaging.')
 }
