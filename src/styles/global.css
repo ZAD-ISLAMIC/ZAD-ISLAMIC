@@ -4978,7 +4978,8 @@ h3 {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  pointer-events: none;
+  /* Prevent scroll events from reaching the page behind the sheet */
+  overscroll-behavior-y: contain;
 }
 
 .loc-sheet__backdrop,
@@ -5008,6 +5009,8 @@ h3 {
   animation: sheet-up 0.26s cubic-bezier(0.2, 0.9, 0.3, 1);
   overflow: hidden;
   pointer-events: auto;
+  /* Prevent the card from being dragged up and pushing page content */
+  touch-action: none;
 }
 
 @keyframes sheet-up {
@@ -5083,6 +5086,8 @@ h3 {
   padding: 16px 18px 26px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* Allow scrolling inside the sheet body only */
+  touch-action: pan-y;
 }
 
 .loc-gps {
