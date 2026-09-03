@@ -121,19 +121,22 @@ function AppShellInner() {
             </p>
             <div className="settings-confirm__actions">
               <button
-                className="settings-confirm__btn settings-confirm__btn--gold"
+                className="settings-confirm__btn settings-confirm__btn--gold settings-confirm__btn--rate"
                 onClick={() => {
                   openExternal(PLAY_STORE_URL)
                   closeExit()
                 }}
               >
-                قيّمنا على Google Play
+                <Icon name="star" size={13} />
+                قيّمنا
               </button>
               <button
                 className="settings-confirm__btn settings-confirm__btn--ghost"
-                onClick={closeExit}
+                onClick={() => {
+                  exitApp()
+                }}
               >
-                لاحقاً
+                خروج
               </button>
             </div>
           </div>

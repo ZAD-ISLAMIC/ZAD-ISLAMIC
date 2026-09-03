@@ -1184,6 +1184,13 @@
   color: var(--on-primary);
 }
 
+.settings-confirm__btn--rate {
+  flex: 0;
+  padding: 11px 18px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
 .settings-confirm__icon--gold {
   background: color-mix(in srgb, var(--gold) 16%, transparent);
   color: var(--gold);
