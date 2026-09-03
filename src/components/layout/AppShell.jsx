@@ -109,30 +109,31 @@ function AppShellInner() {
         />
       )}
       {showExit && (
-        <div className="settings-confirm" role="dialog" aria-modal="true" aria-label="تأكيد الخروج">
+        <div className="settings-confirm" role="dialog" aria-modal="true" aria-label="تقييم التطبيق">
           <div className="settings-confirm__backdrop" onClick={closeExit} />
           <div className="settings-confirm__card">
             <div className="settings-confirm__icon settings-confirm__icon--gold" aria-hidden="true">
-              <Icon name="close" size={22} />
+              <Icon name="star" size={22} />
             </div>
             <h3 className="settings-confirm__title">هل بالفعل تريد الخروج من التطبيق؟</h3>
             <p className="settings-confirm__msg">
-              تقييمك للتطبيق يساعدنا على تحسينه ونشره، وإذا أعجبك فقيمة بـ5 نجوم
+              إذا أعجبك التطبيق، من فضلك قيّمه بخمسة نجوم — تقييمك يساعدنا على التحسين والنشر
             </p>
             <div className="settings-confirm__actions">
               <button
                 className="settings-confirm__btn settings-confirm__btn--gold"
                 onClick={() => {
-                  exitApp()
+                  openExternal(PLAY_STORE_URL)
+                  closeExit()
                 }}
               >
-                خروج
+                قيّمنا على Google Play
               </button>
               <button
                 className="settings-confirm__btn settings-confirm__btn--ghost"
                 onClick={closeExit}
               >
-                إلغاء
+                لاحقاً
               </button>
             </div>
           </div>
