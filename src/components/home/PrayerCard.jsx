@@ -18,6 +18,19 @@ export const PrayerCard = React.memo(function PrayerCard() {
   const [now, setNow] = useState(() => getNowMs())
   const [showSettings, setShowSettings] = useState(false)
 
+  // Lock page scroll while sheet is open — disables touchmove on the
+  // window so dragging the page up behind the overlay is impossible.
+  // Scroll inside the sheet body itself is allowed.
+  useEffect(() => {
+    if (!showSettings) return
+    const lock = (e) => {
+      if (e.target.closest('.set-sheet') || e.target.closest('.loc-sheet')) return
+      e.preventDefault()
+    }
+    document.addEventListener('touchmove', lock, { passive: false })
+    return () => document.removeEventListener('touchmove', lock)
+  }, [showSettings])
+
   useEffect(() => {
     let raf
     let last = 0
