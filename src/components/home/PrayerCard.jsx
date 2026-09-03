@@ -47,24 +47,29 @@ export const PrayerCard = React.memo(function PrayerCard() {
 
   return (
     <>
-      <button className="home-prayer" onClick={() => navigate('/prayer')} type="button">
+      <div className="home-prayer" onClick={() => navigate('/prayer')}>
         <div className="home-prayer__top">
           <span className="home-prayer__label">
             <Icon name="landmark" size={14} />
             مواقيت الصلاة
           </span>
-          <span className="home-prayer__actions" onClick={(e) => e.stopPropagation()}>
-            <span
+          <span className="home-prayer__actions">
+            <button
               className="home-prayer__settings-btn"
-              onClick={() => setShowSettings(true)}
+              onClick={(e) => { e.stopPropagation(); setShowSettings(true); }}
               aria-label="إعدادات المواقيت"
+              type="button"
             >
               <Icon name="gear" size={14} />
-            </span>
-            <span className="home-prayer__more">
+            </button>
+            <button
+              className="home-prayer__more"
+              onClick={(e) => { e.stopPropagation(); navigate('/prayer'); }}
+              type="button"
+            >
               التفاصيل
               <Icon name="arrow-left" size={12} />
-            </span>
+            </button>
           </span>
         </div>
 
@@ -89,7 +94,7 @@ export const PrayerCard = React.memo(function PrayerCard() {
             )
           })}
         </div>
-      </button>
+      </div>
       {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
     </>
   )
