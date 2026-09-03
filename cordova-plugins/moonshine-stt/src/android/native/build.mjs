@@ -82,6 +82,10 @@ const common = [
   '-DTRANSCRIBE_INSTALL=OFF',
   '-DTRANSCRIBE_USE_SYSTEM_BLAS=OFF',
   '-DGGML_OPENMP=OFF',
+  // Force 16KB page size alignment so Google Play accepts the bundle.
+  '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-z,max-page-size=16384',
+  '-DCMAKE_SHARED_LINKER_FLAGS=-Wl,-z,max-page-size=16384',
+  '-DCMAKE_MODULE_LINKER_FLAGS=-Wl,-z,max-page-size=16384',
 ]
 
 fs.mkdirSync(path.join(BUILD, 'engine'), { recursive: true })
