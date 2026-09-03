@@ -11,9 +11,9 @@
     <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <title>التقوى</title>
     <style id="app-splash-styles">
-      html,
-      body {
-        background: #0a1428;
+      /* Splash يتبع الثيم تلقائيًا عبر CSS variables */
+      html, body {
+        background: var(--splash-bg, #0a1428);
       }
       /* الشاشة الأولى — ثابتة حتى يقارب الجافاسكربت ثم تُخفى بـ .is-leaving */
       #app-splash {
@@ -26,13 +26,13 @@
         justify-content: center;
         text-align: center;
         overflow: hidden;
-        color: #eef3fb;
+        color: var(--splash-color, #eef3fb);
         font-family: 'Vazirmatn', 'Noto Naskh Arabic', 'Segoe UI', Tahoma, sans-serif;
         background:
           radial-gradient(120% 90% at 50% -12%, rgba(16, 185, 129, 0.18), transparent 58%),
           radial-gradient(95% 75% at 88% 108%, rgba(212, 175, 55, 0.12), transparent 55%),
           radial-gradient(95% 75% at 10% 106%, rgba(96, 130, 255, 0.16), transparent 52%),
-          linear-gradient(180deg, #0b1a33 0%, #0a1428 55%, #07101f 100%);
+          linear-gradient(180deg, var(--splash-bg-start, #0b1a33) 0%, var(--splash-bg, #0a1428) 55%, var(--splash-bg-end, #07101f) 100%);
         background-attachment: fixed;
       }
       #app-splash::before {
@@ -65,7 +65,7 @@
         font-size: clamp(30px, 9vw, 44px);
         font-weight: 700;
         letter-spacing: 1.5px;
-        color: #f5f7fb;
+        color: var(--splash-title, #f5f7fb);
         animation: splash-rise 0.9s 0.12s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
         text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
       }
@@ -73,7 +73,7 @@
         margin-top: 10px;
         font-size: clamp(13px, 3.6vw, 16px);
         font-weight: 400;
-        color: #8ba1c7;
+        color: var(--splash-muted, #8ba1c7);
         letter-spacing: 0.4px;
         animation: splash-rise 0.9s 0.2s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
       }
@@ -103,8 +103,7 @@
         pointer-events: none;
       }
       @keyframes splash-glow {
-        0%,
-        100% { opacity: 0.5; }
+        0%, 100% { opacity: 0.5; }
         50% { opacity: 1; }
       }
       @keyframes splash-pop {
@@ -118,6 +117,15 @@
       @keyframes splash-slide {
         from { transform: translateX(100%); }
         to { transform: translateX(-100%); }
+      }
+      /* Light theme overrides */
+      html[data-theme='light'] #app-splash {
+        --splash-bg: #f2f6fc;
+        --splash-bg-start: #ffffff;
+        --splash-bg-end: #e8eef8;
+        --splash-color: #14233f;
+        --splash-title: #14233f;
+        --splash-muted: #5b6f92;
       }
     </style>
   </head>
