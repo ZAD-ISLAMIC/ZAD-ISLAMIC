@@ -18,8 +18,8 @@
  * This script is idempotent — safe to run multiple times.
  */
 
-import { existsSync, readFileSync, writeFileSync, copyFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync, writeFileSync, copyFileSync, mkdirSync, readdirSync, statSync } from 'node:fs'
+import { resolve, join } from 'node:path'
 
 const NODE_MODULES_FILE = resolve(
   'node_modules/cordova-android/framework/src/org/apache/cordova/engine/SystemWebChromeClient.java'
@@ -159,4 +159,85 @@ if (existsSync(MANIFEST_FILE)) {
   }
 } else {
   console.log('[patch-cordova] No AndroidManifest.xml found — skipping manifest patch.')
+}
+
+// ---- 4. Post-prepare: restore .so files and plugin Java sources ----
+// cordova-android 15 does not auto-copy plugin native libs / Java sources into
+// platforms/ when `platforms/` is deleted. We re-inject them idempotently.
+const APP_SRC_MAIN = resolve('platforms/android/app/src/main')
+const JNI_LIBS_DIR = join(APP_SRC_MAIN, 'jniLibs', 'arm64-v8a')
+const JAVA_DIR = join(APP_SRC_MAIN, 'java', 'com', 'rn0x')
+const BUILD_GRADLE = resolve('platforms/android/app/build.gradle')
+const MOONSHINE_PLUGIN = resolve('cordova-plugins/moonshine-stt/src/android')
+
+// --- 4a. Copy .so files ---
+if (existsSync(MOONSHINE_PLUGIN)) {
+  mkdirSync(JNI_LIBS_DIR, { recursive: true })
+  const srcSoDir = join(MOONSHINE_PLUGIN, 'libs', 'arm64-v8a')
+  if (existsSync(srcSoDir)) {
+    for (const file of readdirSync(srcSoDir)) {
+      if (file.endsWith('.so')) {
+        copyFileSync(join(srcSoDir, file), join(JNI_LIBS_DIR, file))
+      }
+    }
+    console.log('[patch-cordova] ✓ .so files copied to jniLibs/arm64-v8a/')
+  } else {
+    console.log('[patch-cordova] ⚠ moonshine-stt src/android/libs not found — skipping .so copy.')
+  }
+}
+
+// --- 4b. Copy plugin Java sources (prayerwatch, downloader, fileopener, etc.) ---
+// Note: plugin src/android/ contains a 'com/' subdirectory; we scan recursively for .java files.
+const PLUGIN_JAVA_SOURCES = [
+  { src: 'cordova-plugins/com.rn0x.prayerwatch/src/android', target: 'prayerwatch' },
+  { src: 'cordova-plugins/com.rn0x.downloader/src/android', target: 'downloader' },
+  { src: 'cordova-plugins/com.rn0x.fileopener/src/android', target: 'fileopener' },
+  { src: 'cordova-plugins/com.rn0x.prayerlocation/src/android', target: 'prayerlocation' },
+  { src: 'cordova-plugins/com.rn0x.qibla/src/android', target: 'qibla' },
+]
+for (const { src, target } of PLUGIN_JAVA_SOURCES) {
+  const srcDir = resolve(src)
+  if (!existsSync(srcDir)) continue
+  const destDir = join(JAVA_DIR, target)
+  mkdirSync(destDir, { recursive: true })
+  // Recursively find all .java files under srcDir
+  function findJavaFiles(dir) {
+    const results = []
+    for (const file of readdirSync(dir)) {
+      const full = join(dir, file)
+      const st = statSync(full)
+      if (st.isDirectory()) {
+        results.push(...findJavaFiles(full))
+      } else if (file.endsWith('.java')) {
+        results.push(full)
+      }
+    }
+    return results
+  }
+  const javaFiles = findJavaFiles(srcDir)
+  for (const file of javaFiles) {
+    copyFileSync(file, join(destDir, file.split('/').pop()))
+  }
+  const count = readdirSync(destDir).filter(f => f.endsWith('.java')).length
+  if (count > 0) console.log(`[patch-cordova] ✓ ${target}/.java (${count} files)`)
+}
+
+// --- 4c. Ensure androidx.work dependency in build.gradle ---
+// Insert AFTER the app-level "dependencies {" block (the one inside android{}),
+// which is always the LAST occurrence in cordova-android 15's generated build.gradle.
+if (existsSync(BUILD_GRADLE)) {
+  let gradle = readFileSync(BUILD_GRADLE, 'utf-8')
+  if (!gradle.includes('androidx.work:work-runtime')) {
+    const depLine = '    implementation "androidx.work:work-runtime:2.9.1"'
+    const marker = 'dependencies {'
+    // Use lastIndexOf to find the LAST (app-level) dependencies block
+    const lastIdx = gradle.lastIndexOf(marker)
+    if (lastIdx > -1) {
+      gradle = gradle.slice(0, lastIdx + marker.length).concat('\n', depLine, gradle.slice(lastIdx + marker.length))
+      writeFileSync(BUILD_GRADLE, gradle)
+      console.log('[patch-cordova] ✓ build.gradle: androidx.work dependency added.')
+    }
+  } else {
+    console.log('[patch-cordova] build.gradle already has work-runtime — skipping.')
+  }
 }
