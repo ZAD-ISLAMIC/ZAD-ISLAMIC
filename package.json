@@ -39,6 +39,7 @@
     "com.rn0x.downloader": "file:cordova-plugins/com.rn0x.downloader",
     "com.rn0x.fileopener": "file:cordova-plugins/com.rn0x.fileopener",
     "com.rn0x.prayerlocation": "file:cordova-plugins/com.rn0x.prayerlocation",
+    "com.rn0x.prayerwatch": "file:cordova-plugins/com.rn0x.prayerwatch",
     "com.rn0x.qibla": "file:cordova-plugins/com.rn0x.qibla",
     "com.rn0x.systemui": "file:cordova-plugins/system-ui",
     "cordova": "^13.0.0",
