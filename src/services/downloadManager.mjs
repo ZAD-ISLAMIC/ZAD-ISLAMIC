@@ -271,7 +271,7 @@ async function runTask(job, task) {
   let sink = null
   let start = 0
   try {
-    sink = await openSink(job.reciterId, n)
+    sink = await openSink(job.reciterId, n, { url: audioUrl(reciter, n) })
     start = sink.offset
 
     const res = await fetch(audioUrl(reciter, n), {

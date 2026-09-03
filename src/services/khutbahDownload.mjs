@@ -182,6 +182,9 @@ async function runTask(task) {
       })
 
       const totalBytes = result.contentLength || 0
+      if (totalBytes === 0) {
+        throw { code: 'badlink', message: 'الملف غير متاح على الخادم' }
+      }
       task.bytes = totalBytes
       task.progress = 1
       markStoredByFile(KHUTBAH_NS, task.fileName, totalBytes)

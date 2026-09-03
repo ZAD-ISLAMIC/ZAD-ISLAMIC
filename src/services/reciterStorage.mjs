@@ -222,8 +222,17 @@ function fileName(surahNumber) {
 /**
  * Write sink that uses DownloaderPlugin.writeFile / readFile.
  * Every write() resolves only once the chunk has been flushed to disk.
+ *
+ * IMPORTANT: writeFile passes base64 through the Cordova JSON bridge,
+ * which encodes strings as UTF-16.  Binary audio data (MP3) contains
+ * byte values > 127 that get mangled in transit — Java then throws
+ * "bad base-64" when decoding.  The fix below uses httpGet() with an
+ * absolute file path instead, which writes raw bytes natively and
+ * avoids the bridge entirely.  The old writeFile path is kept as a
+ * fallback for tiny probe writes (1 byte) only.
  */
-function createNativeSink(ns, fileName) {
+function createNativeSink(ns, fileName, options = {}) {
+  const { url } = options
   let currentSize = 0
 
   return {
@@ -233,25 +242,45 @@ function createNativeSink(ns, fileName) {
       return currentSize
     },
     async reset() {
-      await window.cordova.plugins.Downloader.writeFile({ ns, fileName, data: '', offset: 0 })
+      // Use httpGet with an empty-body trick isn't available; instead
+      // just delete and re-create via httpGet on next write.
+      try {
+        await window.cordova.plugins.Downloader.deleteFile({ ns, fileName })
+      } catch { /* ignore */ }
       currentSize = 0
     },
     async write(blob, offset) {
+      // httpGet path: download directly to file, bypassing base64 bridge.
+      if (url && window.cordova?.plugins?.Downloader?.httpGet) {
+        const filePath = await nativeFilePath(ns, fileName)
+        if (!filePath) throw { code: 'storage', message: 'تعذّر الوصول إلى مسار التخزين' }
+        // If we already have partial data, httpGet won't resume — delete and restart.
+        if ((offset ?? currentSize) > 0) {
+          try { await window.cordova.plugins.Downloader.deleteFile({ ns, fileName }) } catch { /* ignore */ }
+          currentSize = 0
+        }
+        const result = await window.cordova.plugins.Downloader.httpGet({ url, dest: filePath })
+        currentSize = result.contentLength || 0
+        return currentSize
+      }
+
+      // Fallback: writeFile with base64 — only safe for tiny probes.
       const buffer = await blob.arrayBuffer()
       const bytes = new Uint8Array(buffer)
-      // Chunk base64 encoding to avoid memory pressure on large files
       const chunkSize = 8192
       let base64 = ''
       for (let i = 0; i < bytes.length; i += chunkSize) {
         const slice = bytes.subarray(i, i + chunkSize)
-        base64 += btoa(String.fromCharCode.apply(null, slice))
+        let str = ''
+        const view = new DataView(slice.buffer, slice.byteOffset, slice.byteLength)
+        for (let j = 0; j < view.byteLength; j++) {
+          str += String.fromCharCode(view.getUint8(j))
+        }
+        base64 += btoa(str)
       }
       const pos = offset != null ? offset : currentSize
       const result = await window.cordova.plugins.Downloader.writeFile({
-        ns,
-        fileName,
-        data: base64,
-        offset: pos,
+        ns, fileName, data: base64, offset: pos,
       })
       currentSize = result.totalSize
       return result.bytesWritten
@@ -291,13 +320,13 @@ async function nativeFileToUrl(ns, fileName) {
 
 // Opens a sink for one surah. Returns { offset, write(blob), reset(), done() }.
 // offset = existing bytes on disk (native resume) or 0.
-export async function openSink(reciterId, surahNumber) {
+export async function openSink(reciterId, surahNumber, options = {}) {
   if ((await getBackend()) === 'cordova') {
     const ns = String(reciterId)
     const fName = fileName(surahNumber)
     let sink
     try {
-      sink = createNativeSink(ns, fName)
+      sink = createNativeSink(ns, fName, options)
     } catch {
       throw { code: 'storage', message: 'تعذّر فتح ملف التحميل' }
     }
@@ -308,7 +337,7 @@ export async function openSink(reciterId, surahNumber) {
         sink.write(blob, pos != null ? pos : null).catch((err) => {
           const msg = err?.message || ''
           if (typeof console !== 'undefined') {
-            console.warn('[altaqwaa] native write failed', {
+            console.error('[altaqwaa] native write failed', {
               name: err?.name,
               message: msg,
               detail: String(err),
@@ -497,12 +526,12 @@ export function fileRegistrySummary(ns) {
   return { count: reg.count || 0, bytes: reg.bytes || 0 }
 }
 
-export async function openFileSink(ns, fileName) {
+export async function openFileSink(ns, fileName, options = {}) {
   const name = String(fileName)
   if ((await getBackend()) === 'cordova') {
     let sink
     try {
-      sink = createNativeSink(ns, name)
+      sink = createNativeSink(ns, name, options)
     } catch {
       throw { code: 'storage', message: 'تعذّر فتح ملف التحميل' }
     }

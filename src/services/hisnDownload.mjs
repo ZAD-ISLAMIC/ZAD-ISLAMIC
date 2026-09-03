@@ -170,7 +170,7 @@ async function runTask(task) {
   let sink = null
   let start = 0
   try {
-    sink = await openFileSink(HISN_NS, task.fileName)
+    sink = await openFileSink(HISN_NS, task.fileName, { url: task.url })
     start = sink.offset
 
     const res = await fetch(task.url, {
