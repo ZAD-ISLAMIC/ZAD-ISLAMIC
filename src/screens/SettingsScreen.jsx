@@ -25,7 +25,7 @@ import {
   DIGIT_STYLE_EASTERN,
   DIGIT_STYLE_WESTERN,
 } from '../utils/arabic.mjs'
-import '../styles/settings.css'
+import { APP_VERSION } from '../constants/app.mjs'
 
 const PLAYER_RATES = [
   { value: 0.75, label: '¾×' },
@@ -488,7 +488,7 @@ export default function SettingsScreen() {
           icon={<Icon name="info" size={20} />}
           label="حول التقوى"
           description="نسخة التطبيق والمحتوى والمصادر"
-          value="v3.0.5"
+          value={`v${APP_VERSION}`}
           onClick={() => navigate('/settings/about')}
         />
       </SettingsGroup>
