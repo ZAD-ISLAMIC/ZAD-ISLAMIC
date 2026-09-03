@@ -117,7 +117,7 @@ function AppShellInner() {
             </div>
             <h3 className="settings-confirm__title">هل بالفعل تريد الخروج من التطبيق؟</h3>
             <p className="settings-confirm__msg">
-              إذا أعجبك التطبيق، من فضلك قيّمه بخمسة نجوم — تقييمك يساعدنا على التحسين والنشر
+              إذا نال التطبيق إعجابك، فالرجاء منحنا تقييمًا بخمس نجوم — فإعطَاؤك إياها سببٌ في انتشاره ونشره
             </p>
             <div className="settings-confirm__actions">
               <button
