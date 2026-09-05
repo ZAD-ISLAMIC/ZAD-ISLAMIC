@@ -1,18 +1,18 @@
 <p align="center">
-  <img src="src/resources/icons/icon@2x.png" width="110" alt="شعار تطبيق التقوى">
+  <img src="src/resources/icons/icon@2x.png" width="110" alt="شعار تطبيق زاد">
 </p>
 
-<h1 align="center">التقوى</h1>
+<h1 align="center">زاد</h1>
 
 <p align="center">
   تطبيق إسلامي مجاني ومفتوح المصدر، رفيق المسلم اليومي في القرآن والأذكار والمواقيت وأكثر
 </p>
 
 <p align="center">
-  <a href="https://github.com/rn0x/altaqwaa-android/releases"><img src="https://img.shields.io/badge/version-3.0.7-7c9cff?style=for-the-badge" alt="الإصدار 3.0.7"></a>
-  <a href="https://github.com/rn0x/altaqwaa-android/releases"><img src="https://img.shields.io/github/downloads/rn0x/altaqwaa-android/total?style=for-the-badge&logo=github&color=10b981" alt="تحميلات GitHub"></a>
-  <a href="https://github.com/rn0x/altaqwaa-android"><img src="https://img.shields.io/github/stars/rn0x/altaqwaa-android?style=for-the-badge&color=d4af37" alt="نجوم"></a>
-  <a href="https://github.com/rn0x/altaqwaa-android/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rn0x/altaqwaa-android?style=for-the-badge&color=64748b" alt="الرخصة GPL-3.0"></a>
+  <a href="https://github.com/ZAD-ISLAMIC/ZAD-ISLAMIC/releases"><img src="https://img.shields.io/badge/version-3.0.7-7c9cff?style=for-the-badge" alt="الإصدار 3.0.7"></a>
+  <a href="https://github.com/ZAD-ISLAMIC/ZAD-ISLAMIC/releases"><img src="https://img.shields.io/github/downloads/rn0x/altaqwaa-android/total?style=for-the-badge&logo=github&color=10b981" alt="تحميلات GitHub"></a>
+  <a href="https://github.com/ZAD-ISLAMIC/ZAD-ISLAMIC"><img src="https://img.shields.io/github/stars/rn0x/altaqwaa-android?style=for-the-badge&color=d4af37" alt="نجوم"></a>
+  <a href="https://github.com/ZAD-ISLAMIC/ZAD-ISLAMIC/blob/main/LICENSE"><img src="https://img.shields.io/github/license/rn0x/altaqwaa-android?style=for-the-badge&color=64748b" alt="الرخصة GPL-3.0"></a>
 </p>
 
 ## ⬇️ التحميل
@@ -21,7 +21,7 @@
   <img src="https://play.google.com/intl/ar/badges/static/images/badges/ar_badge_web_generic.png" alt="متوفر على Google Play" width="190">
 </a>
 
-<a href="https://github.com/rn0x/altaqwaa-android/releases">
+<a href="https://github.com/ZAD-ISLAMIC/ZAD-ISLAMIC/releases">
   <img src="https://img.shields.io/github/downloads/rn0x/altaqwaa-android/total?style=for-the-badge&logo=github&logoColor=white&label=GitHub%20Releases&color=0a1428" alt="تحميل من GitHub Releases">
 </a>
 
@@ -41,7 +41,7 @@
 - 🧭 **اتجاه القبلة** — بوصلة دقيقة لاتجاه القبلة من أي مكان
 - 📿 **الأذكار وحصن المسلم** — أذكار الصباح والمساء والنوم، مقروءة ومسموعة بدون إنترنت
 - ☪️ **المسبحة الإلكترونية** — تسبيح بعدّاد يدوي أو صوتي
-- 📻 **راديو التقوى** — بث مباشر للقنوات القرآنية
+- 📻 **راديو زاد** — بث مباشر للقنوات القرآنية
 - 🕋 **الموسوعة التاريخية** — أحداث السيرة والتاريخ الإسلامي من مصادر موثوقة
 - 📜 **فتاوى ابن باز** — فتاوى مكتوبة ومسموعة للشيخ رحمه الله
 - 🎙️ **الخطب** — خطب منبرية مع مرفقات PDF و Word
@@ -137,6 +137,6 @@ npm run keystore   # يولد مفتاح keystore + build.json
 
 <div align="center">
 
-[🌐 المتجر](https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa) · [🌐 الموقع](https://rn0x.github.io/altaqwaa-android/) · [🔒 الخصوصية](https://rn0x.github.io/altaqwaa-android/privacy.html) · [🐙 GitHub](https://github.com/rn0x/altaqwaa-android) · [⬇️ Releases](https://github.com/rn0x/altaqwaa-android/releases)
+[🌐 المتجر](https://play.google.com/store/apps/details?id=com.rn0x.altaqwaa) · [🌐 الموقع](https://rn0x.github.io/altaqwaa-android/) · [🔒 الخصوصية](https://rn0x.github.io/altaqwaa-android/privacy.html) · [🐙 GitHub](https://github.com/ZAD-ISLAMIC/ZAD-ISLAMIC) · [⬇️ Releases](https://github.com/ZAD-ISLAMIC/ZAD-ISLAMIC/releases)
 
 </div>
