@@ -1,0 +1,23 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # تشغيل يدوي من تبويب Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - run: npx cap sync android
+      - name: Build Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug.apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
