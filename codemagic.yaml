@@ -8,14 +8,39 @@ workflows:
       node: 20.19.0
       java: 21
 
+      android_signing:
+        - zad_release
+
     scripts:
       - name: Install dependencies
         script: |
           npm ci
 
-      - name: Build web assets
+      - name: Create build.json from Codemagic signing credentials
         script: |
-          npm run build
+          node <<'NODE'
+          const fs = require('fs');
+
+          const buildConfig = {
+            android: {
+              release: {
+                keystore: process.env.CM_KEYSTORE_PATH,
+                storePassword: process.env.CM_KEYSTORE_PASSWORD,
+                alias: process.env.CM_KEY_ALIAS,
+                password: process.env.CM_KEY_PASSWORD,
+                keystoreType: "pkcs12",
+                packageType: "apk"
+              }
+            }
+          };
+
+          fs.writeFileSync(
+            'build.json',
+            JSON.stringify(buildConfig, null, 2) + '\n'
+          );
+
+          console.log('build.json created successfully');
+          NODE
 
       - name: Build Android AAB
         script: |
@@ -26,5 +51,5 @@ workflows:
           npm run build:apk:release
 
     artifacts:
-      - "**/*.apk"
-      - "**/*.aab"
+      - "platforms/android/app/build/outputs/**/*.apk"
+      - "platforms/android/app/build/outputs/**/*.aab"
